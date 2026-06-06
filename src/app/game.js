@@ -136,6 +136,9 @@ const languageLabels = {
     specialTitle: "Special",
     specialText: (hp) => `${hp} hit${hp === 1 ? "" : "s"} left.`,
     specialAllText: (count) => `Hit ${count} enemies.`,
+    bossKicker: "WARNING",
+    bossTitle: "Boss Appeared",
+    bossText: "A powerful enemy has arrived.",
   },
   ja: {
     languageName: "日本語",
@@ -177,6 +180,9 @@ const languageLabels = {
     specialTitle: "必殺技",
     specialText: (hp) => `必殺技が命中。あと${hp}回で倒せます。`,
     specialAllText: (count) => `${count}体に命中。`,
+    bossKicker: "WARNING",
+    bossTitle: "ボス出現",
+    bossText: "強敵があらわれました。",
   },
 };
 
@@ -309,6 +315,7 @@ const state = {
   roundStart: 0,
   rafId: 0,
   specialEffectTimerId: 0,
+  bossIntroTimerId: 0,
   noticeTimerId: 0,
   startDelayTimerId: 0,
   usedWords: [],
@@ -327,6 +334,10 @@ const els = {
   specialGaugeFill: document.querySelector("#specialGaugeFill"),
   specialButton: document.querySelector("#specialButton"),
   specialEffect: document.querySelector("#specialEffect"),
+  bossIntro: document.querySelector("#bossIntro"),
+  bossIntroKicker: document.querySelector("#bossIntroKicker"),
+  bossIntroTitle: document.querySelector("#bossIntroTitle"),
+  bossIntroText: document.querySelector("#bossIntroText"),
   wordTranslation: document.querySelector("#wordTranslation"),
   typedWord: document.querySelector("#typedWord"),
   remainingWord: document.querySelector("#remainingWord"),
@@ -502,6 +513,7 @@ function showDifficultySelect() {
   clearStartDelayTimer();
   clearNoticeTimer();
   clearSpecialEffect();
+  clearBossIntro();
   clearEnemies();
   updateLanguageText();
   updateHud();
@@ -615,6 +627,36 @@ function clearSpecialEffect() {
   window.clearTimeout(state.specialEffectTimerId);
   state.specialEffectTimerId = 0;
   els.specialEffect.classList.remove("is-active");
+}
+
+function playBossIntro(enemy) {
+  const t = labels();
+
+  window.clearTimeout(state.bossIntroTimerId);
+  els.bossIntro.classList.remove("is-active");
+  enemy.element.classList.remove("boss-entry");
+  els.bossIntroKicker.textContent = t.bossKicker;
+  els.bossIntroTitle.textContent = t.bossTitle;
+  els.bossIntroText.textContent = t.bossText;
+  void els.bossIntro.offsetWidth;
+  els.bossIntro.classList.add("is-active");
+  enemy.element.classList.add("boss-entry");
+  setMessage(t.bossTitle, t.bossText);
+
+  state.bossIntroTimerId = window.setTimeout(() => {
+    state.bossIntroTimerId = 0;
+    els.bossIntro.classList.remove("is-active");
+    enemy.element.classList.remove("boss-entry");
+  }, 1500);
+}
+
+function clearBossIntro() {
+  window.clearTimeout(state.bossIntroTimerId);
+  state.bossIntroTimerId = 0;
+  els.bossIntro.classList.remove("is-active");
+  state.activeEnemies.forEach((enemy) => {
+    enemy.element.classList.remove("boss-entry");
+  });
 }
 
 function preloadEnemyFrames() {
@@ -855,6 +897,7 @@ function createEnemy(wave, index) {
 }
 
 function clearEnemies() {
+  clearBossIntro();
   clearEnemyAnimationTimers();
   state.activeEnemies = [];
   state.selectedEnemyId = "";
@@ -873,6 +916,11 @@ function addEnemyToWave(wave, index) {
   els.enemyLayer.appendChild(enemy.element);
   playEnemyAnimation(enemy, "idle");
   setTargetEnemy(enemy);
+
+  if (enemy.boss) {
+    playBossIntro(enemy);
+  }
+
   updateHud();
 }
 
@@ -1134,6 +1182,7 @@ function finishGame(cleared) {
   clearStartDelayTimer();
   clearEnemyAnimationTimers();
   clearSpecialEffect();
+  clearBossIntro();
   els.startButton.textContent = t.start;
   updateHud();
 
@@ -1178,6 +1227,7 @@ function resetGame() {
   clearStartDelayTimer();
   clearNoticeTimer();
   clearSpecialEffect();
+  clearBossIntro();
   clearEnemies();
   hideGameNotice();
   updateLanguageText();
@@ -1204,6 +1254,7 @@ function startGame(difficulty = state.difficulty) {
   clearStartDelayTimer();
   clearNoticeTimer();
   clearSpecialEffect();
+  clearBossIntro();
   state.running = true;
   state.hp = maxHp;
   state.score = 0;
