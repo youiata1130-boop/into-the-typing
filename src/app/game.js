@@ -181,11 +181,23 @@ const languageLabels = {
 };
 
 const maxHp = 5;
+const defaultSpecialGaugeSettings = {
+  chargeStartStreak: 5,
+  baseGain: 0.25,
+  gainPerStreak: 0.03,
+  streakCap: 16,
+};
 const defaultDifficulty = "beginner";
 const difficultyModes = {
   beginner: {
     label: "初級",
     enabled: true,
+    specialGauge: {
+      chargeStartStreak: 2,
+      baseGain: 2.2,
+      gainPerStreak: 0.18,
+      streakCap: 16,
+    },
     waves: [
       { types: ["goblin_level_1"], hp: 2, count: 3 },
       { types: ["goblin_level_1"], hp: 3, count: 3 },
@@ -208,10 +220,6 @@ const repeatAttackMs = 2200;
 const knockbackAmount = 0.14;
 const startNoticeMs = 850;
 const specialGaugeMax = 100;
-const specialChargeStartStreak = 5;
-const specialBaseGain = 0.25;
-const specialGainPerStreak = 0.03;
-const specialGainStreakCap = 16;
 const specialDamage = 3;
 const enemyAnimations = window.ENEMY_ANIMATIONS || {
   defaultEnemy: "goblin_level_1",
@@ -347,15 +355,24 @@ function updateLanguageText() {
   els.noticeButton.textContent = t.again;
 }
 
+function getSpecialGaugeSettings() {
+  return {
+    ...defaultSpecialGaugeSettings,
+    ...(getDifficultyMode(state.difficulty).specialGauge || {}),
+  };
+}
+
 function getSpecialGain() {
-  if (state.successStreak < specialChargeStartStreak) {
+  const settings = getSpecialGaugeSettings();
+
+  if (state.successStreak < settings.chargeStartStreak) {
     return 0;
   }
 
-  const chargedStreak = Math.min(state.successStreak, specialGainStreakCap) - specialChargeStartStreak + 1;
-  const streakBonus = chargedStreak * specialGainPerStreak;
+  const chargedStreak = Math.min(state.successStreak, settings.streakCap) - settings.chargeStartStreak + 1;
+  const streakBonus = chargedStreak * settings.gainPerStreak;
 
-  return specialBaseGain + streakBonus;
+  return settings.baseGain + streakBonus;
 }
 
 function chargeSpecialGauge() {
@@ -378,7 +395,8 @@ function isSpecialReady() {
 }
 
 function updateHud() {
-  const streakProgress = (Math.min(state.successStreak, specialGainStreakCap) / specialGainStreakCap) * 100;
+  const { streakCap } = getSpecialGaugeSettings();
+  const streakProgress = (Math.min(state.successStreak, streakCap) / streakCap) * 100;
   const specialGauge = Math.max(0, Math.min(state.specialGauge, specialGaugeMax));
   els.scoreText.textContent = state.score;
   els.comboText.textContent = state.combo;
@@ -386,8 +404,8 @@ function updateHud() {
   els.streakFill.style.width = `${streakProgress}%`;
   els.specialGaugeText.textContent = `${Math.round(specialGauge)}%`;
   els.specialGaugeFill.style.width = `${specialGauge}%`;
-  els.streakFill.parentElement.setAttribute("aria-valuemax", String(specialGainStreakCap));
-  els.streakFill.parentElement.setAttribute("aria-valuenow", String(Math.min(state.successStreak, specialGainStreakCap)));
+  els.streakFill.parentElement.setAttribute("aria-valuemax", String(streakCap));
+  els.streakFill.parentElement.setAttribute("aria-valuenow", String(Math.min(state.successStreak, streakCap)));
   els.specialGaugeFill.parentElement.setAttribute("aria-valuenow", String(Math.round(specialGauge)));
   els.specialButton.disabled = !state.running || !isSpecialReady() || !state.activeEnemies.some((enemy) => enemy.hp > 0);
 }
@@ -1001,8 +1019,9 @@ function useSpecialMove() {
     updateHud();
     return false;
   }
+  const { streakCap } = getSpecialGaugeSettings();
   state.specialGauge = 0;
-  state.score += targets.length * 120 + Math.min(state.successStreak, specialGainStreakCap) * 20;
+  state.score += targets.length * 120 + Math.min(state.successStreak, streakCap) * 20;
   setTargetEnemy(null);
   playSpecialEffect();
   targets.forEach((enemy) => {
