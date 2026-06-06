@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Into the Typing</title>
+    <link rel="stylesheet" href="src/styles/main.css">
+  </head>
+  <body>
+    <main class="game-shell">
+      <section class="ability-panel ability-panel-top" aria-label="必殺技ゲージ">
+        <div class="ability-meter-row">
+          <div class="ability-meter-head">
+            <span id="streakLabel">連続成功</span>
+            <strong id="streakText">0</strong>
+          </div>
+          <div class="ability-meter-track" role="meter" aria-label="Success streak" aria-valuemin="0" aria-valuemax="16" aria-valuenow="0">
+            <i id="streakFill"></i>
+          </div>
+        </div>
+        <div class="ability-meter-row">
+          <div class="ability-meter-head">
+            <span id="specialLabel">必殺技</span>
+            <strong id="specialGaugeText">0%</strong>
+          </div>
+          <div class="ability-meter-track special-meter-track" role="meter" aria-label="Special gauge" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+            <i id="specialGaugeFill"></i>
+          </div>
+        </div>
+      </section>
+
+      <section class="arena" aria-label="戦闘エリア">
+        <div class="sky">
+          <div class="cloud cloud-a"></div>
+          <div class="cloud cloud-b"></div>
+        </div>
+        <div class="lane" id="lane">
+          <div class="player" aria-label="拠点">
+            <img class="home-image" src="src/assets/images/home/home_01.png" alt="拠点">
+          </div>
+          <div class="enemy-layer" id="enemyLayer" aria-label="敵"></div>
+        </div>
+        <div class="special-effect" id="specialEffect" aria-hidden="true">
+          <span class="special-flash"></span>
+          <span class="special-slash special-slash-a"></span>
+          <span class="special-slash special-slash-b"></span>
+          <span class="special-ring"></span>
+          <span class="special-spark special-spark-a"></span>
+          <span class="special-spark special-spark-b"></span>
+          <span class="special-spark special-spark-c"></span>
+        </div>
+        <div class="ground"></div>
+        <div class="game-notice" id="gameNotice" data-kind="language" aria-live="polite" aria-hidden="true">
+          <div class="notice-card">
+            <span class="notice-kicker" id="noticeKicker">ことば</span>
+            <strong id="noticeTitle">モードを選択</strong>
+            <span id="noticeText">日本語モードは、表示された日本語をローマ字で入力します。</span>
+            <div class="language-choices" id="languageChoices">
+              <button class="language-choice" type="button" data-language="ja">
+                <span>日本語</span>
+                <small>ローマ字で入力</small>
+              </button>
+              <button class="language-choice" type="button" data-language="en">
+                <span>English</span>
+                <small>Type English words</small>
+              </button>
+            </div>
+            <button id="noticeButton" type="button">もう一度</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="control-panel">
+        <div class="typing-box" aria-label="入力状況">
+          <span class="typing-label" id="typingLabel">入力</span>
+          <div class="typing-status" id="typingStatus" aria-live="polite">
+            <span class="typing-status-text" id="typingStatusText">待機中</span>
+            <span class="word-card typing-word-card">
+              <span class="word-translation" id="wordTranslation">はじめ</span>
+              <span class="word-target"><span id="typedWord"></span><span id="remainingWord">hajime</span></span>
+            </span>
+          </div>
+        </div>
+        <div class="control-side">
+          <div class="stats action-stats">
+            <div class="stat">
+              <span id="scoreLabel">スコア</span>
+              <strong id="scoreText">0</strong>
+            </div>
+            <div class="stat">
+              <span id="comboLabel">コンボ</span>
+              <strong id="comboText">0</strong>
+            </div>
+          </div>
+          <div class="actions">
+            <button id="specialButton" type="button" disabled>必殺技</button>
+            <button id="startButton" type="button">スタート</button>
+            <button id="resetButton" type="button" aria-label="戻る">戻</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="message-panel" id="messagePanel" aria-live="polite">
+        <strong id="messageTitle">準備OK</strong>
+        <span id="messageText">スタートを押して、敵の言葉をタイプしてください。</span>
+      </section>
+
+      <p class="key-hint">Spaceキーで必殺技を使えます</p>
+    </main>
+
+    <script src="src/config/enemyAnimations.js"></script>
+    <script src="src/app/game.js"></script>
+  </body>
+</html>
