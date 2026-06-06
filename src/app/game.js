@@ -109,7 +109,7 @@ const languageLabels = {
     readyText: "Press Start and type the enemy word.",
     chooseKicker: "DIFFICULTY",
     chooseTitle: "Choose Difficulty",
-    chooseText: "Beginner is available. Intermediate and Advanced are locked for now.",
+    chooseText: "Beginner and Intermediate are available. Advanced is locked for now.",
     start: "Start",
     restart: "Restart",
     again: "Again",
@@ -150,7 +150,7 @@ const languageLabels = {
     readyText: "スタートを押して、敵の言葉をタイプしてください。",
     chooseKicker: "難易度",
     chooseTitle: "難易度を選択",
-    chooseText: "初級のみプレイできます。中級と上級は準備中です。",
+    chooseText: "初級と中級をプレイできます。上級は準備中です。",
     start: "スタート",
     restart: "リスタート",
     again: "もう一度",
@@ -192,6 +192,10 @@ const difficultyModes = {
   beginner: {
     label: "初級",
     enabled: true,
+    wordLength: {
+      normalMin: 0,
+      bossMin: 7,
+    },
     specialGauge: {
       chargeStartStreak: 2,
       baseGain: 2.2,
@@ -206,8 +210,16 @@ const difficultyModes = {
   },
   intermediate: {
     label: "中級",
-    enabled: false,
-    waves: [],
+    enabled: true,
+    wordLength: {
+      normalMin: 6,
+      bossMin: 9,
+    },
+    waves: [
+      { types: ["goblin_level_2"], hp: 3, count: 4 },
+      { types: ["goblin_level_2"], hp: 4, count: 3 },
+      { types: ["goblin_level_3"], hp: 7, count: 1, boss: true },
+    ],
   },
   advanced: {
     label: "上級",
@@ -359,6 +371,14 @@ function getSpecialGaugeSettings() {
   return {
     ...defaultSpecialGaugeSettings,
     ...(getDifficultyMode(state.difficulty).specialGauge || {}),
+  };
+}
+
+function getWordLengthSettings() {
+  return {
+    normalMin: 0,
+    bossMin: 7,
+    ...(getDifficultyMode(state.difficulty).wordLength || {}),
   };
 }
 
@@ -674,9 +694,9 @@ function getWordInputs(word) {
 }
 
 function chooseWord(options = {}) {
-  const { preferLong = false } = options;
+  const { minLength = 0 } = options;
   const wordList = words();
-  const eligibleWords = preferLong ? wordList.filter((word) => word.text.length >= 7) : wordList;
+  const eligibleWords = minLength > 0 ? wordList.filter((word) => word.text.length >= minLength) : wordList;
   const poolBase = eligibleWords.length ? eligibleWords : wordList;
   const unusedWords = poolBase.filter((word) => !state.usedWords.includes(word.text));
   const pool = unusedWords.length ? unusedWords : poolBase;
@@ -786,7 +806,8 @@ function setTargetEnemy(enemy) {
 }
 
 function setNextWord(enemy) {
-  const next = chooseWord({ preferLong: enemy.boss });
+  const wordLength = getWordLengthSettings();
+  const next = chooseWord({ minLength: enemy.boss ? wordLength.bossMin : wordLength.normalMin });
   enemy.word = next.text;
   enemy.inputs = getWordInputs(next);
   enemy.matchedWord = enemy.inputs[0] || next.text;
