@@ -191,8 +191,9 @@ const repeatAttackMs = 2200;
 const knockbackAmount = 0.14;
 const startNoticeMs = 850;
 const specialGaugeMax = 100;
-const specialBaseGain = 1.5;
-const specialGainPerStreak = 0.35;
+const specialChargeStartStreak = 5;
+const specialBaseGain = 0.25;
+const specialGainPerStreak = 0.03;
 const specialGainStreakCap = 16;
 const specialDamage = 3;
 const enemyAnimations = window.ENEMY_ANIMATIONS || {
@@ -312,7 +313,12 @@ function updateLanguageText() {
 }
 
 function getSpecialGain() {
-  const streakBonus = Math.min(state.successStreak, specialGainStreakCap) * specialGainPerStreak;
+  if (state.successStreak < specialChargeStartStreak) {
+    return 0;
+  }
+
+  const chargedStreak = Math.min(state.successStreak, specialGainStreakCap) - specialChargeStartStreak + 1;
+  const streakBonus = chargedStreak * specialGainPerStreak;
 
   return specialBaseGain + streakBonus;
 }
