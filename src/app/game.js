@@ -1062,9 +1062,11 @@ function finishGame(cleared) {
     return;
   }
 
-  if (state.perfect) {
+  const noDamageClear = state.perfect && state.hp === maxHp;
+
+  if (noDamageClear) {
     setMessage(t.perfectTitle, t.perfectText(state.score));
-    showGameNotice("clear", "PERFECT", t.clearTitle, `${state.score} ${t.score}`, { persistent: true });
+    showGameNotice("clear", "PERFECT", t.perfectTitle, t.perfectText(state.score), { persistent: true });
   } else {
     setMessage(t.clearTitle, t.clearText(state.score));
     showGameNotice("clear", "CLEAR", t.clearTitle, `${t.score} ${state.score}`, { persistent: true });
