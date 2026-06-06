@@ -50,19 +50,23 @@
           <span class="special-spark special-spark-c"></span>
         </div>
         <div class="ground"></div>
-        <div class="game-notice" id="gameNotice" data-kind="language" aria-live="polite" aria-hidden="true">
+        <div class="game-notice" id="gameNotice" data-kind="difficulty" aria-live="polite" aria-hidden="true">
           <div class="notice-card">
-            <span class="notice-kicker" id="noticeKicker">ことば</span>
-            <strong id="noticeTitle">モードを選択</strong>
-            <span id="noticeText">日本語モードは、表示された日本語をローマ字で入力します。</span>
-            <div class="language-choices" id="languageChoices">
-              <button class="language-choice" type="button" data-language="ja">
-                <span>日本語</span>
-                <small>ローマ字で入力</small>
+            <span class="notice-kicker" id="noticeKicker">難易度</span>
+            <strong id="noticeTitle">難易度を選択</strong>
+            <span id="noticeText">初級のみプレイできます。中級と上級は準備中です。</span>
+            <div class="difficulty-choices" id="difficultyChoices">
+              <button class="difficulty-choice" type="button" data-difficulty="beginner">
+                <span>初級</span>
+                <small>レベル1の敵とレベル2のボス</small>
               </button>
-              <button class="language-choice" type="button" data-language="en">
-                <span>English</span>
-                <small>Type English words</small>
+              <button class="difficulty-choice" type="button" data-difficulty="intermediate" disabled aria-disabled="true">
+                <span>中級</span>
+                <small>準備中</small>
+              </button>
+              <button class="difficulty-choice" type="button" data-difficulty="advanced" disabled aria-disabled="true">
+                <span>上級</span>
+                <small>準備中</small>
               </button>
             </div>
             <button id="noticeButton" type="button">もう一度</button>

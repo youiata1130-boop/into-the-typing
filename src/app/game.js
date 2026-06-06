@@ -107,9 +107,9 @@ const languageLabels = {
     inputHint: "Type letters",
     readyTitle: "Ready",
     readyText: "Press Start and type the enemy word.",
-    chooseKicker: "LANGUAGE",
-    chooseTitle: "Choose Mode",
-    chooseText: "Pick the words you want to type.",
+    chooseKicker: "DIFFICULTY",
+    chooseTitle: "Choose Difficulty",
+    chooseText: "Beginner is available. Intermediate and Advanced are locked for now.",
     start: "Start",
     restart: "Restart",
     again: "Again",
@@ -148,9 +148,9 @@ const languageLabels = {
     inputHint: "ローマ字で入力",
     readyTitle: "準備OK",
     readyText: "スタートを押して、敵の言葉をタイプしてください。",
-    chooseKicker: "ことば",
-    chooseTitle: "モードを選択",
-    chooseText: "日本語モードは、表示された日本語をローマ字で入力します。",
+    chooseKicker: "難易度",
+    chooseTitle: "難易度を選択",
+    chooseText: "初級のみプレイできます。中級と上級は準備中です。",
     start: "スタート",
     restart: "リスタート",
     again: "もう一度",
@@ -181,11 +181,28 @@ const languageLabels = {
 };
 
 const maxHp = 5;
-const enemyWaves = [
-  { types: ["goblin_level_1", "goblin_level_2"], hp: 2, count: 2 },
-  { types: ["goblin_level_1", "goblin_level_2", "goblin_level_3"], hp: 3, count: 3 },
-  { types: ["goblin_level_2", "goblin_level_3", "goblin_level_3"], hp: 4, count: 3, boss: true },
-];
+const defaultDifficulty = "beginner";
+const difficultyModes = {
+  beginner: {
+    label: "初級",
+    enabled: true,
+    waves: [
+      { types: ["goblin_level_1"], hp: 2, count: 3 },
+      { types: ["goblin_level_1"], hp: 3, count: 3 },
+      { types: ["goblin_level_2"], hp: 4, count: 1, boss: true },
+    ],
+  },
+  intermediate: {
+    label: "中級",
+    enabled: false,
+    waves: [],
+  },
+  advanced: {
+    label: "上級",
+    enabled: false,
+    waves: [],
+  },
+};
 const attackMs = 8200;
 const repeatAttackMs = 2200;
 const knockbackAmount = 0.14;
@@ -220,18 +237,34 @@ function getWaveEnemyTypes(wave) {
   return Array.from({ length: count }, (_, index) => configuredTypes[index % configuredTypes.length]).filter(hasEnemyVisuals);
 }
 
-const playableEnemyWaves = enemyWaves
-  .map((wave) => {
-    const types = getWaveEnemyTypes(wave);
+function getDifficultyMode(difficulty) {
+  return difficultyModes[difficulty] || difficultyModes[defaultDifficulty];
+}
 
-    return { ...wave, types, count: types.length };
-  })
-  .filter((wave) => wave.count > 0);
-const roundLimit = playableEnemyWaves.reduce((total, wave) => total + wave.count, 0);
-document.documentElement.dataset.enemyTypes = [...new Set(playableEnemyWaves.flatMap((wave) => wave.types))].join(",");
+function buildPlayableEnemyWaves(waves) {
+  return waves
+    .map((wave) => {
+      const types = getWaveEnemyTypes(wave);
+
+      return { ...wave, types, count: types.length };
+    })
+    .filter((wave) => wave.count > 0);
+}
+
+function getRoundLimit(waves) {
+  return waves.reduce((total, wave) => total + wave.count, 0);
+}
+
+function updateEnemyTypeDataset(waves) {
+  document.documentElement.dataset.enemyTypes = [...new Set(waves.flatMap((wave) => wave.types))].join(",");
+}
+
+const initialPlayableEnemyWaves = buildPlayableEnemyWaves(getDifficultyMode(defaultDifficulty).waves);
+updateEnemyTypeDataset(initialPlayableEnemyWaves);
 
 const state = {
   language: "ja",
+  difficulty: defaultDifficulty,
   running: false,
   hp: maxHp,
   score: 0,
@@ -241,6 +274,8 @@ const state = {
   cleared: 0,
   currentWaveIndex: 0,
   currentWaveSpawned: 0,
+  playableEnemyWaves: initialPlayableEnemyWaves,
+  roundLimit: getRoundLimit(initialPlayableEnemyWaves),
   activeEnemies: [],
   selectedEnemyId: "",
   nextEnemyId: 1,
@@ -284,7 +319,7 @@ const els = {
   noticeTitle: document.querySelector("#noticeTitle"),
   noticeText: document.querySelector("#noticeText"),
   noticeButton: document.querySelector("#noticeButton"),
-  languageChoices: document.querySelector("#languageChoices"),
+  difficultyChoices: document.querySelector("#difficultyChoices"),
   messageTitle: document.querySelector("#messageTitle"),
   messageText: document.querySelector("#messageText"),
   lane: document.querySelector("#lane"),
@@ -292,16 +327,16 @@ const els = {
 };
 
 function labels() {
-  return languageLabels[state.language];
+  return languageLabels.ja;
 }
 
 function words() {
-  return wordSets[state.language];
+  return wordSets.ja;
 }
 
 function updateLanguageText() {
   const t = labels();
-  document.documentElement.lang = state.language === "ja" ? "ja" : "en";
+  document.documentElement.lang = "ja";
   els.scoreLabel.textContent = t.score;
   els.comboLabel.textContent = t.combo;
   els.streakLabel.textContent = t.streak;
@@ -376,7 +411,7 @@ function updateTypingStatus() {
 function hideGameNotice() {
   els.gameNotice.classList.remove("is-visible", "is-actionable");
   els.gameNotice.setAttribute("aria-hidden", "true");
-  els.languageChoices.hidden = true;
+  els.difficultyChoices.hidden = true;
 }
 
 function clearNoticeTimer() {
@@ -397,7 +432,7 @@ function showGameNotice(kind, kicker, title, text, options = {}) {
   els.noticeKicker.textContent = kicker;
   els.noticeTitle.textContent = title;
   els.noticeText.textContent = text;
-  els.languageChoices.hidden = !choices;
+  els.difficultyChoices.hidden = !choices;
   els.gameNotice.classList.toggle("is-actionable", persistent || choices);
   els.gameNotice.classList.add("is-visible");
   els.gameNotice.setAttribute("aria-hidden", "false");
@@ -413,7 +448,16 @@ function showGameNotice(kind, kicker, title, text, options = {}) {
   }
 }
 
-function showLanguageSelect() {
+function syncDifficultyButtons() {
+  els.difficultyChoices.querySelectorAll("[data-difficulty]").forEach((button) => {
+    const mode = getDifficultyMode(button.dataset.difficulty);
+    button.disabled = !mode.enabled;
+    button.setAttribute("aria-disabled", String(!mode.enabled));
+    button.classList.toggle("is-selected", mode.enabled && button.dataset.difficulty === state.difficulty);
+  });
+}
+
+function showDifficultySelect() {
   const t = labels();
   state.running = false;
   cancelAnimationFrame(state.rafId);
@@ -424,7 +468,8 @@ function showLanguageSelect() {
   updateLanguageText();
   updateHud();
   updateTypingStatus();
-  showGameNotice("language", t.chooseKicker, t.chooseTitle, t.chooseText, { choices: true });
+  syncDifficultyButtons();
+  showGameNotice("difficulty", t.chooseKicker, t.chooseTitle, t.chooseText, { choices: true });
 }
 
 function interruptGame() {
@@ -435,7 +480,7 @@ function interruptGame() {
   resetGame();
   const t = labels();
   setMessage(t.interruptedTitle, t.interruptedText);
-  showLanguageSelect();
+  showDifficultySelect();
 }
 
 function getEnemyFrames(enemyType, animationName) {
@@ -604,14 +649,10 @@ function createJapaneseInputVariants(input) {
 
 function getWordInputs(word) {
   if (word.inputs?.length) {
-    return state.language === "ja" ? [...new Set(word.inputs.flatMap(createJapaneseInputVariants))] : word.inputs;
+    return [...new Set(word.inputs.flatMap(createJapaneseInputVariants))];
   }
 
-  if (state.language === "ja") {
-    return createJapaneseInputVariants(word.text);
-  }
-
-  return [word.text];
+  return createJapaneseInputVariants(word.text);
 }
 
 function chooseWord(options = {}) {
@@ -632,7 +673,7 @@ function chooseWord(options = {}) {
 }
 
 function chooseEnemyWave() {
-  return playableEnemyWaves[state.currentWaveIndex] || null;
+  return state.playableEnemyWaves[state.currentWaveIndex] || null;
 }
 
 function getSelectedEnemy() {
@@ -1028,12 +1069,12 @@ function defeatEnemy(enemy) {
   playEnemyAnimation(enemy, "defeat", { duration: 520, loop: false });
   updateHud();
 
-  if (state.cleared >= roundLimit) {
+  if (state.cleared >= state.roundLimit) {
     window.setTimeout(() => finishGame(true), 620);
     return;
   }
 
-  setMessage(t.defeatedTitle, t.defeatedText(roundLimit - state.cleared));
+  setMessage(t.defeatedTitle, t.defeatedText(state.roundLimit - state.cleared));
   window.setTimeout(() => {
     if (state.running) {
       removeEnemy(enemy);
@@ -1076,6 +1117,7 @@ function finishGame(cleared) {
 function resetGame() {
   const t = labels();
   state.running = false;
+  state.language = "ja";
   state.hp = maxHp;
   state.score = 0;
   state.combo = 0;
@@ -1086,10 +1128,10 @@ function resetGame() {
   state.currentWaveSpawned = 0;
   state.nextEnemyId = 1;
   state.perfect = true;
-  state.currentWord = state.language === "ja" ? "hajime" : "start";
-  state.currentInputs = state.language === "ja" ? createJapaneseInputVariants("hajime") : ["start"];
+  state.currentWord = "hajime";
+  state.currentInputs = createJapaneseInputVariants("hajime");
   state.currentMatchedWord = state.currentWord;
-  state.currentTranslation = state.language === "ja" ? "はじめ" : "start";
+  state.currentTranslation = "はじめ";
   state.currentWordBestLength = 0;
   state.usedWords = [];
   cancelAnimationFrame(state.rafId);
@@ -1104,8 +1146,19 @@ function resetGame() {
   setMessage(t.readyTitle, t.readyText);
 }
 
-function startGame(language = state.language) {
-  state.language = language;
+function startGame(difficulty = state.difficulty) {
+  const mode = getDifficultyMode(difficulty);
+
+  if (!mode.enabled) {
+    return;
+  }
+
+  state.language = "ja";
+  state.difficulty = difficulty;
+  state.playableEnemyWaves = buildPlayableEnemyWaves(mode.waves);
+  state.roundLimit = getRoundLimit(state.playableEnemyWaves);
+  updateEnemyTypeDataset(state.playableEnemyWaves);
+
   const t = labels();
   cancelAnimationFrame(state.rafId);
   clearStartDelayTimer();
@@ -1128,7 +1181,7 @@ function startGame(language = state.language) {
   updateLanguageText();
   els.startButton.textContent = t.restart;
   updateHud();
-  setMessage(t.startedTitle, t.startedText(roundLimit));
+  setMessage(t.startedTitle, t.startedText(state.roundLimit));
   showGameNotice("start", "START", t.startTitle, t.startText, { duration: startNoticeMs });
   spawnNextEnemy();
   state.startDelayTimerId = window.setTimeout(() => {
@@ -1207,8 +1260,15 @@ function isSpaceStartKey(event) {
   return !event.altKey && !event.ctrlKey && !event.metaKey && (event.code === "Space" || event.key === " ");
 }
 
-function getFocusedLanguage() {
-  return document.activeElement?.closest?.("[data-language]")?.dataset.language || state.language;
+function getFocusedDifficulty() {
+  const focusedButton = document.activeElement?.closest?.("[data-difficulty]");
+  const focusedMode = focusedButton ? getDifficultyMode(focusedButton.dataset.difficulty) : null;
+
+  if (focusedMode?.enabled) {
+    return focusedButton.dataset.difficulty;
+  }
+
+  return state.difficulty;
 }
 
 function handleTypingKeydown(event) {
@@ -1225,7 +1285,7 @@ function handleTypingKeydown(event) {
     if (state.running) {
       useSpecialMove();
     } else {
-      startGame(getFocusedLanguage());
+      startGame(getFocusedDifficulty());
     }
     return;
   }
@@ -1262,23 +1322,23 @@ function handleTypingKeydown(event) {
 }
 
 els.specialButton.addEventListener("click", useSpecialMove);
-els.startButton.addEventListener("click", showLanguageSelect);
+els.startButton.addEventListener("click", showDifficultySelect);
 els.resetButton.addEventListener("click", () => {
   resetGame();
-  showLanguageSelect();
+  showDifficultySelect();
 });
-els.noticeButton.addEventListener("click", showLanguageSelect);
-els.languageChoices.addEventListener("click", (event) => {
-  const button = event.target.closest("[data-language]");
+els.noticeButton.addEventListener("click", showDifficultySelect);
+els.difficultyChoices.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-difficulty]");
 
-  if (!button) {
+  if (!button || button.disabled) {
     return;
   }
 
-  startGame(button.dataset.language);
+  startGame(button.dataset.difficulty);
 });
 document.addEventListener("keydown", handleTypingKeydown);
 
 preloadEnemyFrames();
 resetGame();
-showLanguageSelect();
+showDifficultySelect();

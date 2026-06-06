@@ -922,7 +922,7 @@ button {
   background: #9a3f3f;
 }
 
-.game-notice[data-kind="language"] .notice-kicker {
+.game-notice[data-kind="difficulty"] .notice-kicker {
   background: var(--berry);
 }
 
@@ -945,23 +945,23 @@ button {
   display: inline-block;
 }
 
-.game-notice[data-kind="language"] #noticeButton {
+.game-notice[data-kind="difficulty"] #noticeButton {
   display: none;
 }
 
-.language-choices {
+.difficulty-choices {
   width: 100%;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
   margin-top: 6px;
 }
 
-.language-choices[hidden] {
+.difficulty-choices[hidden] {
   display: none;
 }
 
-.language-choice {
+.difficulty-choice {
   min-height: 76px;
   padding: 10px;
   display: grid;
@@ -973,19 +973,28 @@ button {
   box-shadow: 0 5px 0 rgba(34, 48, 71, 0.14);
 }
 
-.language-choice:first-child {
+.difficulty-choice.is-selected {
   color: #fff;
   background: var(--leaf-dark);
   border-color: var(--leaf-dark);
 }
 
-.language-choice span {
+.difficulty-choice:disabled {
+  color: #7b8490;
+  background: #eef2f6;
+  border-color: #d7e0e8;
+  cursor: default;
+  filter: none;
+  box-shadow: none;
+}
+
+.difficulty-choice span {
   color: inherit;
   font-size: 1.12rem;
   font-weight: 900;
 }
 
-.language-choice small {
+.difficulty-choice small {
   color: inherit;
   font-size: 0.78rem;
   font-weight: 700;
@@ -1135,6 +1144,15 @@ button:active {
   box-shadow: 0 3px 0 rgba(34, 48, 71, 0.18);
 }
 
+button:disabled {
+  cursor: default;
+  filter: none;
+}
+
+button:disabled:active {
+  transform: none;
+}
+
 #resetButton {
   width: 46px;
   padding: 0;
@@ -1254,7 +1272,7 @@ button:active {
     padding: 6px 8px;
   }
 
-  .language-choices {
+  .difficulty-choices {
     grid-template-columns: 1fr;
   }
 
