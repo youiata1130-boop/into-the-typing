@@ -36,7 +36,13 @@
         </div>
         <div class="lane" id="lane">
           <div class="player" aria-label="拠点">
-            <img class="home-image" src="src/assets/images/home/home_01.png" alt="拠点">
+            <div class="character-hp player-hp">
+              <span>BASE</span>
+              <div class="character-hp-track" id="playerHpTrack" role="meter" aria-label="拠点HP" aria-valuemin="0" aria-valuemax="5" aria-valuenow="5">
+                <i id="playerHpFill"></i>
+              </div>
+            </div>
+            <img class="home-image" id="homeImage" src="src/assets/images/home/home_01.png" data-normal-src="src/assets/images/home/home_01.png" data-damaged-src="damaged_base.png" alt="拠点">
           </div>
           <div class="enemy-layer" id="enemyLayer" aria-label="敵"></div>
         </div>

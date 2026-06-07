@@ -443,6 +443,22 @@ button {
   top: -30px;
 }
 
+.player-hp {
+  top: -8px;
+  left: 52%;
+  z-index: 6;
+  width: 120px;
+}
+
+.player-hp .character-hp-track {
+  background: #eaf7ee;
+  border-color: #9ecfb3;
+}
+
+.player-hp .character-hp-track i {
+  background: linear-gradient(90deg, #2f9e66, #ffd166);
+}
+
 .enemy {
   --enemy-progress: 0;
   --enemy-slot: 0;
@@ -1467,6 +1483,12 @@ button:disabled:active {
 
   .enemy-hp {
     top: -28px;
+  }
+
+  .player-hp {
+    top: -10px;
+    left: 54%;
+    width: 92px;
   }
 
   .enemy {

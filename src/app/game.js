@@ -101,14 +101,14 @@ const wordSets = {
     { text: "tenkuujou", translation: "天空城" },
     { text: "mahoukishi", translation: "魔法騎士" },
     { text: "ryuuseigun", translation: "流星群" },
-    { text: "hikarimichi", translation: "光の道" },
+    { text: "hikarinomichi", translation: "光の道" },
     { text: "seinarukagi", translation: "聖なる鍵" },
-    { text: "kuroganeken", translation: "鋼の剣" },
+    { text: "haganenoken", translation: "鋼の剣" },
     { text: "ryuunomahou", translation: "竜の魔法" },
     { text: "honoonoryuu", translation: "炎の竜" },
     { text: "yamiwoterasu", translation: "闇を照らす" },
     { text: "densetsunoken", translation: "伝説の剣" },
-    { text: "tokiwonomamori", translation: "時の守り" },
+    { text: "tokinomamori", translation: "時の守り" },
     { text: "kibounohikari", translation: "希望の光" },
     { text: "tsubasanoyuusha", translation: "翼の勇者" },
     { text: "maboroshinomori", translation: "幻の森" },
@@ -216,6 +216,7 @@ const languageLabels = {
 };
 
 const maxHp = 5;
+const damagedBaseHpThreshold = 3;
 const defaultSpecialGaugeSettings = {
   chargeStartStreak: 5,
   baseGain: 0.25,
@@ -232,9 +233,9 @@ const difficultyModes = {
       bossMin: 7,
     },
     specialGauge: {
-      chargeStartStreak: 2,
-      baseGain: 2.2,
-      gainPerStreak: 0.18,
+      chargeStartStreak: 3,
+      baseGain: 1.8,
+      gainPerStreak: 0.14,
       streakCap: 16,
     },
     waves: [
@@ -249,6 +250,9 @@ const difficultyModes = {
     wordLength: {
       normalMin: 9,
       bossMin: 13,
+    },
+    specialGauge: {
+      streakCap: 50,
     },
     waves: [
       { types: ["goblin_level_2"], hp: 4, count: 2 },
@@ -266,6 +270,9 @@ const attackMs = 8200;
 const repeatAttackMs = 2200;
 const knockbackAmount = 0.14;
 const startNoticeMs = 850;
+const inputBufferRetryMs = 24;
+const inputBufferRetentionMs = 1400;
+const inputBufferMax = 32;
 const specialGaugeMax = 100;
 const specialDamage = 3;
 const enemyAnimations = window.ENEMY_ANIMATIONS || {
@@ -347,6 +354,8 @@ const state = {
   bossIntroTimerId: 0,
   noticeTimerId: 0,
   startDelayTimerId: 0,
+  inputBufferTimerId: 0,
+  inputBuffer: [],
   usedWords: [],
 };
 
@@ -361,6 +370,10 @@ const els = {
   specialLabel: document.querySelector("#specialLabel"),
   specialGaugeText: document.querySelector("#specialGaugeText"),
   specialGaugeFill: document.querySelector("#specialGaugeFill"),
+  player: document.querySelector(".player"),
+  homeImage: document.querySelector("#homeImage"),
+  playerHpTrack: document.querySelector("#playerHpTrack"),
+  playerHpFill: document.querySelector("#playerHpFill"),
   specialButton: document.querySelector("#specialButton"),
   specialEffect: document.querySelector("#specialEffect"),
   bossIntro: document.querySelector("#bossIntro"),
@@ -454,19 +467,35 @@ function isSpecialReady() {
   return state.specialGauge >= specialGaugeMax;
 }
 
+function updateBaseVisual(playerHp) {
+  const damaged = playerHp <= damagedBaseHpThreshold;
+  const nextSrc = damaged ? els.homeImage.dataset.damagedSrc : els.homeImage.dataset.normalSrc;
+
+  if (nextSrc && els.homeImage.getAttribute("src") !== nextSrc) {
+    els.homeImage.setAttribute("src", nextSrc);
+  }
+
+  els.player.classList.toggle("is-damaged", damaged);
+}
+
 function updateHud() {
   const { streakCap } = getSpecialGaugeSettings();
   const streakProgress = (Math.min(state.successStreak, streakCap) / streakCap) * 100;
   const specialGauge = Math.max(0, Math.min(state.specialGauge, specialGaugeMax));
+  const playerHp = Math.max(0, Math.min(state.hp, maxHp));
   els.scoreText.textContent = state.score;
   els.comboText.textContent = state.combo;
   els.streakText.textContent = state.successStreak;
   els.streakFill.style.width = `${streakProgress}%`;
   els.specialGaugeText.textContent = `${Math.round(specialGauge)}%`;
   els.specialGaugeFill.style.width = `${specialGauge}%`;
+  els.playerHpFill.style.width = `${(playerHp / maxHp) * 100}%`;
+  updateBaseVisual(playerHp);
   els.streakFill.parentElement.setAttribute("aria-valuemax", String(streakCap));
   els.streakFill.parentElement.setAttribute("aria-valuenow", String(Math.min(state.successStreak, streakCap)));
   els.specialGaugeFill.parentElement.setAttribute("aria-valuenow", String(Math.round(specialGauge)));
+  els.playerHpTrack.setAttribute("aria-valuemax", String(maxHp));
+  els.playerHpTrack.setAttribute("aria-valuenow", String(playerHp));
   els.specialButton.disabled = !state.running || !isSpecialReady() || !state.activeEnemies.some((enemy) => enemy.hp > 0);
 }
 
@@ -500,6 +529,99 @@ function clearNoticeTimer() {
 function clearStartDelayTimer() {
   window.clearTimeout(state.startDelayTimerId);
   state.startDelayTimerId = 0;
+}
+
+function clearInputBufferTimer() {
+  window.clearTimeout(state.inputBufferTimerId);
+  state.inputBufferTimerId = 0;
+}
+
+function clearInputBuffer() {
+  clearInputBufferTimer();
+  state.inputBuffer = [];
+}
+
+function trimInputBuffer(now = performance.now()) {
+  const oldestQueuedAt = now - inputBufferRetentionMs;
+
+  while (state.inputBuffer.length && state.inputBuffer[0].queuedAt < oldestQueuedAt) {
+    state.inputBuffer.shift();
+  }
+}
+
+function scheduleBufferedInputFlush() {
+  if (!state.running || !state.inputBuffer.length || state.inputBufferTimerId) {
+    return;
+  }
+
+  state.inputBufferTimerId = window.setTimeout(() => {
+    state.inputBufferTimerId = 0;
+    flushBufferedInput();
+  }, inputBufferRetryMs);
+}
+
+function enqueueBufferedInput(action, value = "") {
+  if (!state.running) {
+    return;
+  }
+
+  trimInputBuffer();
+  state.inputBuffer.push({
+    action,
+    value,
+    queuedAt: performance.now(),
+  });
+
+  if (state.inputBuffer.length > inputBufferMax) {
+    state.inputBuffer.splice(0, state.inputBuffer.length - inputBufferMax);
+  }
+
+  scheduleBufferedInputFlush();
+}
+
+function applyBufferedInputEntry(enemy, entry) {
+  setTargetEnemy(enemy);
+
+  if (entry.action === "letter") {
+    applyTypedValue(enemy, enemy.typed + entry.value);
+    return;
+  }
+
+  if (entry.action === "backspace") {
+    applyTypedValue(enemy, enemy.typed.slice(0, -1));
+  }
+}
+
+function flushBufferedInput() {
+  if (!state.running) {
+    clearInputBuffer();
+    return;
+  }
+
+  clearInputBufferTimer();
+  trimInputBuffer();
+
+  while (state.inputBuffer.length) {
+    const targetEnemy = getInputEnemy();
+
+    if (!targetEnemy) {
+      scheduleBufferedInputFlush();
+      return;
+    }
+
+    const entry = state.inputBuffer.shift();
+    applyBufferedInputEntry(targetEnemy, entry);
+
+    if (!state.running || targetEnemy.resolving || !state.activeEnemies.includes(targetEnemy)) {
+      break;
+    }
+
+    trimInputBuffer();
+  }
+
+  if (state.inputBuffer.length) {
+    scheduleBufferedInputFlush();
+  }
 }
 
 function showGameNotice(kind, kicker, title, text, options = {}) {
@@ -540,6 +662,7 @@ function showDifficultySelect() {
   state.running = false;
   cancelAnimationFrame(state.rafId);
   clearStartDelayTimer();
+  clearInputBuffer();
   clearNoticeTimer();
   clearSpecialEffect();
   clearBossIntro();
@@ -737,9 +860,13 @@ function toShortestJapaneseInput(input) {
   return replacements.reduce((value, [from, to]) => value.replaceAll(from, to), input);
 }
 
+function toExplicitJapaneseNInput(input) {
+  return input.replace(/n(?=$|[bcdfghjklmnpqrstvwxyz])/g, "nn");
+}
+
 function createJapaneseInputVariants(input) {
   const preferredInput = toShortestJapaneseInput(input);
-  const variants = [preferredInput];
+  const variants = [preferredInput, input];
   const replacements = [
     ["zi", "ji"],
     ["zya", "ja"],
@@ -751,9 +878,9 @@ function createJapaneseInputVariants(input) {
     variants.push(...variants.map((variant) => variant.replaceAll(pattern, alternative)));
   });
 
-  const doubledNVariants = variants.map((variant) => variant.replace(/n(?=$|[bcdfghjklmpqrstvwxyz])/g, "nn"));
+  const explicitNVariants = variants.map(toExplicitJapaneseNInput);
 
-  return [...new Set([...variants, ...doubledNVariants].filter((variant) => !variant.endsWith("n") || variant.endsWith("nn")))];
+  return [...new Set([...explicitNVariants, ...variants])];
 }
 
 function getWordInputs(word) {
@@ -951,6 +1078,7 @@ function addEnemyToWave(wave, index) {
   }
 
   updateHud();
+  flushBufferedInput();
 }
 
 function spawnNextEnemy() {
@@ -1066,6 +1194,7 @@ function enemyAttack(enemy) {
       enemy.resolving = false;
       enemy.nextAttackAt = performance.now() + repeatAttackMs;
       enemy.element.classList.remove("attack");
+      flushBufferedInput();
     }
   }, 360);
 }
@@ -1102,6 +1231,7 @@ function damageEnemy(enemy) {
       setTargetEnemy(enemy);
       enemy.lastTick = performance.now();
       playEnemyAnimation(enemy, "idle");
+      flushBufferedInput();
     }
   }, 220);
 }
@@ -1159,6 +1289,7 @@ function useSpecialMove() {
         playEnemyAnimation(enemy, "idle");
       });
       setTargetEnemy(remainingEnemies[0]);
+      flushBufferedInput();
       targets.filter((enemy) => enemy.hp <= 0).forEach((enemy) => {
         enemy.element.classList.remove("special");
         defeatEnemy(enemy);
@@ -1199,6 +1330,7 @@ function defeatEnemy(enemy) {
         queueNextEnemy();
       } else {
         renderWord();
+        flushBufferedInput();
       }
     }
   }, 620);
@@ -1209,6 +1341,7 @@ function finishGame(cleared) {
   state.running = false;
   cancelAnimationFrame(state.rafId);
   clearStartDelayTimer();
+  clearInputBuffer();
   clearEnemyAnimationTimers();
   clearSpecialEffect();
   clearBossIntro();
@@ -1254,6 +1387,7 @@ function resetGame() {
   state.usedWords = [];
   cancelAnimationFrame(state.rafId);
   clearStartDelayTimer();
+  clearInputBuffer();
   clearNoticeTimer();
   clearSpecialEffect();
   clearBossIntro();
@@ -1281,6 +1415,7 @@ function startGame(difficulty = state.difficulty) {
   const t = labels();
   cancelAnimationFrame(state.rafId);
   clearStartDelayTimer();
+  clearInputBuffer();
   clearNoticeTimer();
   clearSpecialEffect();
   clearBossIntro();
@@ -1418,25 +1553,32 @@ function handleTypingKeydown(event) {
 
   if (letter) {
     event.preventDefault();
+    if (state.inputBuffer.length) {
+      flushBufferedInput();
+    }
+
     const targetEnemy = getInputEnemy();
 
-    if (targetEnemy) {
+    if (targetEnemy && !state.inputBuffer.length) {
       setTargetEnemy(targetEnemy);
       applyTypedValue(targetEnemy, targetEnemy.typed + letter);
     } else {
-      state.combo = 0;
-      resetSuccessStreak();
-      updateHud();
-      setMessage(labels().missTitle, labels().missText);
+      enqueueBufferedInput("letter", letter);
     }
     return;
   }
 
   if (event.key === "Backspace") {
     event.preventDefault();
+    if (state.inputBuffer.length) {
+      flushBufferedInput();
+    }
+
     const targetEnemy = getInputEnemy();
-    if (targetEnemy) {
+    if (targetEnemy && !state.inputBuffer.length) {
       applyTypedValue(targetEnemy, targetEnemy.typed.slice(0, -1));
+    } else {
+      enqueueBufferedInput("backspace");
     }
   }
 }
