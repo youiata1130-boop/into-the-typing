@@ -217,6 +217,7 @@ const languageLabels = {
 
 const maxHp = 5;
 const damagedBaseHpThreshold = 3;
+const criticalBaseHpThreshold = 1;
 const defaultSpecialGaugeSettings = {
   chargeStartStreak: 5,
   baseGain: 0.25,
@@ -468,14 +469,20 @@ function isSpecialReady() {
 }
 
 function updateBaseVisual(playerHp) {
-  const damaged = playerHp <= damagedBaseHpThreshold;
-  const nextSrc = damaged ? els.homeImage.dataset.damagedSrc : els.homeImage.dataset.normalSrc;
+  const critical = playerHp <= criticalBaseHpThreshold;
+  const damaged = !critical && playerHp <= damagedBaseHpThreshold;
+  const nextSrc = critical
+    ? els.homeImage.dataset.criticalSrc
+    : damaged
+      ? els.homeImage.dataset.damagedSrc
+      : els.homeImage.dataset.normalSrc;
 
   if (nextSrc && els.homeImage.getAttribute("src") !== nextSrc) {
     els.homeImage.setAttribute("src", nextSrc);
   }
 
   els.player.classList.toggle("is-damaged", damaged);
+  els.player.classList.toggle("is-critical", critical);
 }
 
 function updateHud() {
