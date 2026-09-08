@@ -608,9 +608,12 @@ function focusStartSurface() {
   els.introStartButton.focus({ preventScroll: true });
 }
 
-function focusGameSurface() {
-  if (flickState.enabled && state.running && !isStoryDialogueOpen()) {
-    els.flickInput.focus({ preventScroll: true });
+function focusGameSurface({ userGesture = false } = {}) {
+  if (flickState.enabled) {
+    // Only a deliberate tap may open the keyboard. Rendering/timers never reopen it.
+    if (userGesture && state.running && !isStoryDialogueOpen()) {
+      els.flickInput.focus({ preventScroll: true });
+    }
     return;
   }
   document.body.tabIndex = -1;
@@ -813,7 +816,7 @@ function advanceStory() {
 
   updateHud();
   startLoop();
-  focusGameSurface();
+  focusGameSurface({ userGesture: true });
 }
 
 function syncStageButtons() {
@@ -1988,7 +1991,7 @@ function startGame(stageId = state.stageId) {
   }
   showGameNotice("start", "START", t.startTitle, t.startText(stage.name), { duration: startNoticeMs });
   spawnNextEnemy();
-  if (flickState.enabled) focusGameSurface();
+  if (flickState.enabled) focusGameSurface({ userGesture: true });
   state.startDelayTimerId = scheduleBattleTimeout(() => {
     state.startDelayTimerId = 0;
     if (!state.running) {

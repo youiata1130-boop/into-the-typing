@@ -2,10 +2,10 @@
 <html lang="ja">
   <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>Into the Typing</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='52'%3E%E2%9A%94%EF%B8%8F%3C/text%3E%3C/svg%3E">
-    <link rel="stylesheet" href="src/styles/main.css?v=flick-continuous-v1">
+    <link rel="stylesheet" href="src/styles/main.css?v=mobile-layout-v2">
   </head>
   <body>
     <main class="game-shell">
@@ -162,7 +162,7 @@
       <section class="battle-screen" id="battleScreen" aria-label="戦闘画面" hidden>
         <header class="battle-toolbar">
           <button id="resetButton" type="button" aria-label="ステージ選択へ戻る"><span aria-hidden="true">←</span> 戻る</button>
-          <section class="battle-progression" aria-label="育成状況">
+          <section class="battle-progression" aria-label="育成状況" hidden>
             <div class="battle-progression-summary">
               <strong id="battleLevelText">Lv. 1</strong>
               <span id="battleExperienceText">0 / 40 EXP</span>
@@ -304,7 +304,8 @@
     <script src="src/config/enemyAnimations.js?v=greatsword-charge-v1"></script>
     <script src="src/config/playerProgression.js?v=player-progression-v1"></script>
     <script src="src/input/japanese.js?v=flick-input-v1"></script>
-    <script src="src/input/mobile.js?v=flick-continuous-v1"></script>
-    <script src="src/app/game.js?v=flick-input-v1"></script>
+    <script src="src/ui/battleLayout.js?v=mobile-layout-v2"></script>
+    <script src="src/input/mobile.js?v=mobile-layout-v2"></script>
+    <script src="src/app/game.js?v=mobile-layout-v2"></script>
   </body>
 </html>

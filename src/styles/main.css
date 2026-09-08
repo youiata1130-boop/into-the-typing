@@ -4350,23 +4350,24 @@ button:disabled:active {
 }
 
 .battle-screen {
-  grid-template-rows: auto minmax(360px, 1fr) auto;
+  position: relative;
+  grid-template-rows: minmax(360px, 1fr) auto;
 }
 
 .battle-toolbar {
-  min-width: 0;
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: start;
-  gap: 12px;
+  position: absolute;
+  top: max(8px, env(safe-area-inset-top, 0px));
+  left: 8px;
+  z-index: 20;
+  pointer-events: none;
 }
 
-.battle-toolbar .battle-progression {
-  min-width: 0;
-  margin: 0;
+.battle-progression[hidden] {
+  display: none;
 }
 
 .battle-toolbar #resetButton {
+  pointer-events: auto;
   width: auto;
   min-width: 88px;
   min-height: 48px;
@@ -4384,7 +4385,7 @@ button:disabled:active {
 
 @media (max-width: 720px) {
   .battle-screen {
-    grid-template-rows: auto minmax(340px, 1fr) auto;
+    grid-template-rows: minmax(340px, 1fr) auto;
   }
 }
 
@@ -4478,19 +4479,20 @@ button:disabled:active {
   }
 }
 
-/* Native Japanese keyboard; size the battle to the space above the keyboard. */
+/* Native Japanese keyboard: the two rows fill the actual visible viewport. */
 .flick-input {
   display: none;
+  width: 100%;
   height: 44px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 7px 10px;
   resize: none;
   overflow: hidden;
   white-space: pre;
-  width: 100%;
-  min-width: 0;
-  min-height: 44px;
-  padding: 7px 12px;
   font: inherit;
   font-size: 18px;
+  line-height: 28px;
   text-align: center;
   color: var(--ink);
   background: #fff;
@@ -4519,55 +4521,56 @@ html[data-flick-input="true"][data-screen="battle"] body {
 
 html[data-flick-input="true"][data-screen="battle"] .game-shell {
   position: fixed;
-  top: calc(var(--battle-viewport-top, 0px) + 8px);
-  left: max(8px, calc((100% - 1100px) / 2));
-  width: min(1100px, calc(100% - 16px));
-  height: calc(var(--battle-viewport-height, 100dvh) - 16px);
+  top: var(--battle-viewport-top, 0px);
+  left: var(--battle-viewport-left, 0px);
+  width: var(--battle-viewport-width, 100%);
+  height: var(--battle-viewport-height, 100dvh);
   min-height: 0;
   margin: 0;
+  padding: 0 env(safe-area-inset-right, 0px) 0 env(safe-area-inset-left, 0px);
 }
 
 html[data-flick-input="true"] .battle-screen {
   height: 100%;
   min-height: 0;
-  grid-template-rows: auto minmax(80px, 1fr) auto;
-  gap: 8px;
+  max-width: 1100px;
+  margin: 0 auto;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 0;
 }
 
 html[data-flick-input="true"] .arena {
   min-height: 0;
+  border-radius: 0;
+}
+
+html[data-flick-input="true"] .battle-toolbar {
+  top: max(6px, env(safe-area-inset-top, 0px));
 }
 
 html[data-flick-input="true"] .control-panel {
-  gap: 6px;
-  padding: 8px;
+  gap: 0;
+  padding: 6px 8px max(6px, env(safe-area-inset-bottom, 0px));
+  border-radius: 0;
+  box-shadow: none;
+}
+
+html[data-flick-input="true"][data-keyboard-open="true"] .control-panel {
+  padding-bottom: 6px;
+}
+
+html[data-flick-input="true"] .typing-box {
+  min-width: 0;
+  gap: 4px;
 }
 
 html[data-flick-input="true"] .typing-status {
   min-height: 0;
-  padding: 4px 8px;
-}
-
-html[data-flick-input="true"] .word-translation {
-  margin-bottom: 2px;
-  font-size: 16px;
-}
-
-html[data-flick-input="true"] .word-target,
-html[data-flick-input="true"] .typing-status[data-weapon="greatsword"] .word-target {
-  font-size: 18px;
-  line-height: 1.3;
-}
-
-html[data-flick-input="true"] .player {
-  bottom: 12px;
-  width: min(129px, 30%);
-  height: min(177px, calc(100% - 42px));
-}
-
-html[data-flick-input="true"] .story-dialog {
-  min-height: 78px;
-  padding: 4px;
+  padding: 0 2px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 html[data-flick-input="true"] .typing-word-card {
@@ -4575,15 +4578,70 @@ html[data-flick-input="true"] .typing-word-card {
   padding: 0;
 }
 
+html[data-flick-input="true"] .word-translation {
+  margin-bottom: 1px;
+  font-size: 16px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+html[data-flick-input="true"] .word-target,
+html[data-flick-input="true"] .typing-status[data-weapon="greatsword"] .word-target {
+  font-size: 18px;
+  line-height: 1.25;
+}
+
+html[data-flick-input="true"][data-compact-battle="true"] .typing-box {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: end;
+  gap: 8px;
+}
+
+/* HP remains readable independently of any necessary image reduction. */
+html[data-flick-input="true"] .character-hp {
+  height: 14px;
+  width: min(92px, 100%);
+  padding: 2px 3px;
+  gap: 0;
+  border-width: 1px;
+  border-radius: 5px;
+  box-shadow: none;
+}
+
+html[data-flick-input="true"] .character-hp-track {
+  height: 8px;
+}
+
+html[data-flick-input="true"] .player-hp {
+  top: -18px;
+}
+
+html[data-flick-input="true"] .player {
+  left: 8px;
+  bottom: var(--fit-player-bottom, 32px);
+  width: var(--fit-player-width, 129px);
+  height: var(--fit-player-height, 177px);
+}
+
 html[data-flick-input="true"] .enemy {
-  height: min(130px, calc(100% - 40px - var(--enemy-slot) * 48px));
-  grid-template-rows: auto minmax(0, 1fr);
+  left: calc(var(--fit-enemy-far, 60%) - var(--enemy-progress) * var(--fit-enemy-travel, 0px));
+  /* Progress already updates each frame; resizing must not animate from old coordinates. */
+  transition: transform 0.18s ease;
+  bottom: calc(var(--fit-enemy-bottom, 26px) + var(--enemy-slot) * var(--fit-slot-gap, 48px));
+  width: var(--fit-enemy-width, 120px);
+  height: auto;
+  grid-template-rows: 14px var(--fit-enemy-height, 106px);
+  gap: 4px;
 }
 
 html[data-flick-input="true"] .enemy-sprite {
-  width: min(96px, 100%);
-  height: 100%;
+  width: var(--fit-enemy-sprite-width, 96px);
+  height: var(--fit-enemy-height, 106px);
   min-height: 0;
-  max-height: 106px;
   transform: none;
+}
+
+html[data-flick-input="true"] .story-dialog {
+  min-height: 64px;
+  padding: 2px;
 }

@@ -147,15 +147,13 @@ test("native Space, Backspace, Enter, and composing keydowns are left to the IME
 
 test("Return confirms consecutive words without another tap on the editor", () => {
   const game = createGame({}, { touch: true });
-  game.run("startGame(); advanceStory(); flickState.keepFocus = true; let returns = 0;");
+  game.run("startGame(); advanceStory(); let returns = 0;");
   for (let count = 1; count <= 2; count++) {
     game.run('els.flickInput.value = "あ"; handleFlickKeydown({ key: "Enter", preventDefault() { returns++; } })');
     game.advance(0);
     assert.equal(game.run("state.storyPunches"), count);
     assert.equal(game.run("document.activeElement === els.flickInput"), true);
     assert.equal(game.run("els.flickInput.value"), "");
-    // A browser focus loss during resolution must not require touching the field again.
-    game.run("document.activeElement = document.body");
     game.advance(480);
     assert.equal(game.run("document.activeElement === els.flickInput"), true);
   }
@@ -164,7 +162,7 @@ test("Return confirms consecutive words without another tap on the editor", () =
 
 test("line-break input submits once and never accumulates blank lines", () => {
   const game = createGame({}, { touch: true });
-  game.run('startGame(); advanceStory(); flickState.keepFocus = true; let prevented = false; els.flickInput.value = "あ"; handleFlickBeforeInput({ inputType: "insertLineBreak", cancelable: true, preventDefault() { prevented = true; } }); handleFlickKeydown({ key: "Enter", preventDefault() {} })');
+  game.run('startGame(); advanceStory(); let prevented = false; els.flickInput.value = "あ"; handleFlickBeforeInput({ inputType: "insertLineBreak", cancelable: true, preventDefault() { prevented = true; } }); handleFlickKeydown({ key: "Enter", preventDefault() {} })');
   game.advance(0);
   assert.equal(game.run("prevented"), true);
   assert.equal(game.run("state.storyPunches"), 1);
@@ -190,16 +188,49 @@ test("rendering and typing do not reapply the focused editor's editability", () 
   assert.equal(game.run("editabilityWrites"), 1);
 });
 
-test("focus recovery respects IME composition, navigation controls, and background tabs", () => {
+test("keyboard dismissal and navigation are respected by renders and automatic callbacks", () => {
   const game = battle();
-  game.run("flickState.keepFocus = true; document.activeElement = els.resetButton; retainFlickFocus()");
-  assert.equal(game.run("document.activeElement === els.resetButton"), true);
-  game.run("document.activeElement = document.body; document.visibilityState = 'hidden'; retainFlickFocus()");
+  for (const active of ["document.body", "els.resetButton"]) {
+    game.run("document.activeElement = " + active + "; renderWord(); updateBattleViewport(); focusGameSurface()");
+    game.advance(900);
+    assert.equal(game.run("document.activeElement === " + active), true);
+  }
+  // A dismissal during attack resolution must survive the next prompt.
+  game.run("focusGameSurface({ userGesture: true })");
+  input(game, game.run("getFlickReading(getCurrentEnemy()).reading"));
+  game.run("document.activeElement = document.body");
+  game.advance(1000);
   assert.equal(game.run("document.activeElement === document.body"), true);
-  game.run("document.visibilityState = 'visible'; flickState.composing = true; retainFlickFocus()");
-  assert.equal(game.run("document.activeElement === document.body"), true);
-  game.run("flickState.composing = false; retainFlickFocus()");
+  game.run("focusGameSurface({ userGesture: true })");
   assert.equal(game.run("document.activeElement === els.flickInput"), true);
-  game.run("resetGame(); showStageSelect(); retainFlickFocus()");
-  assert.equal(game.run("flickState.keepFocus"), false);
+  game.run("resetGame(); showStageSelect(); focusGameSurface({ userGesture: true })");
+  assert.equal(game.run("document.activeElement === els.flickInput"), false);
+});
+
+test("closing the keyboard immediately after Start is not undone by the start notice", () => {
+  const game = battle();
+  game.run("startGame(); document.activeElement = document.body");
+  game.advance(900);
+  assert.equal(game.run("document.activeElement === document.body"), true);
+});
+
+test("handakuten and small kana remain unjudged during composition and commit once", () => {
+  for (const [roman, translation, updates] of [
+    ["pan", "パン", ["は", "ぱ", "ぱん"]],
+    ["gyuunyuu", "牛乳", ["き", "ぎ", "ぎゆ", "ぎゅ", "ぎゅうにゅう"]],
+  ]) {
+    const game = battle("greatsword");
+    prompt(game, roman, translation);
+    game.run("handleFlickCompositionStart()");
+    for (const value of updates) {
+      game.run("els.flickInput.value = " + JSON.stringify(value) + "; handleFlickInput({ isComposing: true }); handleFlickKeydown({ key: 'Enter', isComposing: true });");
+      game.advance(0);
+      assert.equal(game.run("getCurrentEnemy().typingMisses"), 0);
+      assert.equal(game.run("getCurrentEnemy().hp"), 20);
+    }
+    game.run("handleFlickCompositionEnd(); handleFlickInput({ isComposing: false }); handleFlickKeydown({ key: 'Enter', preventDefault() {} })");
+    game.advance(0);
+    assert.equal(game.run("getCurrentEnemy().hp"), 16);
+    assert.equal(game.run("state.combo"), 1);
+  }
 });
