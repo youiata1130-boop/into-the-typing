@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import vm from "node:vm";
 
 // A small DOM and clock let the real battle flow run without browser dependencies.
-export function createGame(savedItems = {}) {
+export function createGame(savedItems = {}, { touch = false } = {}) {
   let now = 0;
   let nextTimerId = 1;
   const timers = new Map();
@@ -33,7 +33,7 @@ export function createGame(savedItems = {}) {
       appendChild(child) { child.isConnected = true; },
       replaceChildren() { children.clear(); },
       remove() { this.isConnected = false; },
-      focus() {},
+      focus() { document.activeElement = this; },
       addEventListener() {},
       getBoundingClientRect: () => ({ left: 0, top: 0, width: 100, height: 100 }),
     };
@@ -47,7 +47,8 @@ export function createGame(savedItems = {}) {
       getItem: key => storage.get(key) ?? null,
       setItem: (key, value) => storage.set(key, value),
     },
-    matchMedia: () => ({ matches: true }),
+    matchMedia: query => ({ matches: query === "(pointer: coarse)" ? touch : true }),
+    addEventListener() {},
     setTimeout(callback, delay) {
       const id = nextTimerId++;
       timers.set(id, { callback, at: now + delay });

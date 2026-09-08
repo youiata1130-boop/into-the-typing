@@ -126,7 +126,7 @@ const wordSets = {
     { text: "okane", translation: "お金" },
     { text: "tokei", translation: "時計" },
     { text: "tegami", translation: "手紙" },
-    { text: "honya", translation: "本屋" },
+    { text: "honya", translation: "本屋", reading: "ほんや" },
     { text: "yakusou", translation: "薬草" },
     { text: "himitsu", translation: "秘密" },
     { text: "nakama", translation: "仲間" },

@@ -40,6 +40,7 @@ into-the-typing/
 │   ├── app/game.js         # Game state, typing, story, and battle flow
 │   ├── config/             # Stage, weapon, animation, and progression settings
 │   ├── data/               # Typing words and interface text
+│   ├── input/              # Japanese reading matching and mobile keyboard
 │   ├── styles/main.css     # Layout and visual effects
 │   └── assets/images/      # Images used by the game
 │       ├── backgrounds/    # Shared, status, and stage-map backgrounds
@@ -117,3 +118,17 @@ Scripts load in the order listed in `index.html`. They remain classic browser sc
 - The battle EXP bar shows previously earned progress during combat and updates at stage clear. Clear results show the awarded EXP and, when a level is gained, the previous and new levels plus HP and skill-point gains.
 
 Run `npm run check` and `npm test` to validate the game scripts and progression behavior.
+
+## Mobile Japanese Input
+
+On a phone or tablet, tap the input field and use the device's Japanese flick keyboard. The prompt includes its hiragana reading. Confirm the word with the keyboard to attack. Hiragana, katakana (including halfwidth kana), the exact displayed kanji, and romaji are accepted.
+
+- Composition stays editable until confirmation; intermediate characters and dakuten changes do not count as mistakes.
+- Committed correct prefixes use the existing attack/charge logic. Duplicate IME completion events cause only one attack.
+- New prompts clear the field while keeping keyboard focus. Leaving or restarting discards old pending composition.
+- The battle fits the visual viewport above the keyboard. The page requests text input; the keyboard language and flick layout are selected on the device.
+- Desktop hardware romaji input remains available.
+- Input files: `src/input/japanese.js` handles readings and matching; `src/input/mobile.js` handles native input and viewport sizing.
+- Validation: integration tests cover composition, dakuten, kana variants, correction, stale events, story handoff, and greatsword charge. Chromium mobile emulation with IME events clears the forest; physical iOS/Android keyboard layouts require device verification.
+
+Browser API references: [compositionend](https://developer.mozilla.org/en-US/docs/Web/API/Element/compositionend_event), [InputEvent.isComposing](https://developer.mozilla.org/en-US/docs/Web/API/InputEvent/isComposing), [VisualViewport](https://developer.mozilla.org/en-US/docs/Web/API/VisualViewport).

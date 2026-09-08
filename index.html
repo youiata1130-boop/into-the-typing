@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Into the Typing</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='52'%3E%E2%9A%94%EF%B8%8F%3C/text%3E%3C/svg%3E">
-    <link rel="stylesheet" href="src/styles/main.css?v=branch-intro-v1">
+    <link rel="stylesheet" href="src/styles/main.css?v=flick-input-v1">
   </head>
   <body>
     <main class="game-shell">
@@ -273,6 +273,7 @@
               <span class="word-target"><span id="typedWord"></span><span id="remainingWord">hajime</span></span>
             </span>
           </div>
+          <input class="flick-input" id="flickInput" type="text" lang="ja" inputmode="text" enterkeyhint="done" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="ひらがな入力" aria-describedby="wordTranslation remainingWord" placeholder="タップして入力" maxlength="80">
         </div>
         <div class="control-side">
           <div class="stats action-stats">
@@ -296,12 +297,14 @@
       </section>
     </main>
 
-    <script src="src/data/words.js?v=branch-intro-v1"></script>
+    <script src="src/data/words.js?v=flick-input-v1"></script>
     <script src="src/data/labels.js?v=folder-layout-v2"></script>
     <script src="src/config/weapons.js?v=branch-intro-v1"></script>
     <script src="src/config/stages.js?v=branch-intro-v1"></script>
     <script src="src/config/enemyAnimations.js?v=greatsword-charge-v1"></script>
     <script src="src/config/playerProgression.js?v=player-progression-v1"></script>
-    <script src="src/app/game.js?v=branch-intro-v1"></script>
+    <script src="src/input/japanese.js?v=flick-input-v1"></script>
+    <script src="src/input/mobile.js?v=flick-input-v1"></script>
+    <script src="src/app/game.js?v=flick-input-v1"></script>
   </body>
 </html>

@@ -251,6 +251,7 @@ const els = {
   remainingWord: document.querySelector("#remainingWord"),
   typingLabel: document.querySelector("#typingLabel"),
   typingStatus: document.querySelector("#typingStatus"),
+  flickInput: document.querySelector("#flickInput"),
   typingBox: document.querySelector(".typing-box"),
   storyDialog: document.querySelector("#storyDialog"),
   storyText: document.querySelector("#storyText"),
@@ -600,6 +601,7 @@ function showScreen(screen) {
   els.statusScreen.hidden = screen !== "status";
   els.battleScreen.hidden = screen !== "battle";
   document.documentElement.dataset.screen = screen;
+  updateBattleViewport();
 }
 
 function focusStartSurface() {
@@ -607,6 +609,10 @@ function focusStartSurface() {
 }
 
 function focusGameSurface() {
+  if (flickState.enabled && state.running && !isStoryDialogueOpen()) {
+    els.flickInput.focus({ preventScroll: true });
+    return;
+  }
   document.body.tabIndex = -1;
   document.body.focus({ preventScroll: true });
 }
@@ -1218,6 +1224,7 @@ function preloadPlayerFrames() {
 }
 
 function renderWord() {
+  syncFlickInput();
   const selectedEnemy = getCurrentEnemy();
 
   if (!selectedEnemy) {
@@ -1231,6 +1238,7 @@ function renderWord() {
   els.wordTranslation.textContent = selectedEnemy.translation;
   els.typedWord.textContent = selectedEnemy.typed;
   els.remainingWord.textContent = selectedEnemy.matchedWord.slice(selectedEnemy.typed.length);
+  if (flickState.enabled) renderFlickPrompt(selectedEnemy);
   updateWeaponCharge();
 }
 
@@ -1459,6 +1467,9 @@ function setNextWord(enemy) {
       wordList: weapon.words,
     });
   enemy.word = next.text;
+  enemy.readingOverride = next.reading || "";
+  enemy.inputRevision = (enemy.inputRevision || 0) + 1;
+  enemy.flickRoman = "";
   enemy.inputs = getWordInputs(next);
   enemy.matchedWord = enemy.inputs[0] || next.text;
   enemy.translation = next.translation;
@@ -1977,6 +1988,7 @@ function startGame(stageId = state.stageId) {
   }
   showGameNotice("start", "START", t.startTitle, t.startText(stage.name), { duration: startNoticeMs });
   spawnNextEnemy();
+  if (flickState.enabled) focusGameSurface();
   state.startDelayTimerId = scheduleBattleTimeout(() => {
     state.startDelayTimerId = 0;
     if (!state.running) {
@@ -1995,6 +2007,16 @@ function normalizeTypedValue(value) {
     .replace(/[^a-z-]/g, "");
 }
 
+function recordTypingMiss(enemy) {
+  state.combo = 0;
+  resetSuccessStreak();
+  if (enemy.weaponId === "greatsword") {
+    enemy.typingMisses += 1;
+    enemy.chargeStartLength = enemy.typed.length;
+  }
+  updateHud();
+}
+
 function applyTypedValue(enemy, value) {
   if (!state.running || isStoryDialogueOpen() || !enemy || enemy.resolving) {
     return;
@@ -2004,13 +2026,7 @@ function applyTypedValue(enemy, value) {
   const matchedWord = enemy.inputs.find((input) => input.startsWith(nextValue));
 
   if (!matchedWord) {
-    state.combo = 0;
-    resetSuccessStreak();
-    if (enemy.weaponId === "greatsword") {
-      enemy.typingMisses += 1;
-      enemy.chargeStartLength = enemy.typed.length;
-    }
-    updateHud();
+    recordTypingMiss(enemy);
     return;
   }
 
@@ -2061,6 +2077,7 @@ function isStartScreenVisible() {
 }
 
 function handleTypingKeydown(event) {
+  if (event.target === els.flickInput || event.isComposing || event.keyCode === 229 || flickState.composing) return;
   if (event.code === "Escape") {
     if (!els.stageScreen.hidden && !els.stageConfirm.hidden) {
       event.preventDefault();
@@ -2185,6 +2202,7 @@ els.stageChoices.addEventListener("click", (event) => {
 });
 document.addEventListener("keydown", handleTypingKeydown);
 
+initializeFlickInput();
 preloadEnemyFrames();
 preloadPlayerFrames();
 resetGame();
