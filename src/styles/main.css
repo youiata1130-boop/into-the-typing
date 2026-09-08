@@ -4481,6 +4481,10 @@ button:disabled:active {
 /* Native Japanese keyboard; size the battle to the space above the keyboard. */
 .flick-input {
   display: none;
+  height: 44px;
+  resize: none;
+  overflow: hidden;
+  white-space: pre;
   width: 100%;
   min-width: 0;
   min-height: 44px;

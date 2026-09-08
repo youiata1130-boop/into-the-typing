@@ -121,14 +121,14 @@ Run `npm run check` and `npm test` to validate the game scripts and progression 
 
 ## Mobile Japanese Input
 
-On a phone or tablet, tap the input field and use the device's Japanese flick keyboard. The prompt includes its hiragana reading. Confirm the word with the keyboard to attack. Hiragana, katakana (including halfwidth kana), the exact displayed kanji, and romaji are accepted.
+On a phone or tablet, the battle and dialogue Next buttons focus the Japanese input field. Use the device's Japanese flick keyboard. The prompt includes its hiragana reading. Confirm the word with the keyboard to attack. Hiragana, katakana (including halfwidth kana), the exact displayed kanji, and romaji are accepted.
 
 - Composition stays editable until confirmation; intermediate characters and dakuten changes do not count as mistakes.
 - Committed correct prefixes use the existing attack/charge logic. Duplicate IME completion events cause only one attack.
-- New prompts clear the field while keeping keyboard focus. Leaving or restarting discards old pending composition.
+- The native editor uses a single-row textarea and a Return key hint so confirming a word keeps the keyboard available. Return/line-break events submit input without adding blank lines; new prompts keep the same focused editor. Editability changes only when entering or leaving dialogue/battle. Leaving or restarting discards old pending composition.
 - The battle fits the visual viewport above the keyboard. The page requests text input; the keyboard language and flick layout are selected on the device.
 - Desktop hardware romaji input remains available.
 - Input files: `src/input/japanese.js` handles readings and matching; `src/input/mobile.js` handles native input and viewport sizing.
 - Validation: integration tests cover composition, dakuten, kana variants, correction, stale events, story handoff, and greatsword charge. Chromium mobile emulation with IME events clears the forest; physical iOS/Android keyboard layouts require device verification.
 
-Browser API references: [compositionend](https://developer.mozilla.org/en-US/docs/Web/API/Element/compositionend_event), [InputEvent.isComposing](https://developer.mozilla.org/en-US/docs/Web/API/InputEvent/isComposing), [VisualViewport](https://developer.mozilla.org/en-US/docs/Web/API/VisualViewport).
+Browser API references: [compositionend](https://developer.mozilla.org/en-US/docs/Web/API/Element/compositionend_event), [InputEvent.isComposing](https://developer.mozilla.org/en-US/docs/Web/API/InputEvent/isComposing), [VisualViewport](https://developer.mozilla.org/en-US/docs/Web/API/VisualViewport), [enterkeyhint](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Global_attributes/enterkeyhint).

@@ -144,3 +144,62 @@ test("native Space, Backspace, Enter, and composing keydowns are left to the IME
   assert.equal(game.run("state.specialGauge"), 100);
   assert.equal(game.run("getCurrentEnemy().typed"), "");
 });
+
+test("Return confirms consecutive words without another tap on the editor", () => {
+  const game = createGame({}, { touch: true });
+  game.run("startGame(); advanceStory(); flickState.keepFocus = true; let returns = 0;");
+  for (let count = 1; count <= 2; count++) {
+    game.run('els.flickInput.value = "あ"; handleFlickKeydown({ key: "Enter", preventDefault() { returns++; } })');
+    game.advance(0);
+    assert.equal(game.run("state.storyPunches"), count);
+    assert.equal(game.run("document.activeElement === els.flickInput"), true);
+    assert.equal(game.run("els.flickInput.value"), "");
+    // A browser focus loss during resolution must not require touching the field again.
+    game.run("document.activeElement = document.body");
+    game.advance(480);
+    assert.equal(game.run("document.activeElement === els.flickInput"), true);
+  }
+  assert.equal(game.run("returns"), 2);
+});
+
+test("line-break input submits once and never accumulates blank lines", () => {
+  const game = createGame({}, { touch: true });
+  game.run('startGame(); advanceStory(); flickState.keepFocus = true; let prevented = false; els.flickInput.value = "あ"; handleFlickBeforeInput({ inputType: "insertLineBreak", cancelable: true, preventDefault() { prevented = true; } }); handleFlickKeydown({ key: "Enter", preventDefault() {} })');
+  game.advance(0);
+  assert.equal(game.run("prevented"), true);
+  assert.equal(game.run("state.storyPunches"), 1);
+  game.advance(480);
+  input(game, "あ\n");
+  assert.equal(game.run("state.storyPunches"), 2);
+  assert.equal(game.run("els.flickInput.value"), "");
+  assert.equal(game.run("document.activeElement === els.flickInput"), true);
+});
+
+test("rendering and typing do not reapply the focused editor's editability", () => {
+  const game = battle();
+  game.run(`let editabilityWrites = 0;
+    let editableState = els.flickInput.readOnly;
+    Object.defineProperty(els.flickInput, "readOnly", {
+      get: () => editableState,
+      set(value) { editabilityWrites++; editableState = value; },
+    });
+    renderWord(); renderWord();
+    applyTypedValue(getCurrentEnemy(), getCurrentEnemy().matchedWord.slice(0, 1));`);
+  assert.equal(game.run("editabilityWrites"), 0);
+  game.run("resetGame()");
+  assert.equal(game.run("editabilityWrites"), 1);
+});
+
+test("focus recovery respects IME composition, navigation controls, and background tabs", () => {
+  const game = battle();
+  game.run("flickState.keepFocus = true; document.activeElement = els.resetButton; retainFlickFocus()");
+  assert.equal(game.run("document.activeElement === els.resetButton"), true);
+  game.run("document.activeElement = document.body; document.visibilityState = 'hidden'; retainFlickFocus()");
+  assert.equal(game.run("document.activeElement === document.body"), true);
+  game.run("document.visibilityState = 'visible'; flickState.composing = true; retainFlickFocus()");
+  assert.equal(game.run("document.activeElement === document.body"), true);
+  game.run("flickState.composing = false; retainFlickFocus()");
+  assert.equal(game.run("document.activeElement === els.flickInput"), true);
+  game.run("resetGame(); showStageSelect(); retainFlickFocus()");
+  assert.equal(game.run("flickState.keepFocus"), false);
+});

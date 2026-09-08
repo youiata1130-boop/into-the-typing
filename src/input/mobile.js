@@ -6,6 +6,7 @@ const flickState = {
   promptKey: "",
   lastValue: null,
   timerId: 0,
+  keepFocus: false,
 };
 
 function flickPromptKey() {
@@ -23,13 +24,27 @@ function clearFlickInput() {
   els.flickInput.setAttribute("aria-invalid", "false");
 }
 
+function retainFlickFocus() {
+  if (!flickState.enabled || !flickState.keepFocus || flickState.composing
+      || !state.running || isStoryDialogueOpen() || els.battleScreen.hidden
+      || document.visibilityState === "hidden") return;
+  const active = document.activeElement;
+  // Do not steal focus from Back, dialogue controls, or another deliberate target.
+  if (active && active !== document.body && active !== els.flickInput) return;
+  if (active !== els.flickInput) focusGameSurface();
+}
+
 function syncFlickInput() {
   const key = flickPromptKey();
   if (flickState.promptKey !== key) {
     flickState.promptKey = key;
     clearFlickInput();
   }
-  els.flickInput.readOnly = !state.running || isStoryDialogueOpen();
+  const readOnly = !state.running || isStoryDialogueOpen();
+  // Reapplying editability on every render can disrupt a mobile keyboard session.
+  if (els.flickInput.readOnly !== readOnly) els.flickInput.readOnly = readOnly;
+  if (readOnly) flickState.keepFocus = false;
+  else retainFlickFocus();
 }
 
 function getFlickReading(enemy) {
@@ -70,6 +85,7 @@ function applyFlickValue(value, key = flickPromptKey()) {
   }
   applyTypedValue(enemy, roman);
   if (enemy.resolving) clearFlickInput();
+  retainFlickFocus();
 }
 
 function queueFlickInput(key = flickPromptKey()) {
@@ -95,12 +111,36 @@ function handleFlickCompositionEnd() {
     clearFlickInput();
     return;
   }
+  stripFlickLineBreaks();
   queueFlickInput(flickState.compositionKey);
+  retainFlickFocus();
+}
+
+function stripFlickLineBreaks() {
+  const value = els.flickInput.value.replace(/[\r\n]/g, "");
+  if (value !== els.flickInput.value) els.flickInput.value = value;
 }
 
 function handleFlickInput(event) {
   if (event.isComposing || flickState.composing) return;
+  stripFlickLineBreaks();
   queueFlickInput();
+  retainFlickFocus();
+}
+
+function handleFlickKeydown(event) {
+  if (event.key !== "Enter" || event.isComposing || flickState.composing || event.keyCode === 229) return;
+  event.preventDefault();
+  queueFlickInput();
+  retainFlickFocus();
+}
+
+function handleFlickBeforeInput(event) {
+  if (!["insertLineBreak", "insertParagraph"].includes(event.inputType)
+      || event.isComposing || flickState.composing) return;
+  if (event.cancelable) event.preventDefault();
+  queueFlickInput();
+  retainFlickFocus();
 }
 
 function updateBattleViewport() {
@@ -124,13 +164,12 @@ function initializeFlickInput() {
   els.flickInput.addEventListener("compositionstart", handleFlickCompositionStart);
   els.flickInput.addEventListener("compositionend", handleFlickCompositionEnd);
   els.flickInput.addEventListener("input", handleFlickInput);
-  els.flickInput.addEventListener("focus", updateBattleViewport);
-  els.flickInput.addEventListener("keydown", event => {
-    if (event.key === "Enter" && !event.isComposing && !flickState.composing && event.keyCode !== 229) {
-      event.preventDefault();
-      queueFlickInput();
-    }
+  els.flickInput.addEventListener("focus", () => {
+    flickState.keepFocus = true;
+    updateBattleViewport();
   });
+  els.flickInput.addEventListener("keydown", handleFlickKeydown);
+  els.flickInput.addEventListener("beforeinput", handleFlickBeforeInput);
   els.typingStatus.addEventListener("click", () => {
     if (flickState.enabled && state.running && !isStoryDialogueOpen()) focusGameSurface();
   });
