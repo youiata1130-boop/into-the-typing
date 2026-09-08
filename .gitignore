@@ -1,0 +1,8 @@
+# Local dependencies and npm logs
+node_modules/
+npm-debug.log*
+
+# Operating-system metadata
+.DS_Store
+Thumbs.db
+Desktop.ini

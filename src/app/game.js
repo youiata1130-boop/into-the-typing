@@ -1,272 +1,8 @@
-const wordSets = {
-  en: [
-    { text: "hi", translation: "こんにちは" },
-    { text: "cat", translation: "ねこ" },
-    { text: "sun", translation: "たいよう" },
-    { text: "map", translation: "ちず" },
-    { text: "tea", translation: "おちゃ" },
-    { text: "star", translation: "ほし" },
-    { text: "leaf", translation: "はっぱ" },
-    { text: "milk", translation: "ミルク" },
-    { text: "cake", translation: "ケーキ" },
-    { text: "book", translation: "ほん" },
-    { text: "rain", translation: "あめ" },
-    { text: "home", translation: "いえ" },
-    { text: "forest", translation: "森" },
-    { text: "castle", translation: "城" },
-    { text: "crystal", translation: "水晶" },
-    { text: "guardian", translation: "守護者" },
-    { text: "keyboard", translation: "キーボード" },
-    { text: "treasure", translation: "宝物" },
-    { text: "mountain", translation: "山" },
-    { text: "sunlight", translation: "日光" },
-    { text: "waterfall", translation: "滝" },
-    { text: "spellbook", translation: "魔法書" },
-    { text: "sanctuary", translation: "聖域" },
-    { text: "adventure", translation: "冒険" },
-  ],
-  ja: [
-    { text: "neko", translation: "ねこ" },
-    { text: "sora", translation: "そら" },
-    { text: "tsuki", translation: "月" },
-    { text: "tsuchi", translation: "土" },
-    { text: "mori", translation: "森" },
-    { text: "hana", translation: "花" },
-    { text: "kaze", translation: "風" },
-    { text: "kutsu", translation: "くつ" },
-    { text: "hoshi", translation: "星" },
-    { text: "yama", translation: "山" },
-    { text: "umi", translation: "海" },
-    { text: "ame", translation: "雨" },
-    { text: "yuki", translation: "雪" },
-    { text: "honoo", translation: "炎" },
-    { text: "hikari", translation: "光" },
-    { text: "fune", translation: "船" },
-    { text: "chikara", translation: "力" },
-    { text: "shizuku", translation: "しずく" },
-    { text: "kokoro", translation: "心" },
-    { text: "yuusha", translation: "勇者" },
-    { text: "mahou", translation: "魔法" },
-    { text: "kenja", translation: "賢者" },
-    { text: "kibou", translation: "希望" },
-    { text: "kiseki", translation: "奇跡" },
-    { text: "bouken", translation: "冒険" },
-    { text: "mamoru", translation: "守る" },
-    { text: "takara", translation: "宝" },
-    { text: "shiro", translation: "城" },
-    { text: "seirei", translation: "精霊" },
-    { text: "densetsu", translation: "伝説" },
-    { text: "asa", translation: "朝" },
-    { text: "yoru", translation: "夜" },
-    { text: "niji", translation: "虹" },
-    { text: "kumo", translation: "雲" },
-    { text: "tori", translation: "鳥" },
-    { text: "inu", translation: "犬" },
-    { text: "mizu", translation: "水" },
-    { text: "ishi", translation: "石" },
-    { text: "kagi", translation: "鍵" },
-    { text: "michi", translation: "道" },
-    { text: "kiri", translation: "霧" },
-    { text: "oto", translation: "音" },
-    { text: "uta", translation: "歌" },
-    { text: "okane", translation: "お金" },
-    { text: "tokei", translation: "時計" },
-    { text: "tegami", translation: "手紙" },
-    { text: "honya", translation: "本屋" },
-    { text: "yakusou", translation: "薬草" },
-    { text: "himitsu", translation: "秘密" },
-    { text: "nakama", translation: "仲間" },
-    { text: "inori", translation: "祈り" },
-    { text: "tsubasa", translation: "翼" },
-    { text: "chizu", translation: "地図" },
-    { text: "shinden", translation: "神殿" },
-    { text: "megami", translation: "女神" },
-    { text: "yuugure", translation: "夕暮れ" },
-    { text: "hayashi", translation: "林" },
-    { text: "mahoroba", translation: "まほろば" },
-    { text: "monogatari", translation: "物語" },
-    { text: "hoshikuzu", translation: "星くず" },
-    { text: "kagayaki", translation: "輝き" },
-    { text: "yakusoku", translation: "約束" },
-    { text: "tabidachi", translation: "旅立ち" },
-    { text: "shukufuku", translation: "祝福" },
-    { text: "mahoujin", translation: "魔法陣" },
-    { text: "michishirube", translation: "道しるべ" },
-    { text: "akatsuki", translation: "暁" },
-    { text: "komorebi", translation: "木漏れ日" },
-    { text: "inazuma", translation: "稲妻" },
-    { text: "ryuusei", translation: "流星" },
-    { text: "tsukikage", translation: "月影" },
-    { text: "hoshizora", translation: "星空" },
-    { text: "tenkuujou", translation: "天空城" },
-    { text: "mahoukishi", translation: "魔法騎士" },
-    { text: "ryuuseigun", translation: "流星群" },
-    { text: "hikarinomichi", translation: "光の道" },
-    { text: "seinarukagi", translation: "聖なる鍵" },
-    { text: "haganenoken", translation: "鋼の剣" },
-    { text: "ryuunomahou", translation: "竜の魔法" },
-    { text: "honoonoryuu", translation: "炎の竜" },
-    { text: "yamiwoterasu", translation: "闇を照らす" },
-    { text: "densetsunoken", translation: "伝説の剣" },
-    { text: "tokinomamori", translation: "時の守り" },
-    { text: "kibounohikari", translation: "希望の光" },
-    { text: "tsubasanoyuusha", translation: "翼の勇者" },
-    { text: "maboroshinomori", translation: "幻の森" },
-    { text: "seireinokokoro", translation: "精霊の心" },
-    { text: "mizuuminoseirei", translation: "湖の精霊" },
-    { text: "kagayakuhouseki", translation: "輝く宝石" },
-    { text: "shindennohihou", translation: "神殿の秘宝" },
-    { text: "yukikagenoshiro", translation: "雪影の城" },
-    { text: "yuugurenotabiji", translation: "夕暮れの旅路" },
-    { text: "mahoujinnokiseki", translation: "魔法陣の奇跡" },
-    { text: "hoshikuzunochikai", translation: "星くずの誓い" },
-    { text: "michishirubenohikari", translation: "道しるべの光" },
-  ],
-};
-
-const languageLabels = {
-  en: {
-    languageName: "English",
-    score: "Score",
-    combo: "Combo",
-    streak: "Streak",
-    special: "Special",
-    input: "Input",
-    idle: "Waiting",
-    inputHint: "Type letters",
-    readyTitle: "Ready",
-    readyText: "Press Start and type the enemy word.",
-    chooseKicker: "DIFFICULTY",
-    chooseTitle: "Choose Difficulty",
-    chooseText: "Beginner and Intermediate are available. Advanced is locked for now.",
-    start: "Start",
-    restart: "Restart",
-    again: "Again",
-    interruptedTitle: "Paused",
-    interruptedText: "Press Space to play again.",
-    startTitle: "Start",
-    startText: "Protect the forest.",
-    startedTitle: "Start",
-    startedText: (roundLimit) => `${roundLimit} cute enemies are coming.`,
-    attackedTitle: "Attacked",
-    attackedText: "The enemy is at your base. Defeat it to stop the attacks.",
-    hitTitle: "Hit",
-    hitText: (hp) => `${hp} more hit${hp === 1 ? "" : "s"} to defeat it.`,
-    defeatedTitle: "Defeated",
-    defeatedText: (remaining) => `${remaining} enemy${remaining === 1 ? "" : "ies"} left.`,
-    gameOverTitle: "Game Over",
-    gameOverText: (score) => `Score: ${score}. Protect the forest next time.`,
-    perfectTitle: "Perfect",
-    perfectText: (score) => `No damage clear. Score: ${score}.`,
-    clearTitle: "Clear",
-    clearText: (score) => `Score: ${score}.`,
-    missTitle: "Typing Miss",
-    missText: "Keep typing the correct letters in order.",
-    specialTitle: "Special",
-    specialText: (hp) => `${hp} hit${hp === 1 ? "" : "s"} left.`,
-    specialAllText: (count) => `Hit ${count} enemies.`,
-    bossKicker: "WARNING",
-    bossTitle: "Boss Appeared",
-    bossText: "A powerful enemy has arrived.",
-  },
-  ja: {
-    languageName: "日本語",
-    score: "スコア",
-    combo: "コンボ",
-    streak: "連続成功",
-    special: "必殺技",
-    input: "入力",
-    idle: "待機中",
-    inputHint: "ローマ字で入力",
-    readyTitle: "準備OK",
-    readyText: "スタートを押して、敵の言葉をタイプしてください。",
-    chooseKicker: "難易度",
-    chooseTitle: "難易度を選択",
-    chooseText: "初級と中級をプレイできます。上級は準備中です。",
-    start: "スタート",
-    restart: "リスタート",
-    again: "もう一度",
-    interruptedTitle: "中断",
-    interruptedText: "スペースキーでもう一度プレイできます。",
-    startTitle: "開始",
-    startText: "森を守りましょう。",
-    startedTitle: "開始",
-    startedText: (roundLimit) => `${roundLimit}体の可愛い敵がやってきます。`,
-    attackedTitle: "攻撃された",
-    attackedText: "敵が拠点前にとどまっています。倒すまで攻撃が続きます。",
-    hitTitle: "ヒット",
-    hitText: (hp) => `あと${hp}回で倒せます。`,
-    defeatedTitle: "やっつけた",
-    defeatedText: (remaining) => `あと${remaining}体です。`,
-    gameOverTitle: "ゲームオーバー",
-    gameOverText: (score) => `スコアは${score}点。次は森を守りきりましょう。`,
-    perfectTitle: "パーフェクト",
-    perfectText: (score) => `ノーダメージでクリア。スコアは${score}点です。`,
-    clearTitle: "クリア",
-    clearText: (score) => `スコアは${score}点です。`,
-    missTitle: "タイプミス",
-    missText: "正しい文字から続けて入力してください。",
-    specialTitle: "必殺技",
-    specialText: (hp) => `必殺技が命中。あと${hp}回で倒せます。`,
-    specialAllText: (count) => `${count}体に命中。`,
-    bossKicker: "WARNING",
-    bossTitle: "ボス出現",
-    bossText: "強敵があらわれました。",
-  },
-};
-
-const maxHp = 5;
-const damagedBaseHpThreshold = 3;
-const criticalBaseHpThreshold = 1;
-const defaultSpecialGaugeSettings = {
-  chargeStartStreak: 5,
-  baseGain: 0.25,
-  gainPerStreak: 0.03,
-  streakCap: 16,
-};
-const defaultDifficulty = "beginner";
-const difficultyModes = {
-  beginner: {
-    label: "初級",
-    enabled: true,
-    wordLength: {
-      normalMin: 0,
-      bossMin: 7,
-    },
-    specialGauge: {
-      chargeStartStreak: 3,
-      baseGain: 1.8,
-      gainPerStreak: 0.14,
-      streakCap: 16,
-    },
-    waves: [
-      { types: ["goblin_level_1"], hp: 2, count: 3 },
-      { types: ["goblin_level_1"], hp: 3, count: 3 },
-      { types: ["goblin_level_2"], hp: 4, count: 1, boss: true },
-    ],
-  },
-  intermediate: {
-    label: "中級",
-    enabled: true,
-    wordLength: {
-      normalMin: 9,
-      bossMin: 13,
-    },
-    specialGauge: {
-      streakCap: 50,
-    },
-    waves: [
-      { types: ["goblin_level_2"], hp: 4, count: 2 },
-      { types: ["goblin_level_2"], hp: 5, count: 1 },
-      { types: ["goblin_level_3"], hp: 8, count: 1, boss: true },
-    ],
-  },
-  advanced: {
-    label: "上級",
-    enabled: false,
-    waves: [],
-  },
-};
+// Game data and settings are loaded by index.html before this script.
+const progression = window.PLAYER_PROGRESSION;
+const defaultPlayerStats = progression.defaultStats;
+const progressionStorageKey = "into-the-typing.player.v2";
+let progressionSaveAvailable = true;
 const attackMs = 8200;
 const repeatAttackMs = 2200;
 const knockbackAmount = 0.14;
@@ -274,17 +10,66 @@ const startNoticeMs = 850;
 const inputBufferRetryMs = 24;
 const inputBufferRetentionMs = 1400;
 const inputBufferMax = 32;
+const playerAttackMs = 480;
+const greatswordImpactDelayMs = 180;
+const greatswordImpactMs = 820;
 const specialGaugeMax = 100;
 const specialDamage = 3;
 const enemyAnimations = window.ENEMY_ANIMATIONS || {
   defaultEnemy: "goblin_level_1",
   frameMs: 140,
   enemies: {
+    egg_level_1: {
+      idle: [
+        "src/assets/images/enemies/egg/level_1/idle/frame_01.png",
+        "src/assets/images/enemies/egg/level_1/idle/frame_02.png",
+        "src/assets/images/enemies/egg/level_1/idle/frame_03.png",
+        "src/assets/images/enemies/egg/level_1/idle/frame_02.png",
+      ],
+      attack: ["src/assets/images/enemies/egg/level_1/attack/frame_02.png"],
+      damage: ["src/assets/images/enemies/egg/level_1/damage/frame_02.png"],
+      defeat: ["src/assets/images/enemies/egg/level_1/defeat/frame_02.png"],
+    },
+    chick_level_1: {
+      idle: [
+        "src/assets/images/enemies/chick/level_1/idle/frame_01.png",
+        "src/assets/images/enemies/chick/level_1/idle/frame_01.png",
+        "src/assets/images/enemies/chick/level_1/idle/frame_02.png",
+        "src/assets/images/enemies/chick/level_1/idle/frame_02.png",
+      ],
+      attack: ["src/assets/images/enemies/chick/level_1/attack/frame_02.png"],
+      damage: ["src/assets/images/enemies/chick/level_1/damage/frame_02.png"],
+      defeat: ["src/assets/images/enemies/chick/level_1/defeat/frame_02.png"],
+    },
+    chicken_level_1: {
+      idle: ["src/assets/images/enemies/chicken/level_1/idle/frame_02.png"],
+      attack: ["src/assets/images/enemies/chicken/level_1/attack/frame_02.png"],
+      damage: ["src/assets/images/enemies/chicken/level_1/damage/frame_02.png"],
+      defeat: ["src/assets/images/enemies/chicken/level_1/defeat/frame_02.png"],
+    },
+    chicken_level_2: {
+      idle: ["src/assets/images/enemies/chicken/level_2/idle/frame_02.png"],
+      attack: ["src/assets/images/enemies/chicken/level_2/attack/frame_02.png"],
+      damage: ["src/assets/images/enemies/chicken/level_2/damage/frame_02.png"],
+      defeat: ["src/assets/images/enemies/chicken/level_2/defeat/frame_02.png"],
+    },
     goblin_level_1: {
-      idle: ["src/assets/images/enemies/goblin/level_1/idle/frame_01.png"],
-      attack: ["src/assets/images/enemies/goblin/level_1/attack/frame_01.png"],
-      damage: ["src/assets/images/enemies/goblin/level_1/damage/frame_01.png"],
-      defeat: ["src/assets/images/enemies/goblin/level_1/defeat/frame_01.png"],
+      idle: ["src/assets/images/enemies/goblin/level_1/idle/frame_02.png"],
+      attack: ["src/assets/images/enemies/goblin/level_1/attack/frame_02.png"],
+      damage: ["src/assets/images/enemies/goblin/level_1/damage/frame_02.png"],
+      defeat: ["src/assets/images/enemies/goblin/level_1/defeat/frame_02.png"],
+    },
+    goblin_level_2: {
+      idle: ["src/assets/images/enemies/goblin/level_2/idle/frame_02.png"],
+      attack: ["src/assets/images/enemies/goblin/level_2/attack/frame_02.png"],
+      damage: ["src/assets/images/enemies/goblin/level_2/damage/frame_02.png"],
+      defeat: ["src/assets/images/enemies/goblin/level_2/defeat/frame_02.png"],
+    },
+    goblin_level_3: {
+      idle: ["src/assets/images/enemies/goblin/level_3/idle/frame_02.png"],
+      attack: ["src/assets/images/enemies/goblin/level_3/attack/frame_02.png"],
+      damage: ["src/assets/images/enemies/goblin/level_3/damage/frame_02.png"],
+      defeat: ["src/assets/images/enemies/goblin/level_3/defeat/frame_02.png"],
     },
   },
 };
@@ -300,8 +85,25 @@ function getWaveEnemyTypes(wave) {
   return Array.from({ length: count }, (_, index) => configuredTypes[index % configuredTypes.length]).filter(hasEnemyVisuals);
 }
 
-function getDifficultyMode(difficulty) {
-  return difficultyModes[difficulty] || difficultyModes[defaultDifficulty];
+function getStageDefinition(stageId) {
+  return stageDefinitions[stageId] || stageDefinitions[defaultStageId];
+}
+
+function getWeaponDefinition(weaponId = defaultWeaponId) {
+  if (weaponId === unarmedWeapon.id) return unarmedWeapon;
+  return weaponDefinitions[weaponId] || weaponDefinitions[defaultWeaponId];
+}
+
+function getBattleWeaponId() {
+  return isUnarmedStory() ? unarmedWeapon.id : state.weaponId;
+}
+
+function getActiveWeapon() {
+  return getWeaponDefinition(getBattleWeaponId());
+}
+
+function getPlayerWeaponAssets(weaponId = defaultWeaponId) {
+  return playerWeaponAssets[weaponId] || playerWeaponAssets[defaultWeaponId];
 }
 
 function buildPlayableEnemyWaves(waves) {
@@ -322,18 +124,62 @@ function updateEnemyTypeDataset(waves) {
   document.documentElement.dataset.enemyTypes = [...new Set(waves.flatMap((wave) => wave.types))].join(",");
 }
 
-const initialPlayableEnemyWaves = buildPlayableEnemyWaves(getDifficultyMode(defaultDifficulty).waves);
+const initialPlayableEnemyWaves = buildPlayableEnemyWaves(getStageDefinition(defaultStageId).waves);
 updateEnemyTypeDataset(initialPlayableEnemyWaves);
+
+function loadPlayerProgress() {
+  try {
+    const saved = JSON.parse(window.localStorage.getItem(progressionStorageKey) || "null");
+    if (saved?.version === 2) {
+      return {
+        ...progression.restore(saved),
+        weaponId: saved.introCompleted === true && Object.hasOwn(weaponDefinitions, saved.weaponId) ? saved.weaponId : defaultWeaponId,
+        introCompleted: saved.introCompleted === true,
+      };
+    }
+  } catch {
+    progressionSaveAvailable = false;
+  }
+  return { ...progression.restore(), weaponId: defaultWeaponId, introCompleted: false };
+}
+
+function savePlayerProgress() {
+  try {
+    window.localStorage.setItem(progressionStorageKey, JSON.stringify({
+      version: 2,
+      totalExperience: state.totalExperience,
+      stats: state.stats,
+      weaponId: state.weaponId,
+      introCompleted: state.introCompleted,
+    }));
+    progressionSaveAvailable = true;
+  } catch {
+    progressionSaveAvailable = false;
+  }
+}
+
+function getMaxHp() {
+  return progression.maxHp(state.level);
+}
 
 const state = {
   language: "ja",
-  difficulty: defaultDifficulty,
+  stageId: defaultStageId,
+  pendingStageId: "",
+  ...loadPlayerProgress(),
   running: false,
-  hp: maxHp,
+  storyPhase: "none",
+  storyPunches: 0,
+  hp: progression.rules.baseHp,
+  pendingExperience: 0,
+  battleExperience: 0,
+  battleLevelsGained: 0,
+  progressNotice: "",
   score: 0,
   combo: 0,
   successStreak: 0,
   specialGauge: 0,
+  specialInProgress: false,
   cleared: 0,
   currentWaveIndex: 0,
   currentWaveSpawned: 0,
@@ -342,6 +188,7 @@ const state = {
   activeEnemies: [],
   selectedEnemyId: "",
   nextEnemyId: 1,
+  battleGeneration: 0,
   perfect: true,
   currentWord: "start",
   currentInputs: ["start"],
@@ -356,27 +203,45 @@ const state = {
   noticeTimerId: 0,
   startDelayTimerId: 0,
   inputBufferTimerId: 0,
+  playerAttackTimerId: 0,
+  greatswordImpactDelayTimerId: 0,
+  greatswordImpactTimerId: 0,
   inputBuffer: [],
   usedWords: [],
 };
+
+function invalidateBattleGeneration() {
+  state.battleGeneration += 1;
+}
+
+function scheduleBattleTimeout(callback, delay) {
+  const battleGeneration = state.battleGeneration;
+
+  return window.setTimeout(() => {
+    if (state.battleGeneration !== battleGeneration) {
+      return;
+    }
+
+    callback();
+  }, delay);
+}
 
 const els = {
   scoreLabel: document.querySelector("#scoreLabel"),
   scoreText: document.querySelector("#scoreText"),
   comboLabel: document.querySelector("#comboLabel"),
   comboText: document.querySelector("#comboText"),
-  streakLabel: document.querySelector("#streakLabel"),
-  streakText: document.querySelector("#streakText"),
-  streakFill: document.querySelector("#streakFill"),
-  specialLabel: document.querySelector("#specialLabel"),
-  specialGaugeText: document.querySelector("#specialGaugeText"),
-  specialGaugeFill: document.querySelector("#specialGaugeFill"),
   player: document.querySelector(".player"),
-  homeImage: document.querySelector("#homeImage"),
+  playerFrameIdle: document.querySelector("#playerFrameIdle"),
+  playerFrameCharge: document.querySelector("#playerFrameCharge"),
+  playerFrameWindup: document.querySelector("#playerFrameWindup"),
+  playerFrameStrike: document.querySelector("#playerFrameStrike"),
   playerHpTrack: document.querySelector("#playerHpTrack"),
   playerHpFill: document.querySelector("#playerHpFill"),
   specialButton: document.querySelector("#specialButton"),
   specialEffect: document.querySelector("#specialEffect"),
+  arena: document.querySelector(".arena"),
+  greatswordImpact: document.querySelector("#greatswordImpact"),
   bossIntro: document.querySelector("#bossIntro"),
   bossIntroKicker: document.querySelector("#bossIntroKicker"),
   bossIntroTitle: document.querySelector("#bossIntroTitle"),
@@ -385,17 +250,57 @@ const els = {
   typedWord: document.querySelector("#typedWord"),
   remainingWord: document.querySelector("#remainingWord"),
   typingLabel: document.querySelector("#typingLabel"),
-  typingStatusText: document.querySelector("#typingStatusText"),
+  typingStatus: document.querySelector("#typingStatus"),
+  typingBox: document.querySelector(".typing-box"),
+  storyDialog: document.querySelector("#storyDialog"),
+  storyText: document.querySelector("#storyText"),
+  storyItem: document.querySelector("#storyItem"),
+  storyNextButton: document.querySelector("#storyNextButton"),
+  battleWeaponName: document.querySelector("#battleWeaponName"),
+  weaponCharge: document.querySelector("#weaponCharge"),
+  weaponChargeText: document.querySelector("#weaponChargeText"),
+  weaponDamagePreview: document.querySelector("#weaponDamagePreview"),
+  weaponChargeMeter: document.querySelector("#weaponChargeMeter"),
+  weaponChargeFill: document.querySelector("#weaponChargeFill"),
+  startScreen: document.querySelector("#startScreen"),
+  stageScreen: document.querySelector("#stageScreen"),
+  statusScreen: document.querySelector("#statusScreen"),
+  battleScreen: document.querySelector("#battleScreen"),
+  introStartButton: document.querySelector("#introStartButton"),
+  statusButton: document.querySelector("#statusButton"),
+  stageSelectButton: document.querySelector("#stageSelectButton"),
+  statusPanel: document.querySelector("#statusPanel"),
+  levelText: document.querySelector("#levelText"),
+  statusHpText: document.querySelector("#statusHpText"),
+  experienceText: document.querySelector("#experienceText"),
+  experienceRemainingText: document.querySelector("#experienceRemainingText"),
+  experienceMeter: document.querySelector("#experienceMeter"),
+  experienceFill: document.querySelector("#experienceFill"),
+  skillPointsText: document.querySelector("#skillPointsText"),
+  skillFeedback: document.querySelector("#skillFeedback"),
+  progressSaveStatus: document.querySelector("#progressSaveStatus"),
+  battleLevelText: document.querySelector("#battleLevelText"),
+  battleExperienceText: document.querySelector("#battleExperienceText"),
+  battleExperienceMeter: document.querySelector("#battleExperienceMeter"),
+  battleExperienceFill: document.querySelector("#battleExperienceFill"),
+  progressionNotice: document.querySelector("#progressionNotice"),
+  statusAttackText: document.querySelector("#statusAttackText"),
+  statusAgilityText: document.querySelector("#statusAgilityText"),
+  statusWordLengthText: document.querySelector("#statusWordLengthText"),
   startButton: document.querySelector("#startButton"),
   resetButton: document.querySelector("#resetButton"),
+  keyHint: document.querySelector("#keyHint"),
   gameNotice: document.querySelector("#gameNotice"),
   noticeKicker: document.querySelector("#noticeKicker"),
   noticeTitle: document.querySelector("#noticeTitle"),
   noticeText: document.querySelector("#noticeText"),
   noticeButton: document.querySelector("#noticeButton"),
-  difficultyChoices: document.querySelector("#difficultyChoices"),
-  messageTitle: document.querySelector("#messageTitle"),
-  messageText: document.querySelector("#messageText"),
+  stageChoices: document.querySelector("#stageChoices"),
+  stageConfirm: document.querySelector("#stageConfirm"),
+  stageConfirmName: document.querySelector("#stageConfirmName"),
+  stageConfirmMeta: document.querySelector("#stageConfirmMeta"),
+  stageConfirmStart: document.querySelector("#stageConfirmStart"),
+  stageConfirmCancel: document.querySelector("#stageConfirmCancel"),
   lane: document.querySelector("#lane"),
   enemyLayer: document.querySelector("#enemyLayer"),
 };
@@ -413,18 +318,21 @@ function updateLanguageText() {
   document.documentElement.lang = "ja";
   els.scoreLabel.textContent = t.score;
   els.comboLabel.textContent = t.combo;
-  els.streakLabel.textContent = t.streak;
-  els.specialLabel.textContent = t.special;
   els.typingLabel.textContent = t.input;
+  els.introStartButton.textContent = t.start;
   els.startButton.textContent = state.running ? t.restart : t.start;
   els.specialButton.textContent = t.special;
-  els.noticeButton.textContent = t.again;
+  els.noticeButton.textContent = t.stageSelect;
+  els.stageSelectButton.textContent = t.stageSelect;
+  els.stageConfirmStart.textContent = t.confirmStart;
+  els.stageConfirmCancel.textContent = t.confirmCancel;
+  els.keyHint.textContent = t.specialKeyHint;
 }
 
 function getSpecialGaugeSettings() {
   return {
     ...defaultSpecialGaugeSettings,
-    ...(getDifficultyMode(state.difficulty).specialGauge || {}),
+    ...(getStageDefinition(state.stageId).specialGauge || {}),
   };
 }
 
@@ -432,11 +340,72 @@ function getWordLengthSettings() {
   return {
     normalMin: 0,
     bossMin: 7,
-    ...(getDifficultyMode(state.difficulty).wordLength || {}),
+    ...(getStageDefinition(state.stageId).wordLength || {}),
   };
 }
 
+function getStatValue(stat) {
+  return state.stats?.[stat] ?? defaultPlayerStats[stat] ?? 1;
+}
+
+function getAdjustedWordLengthSettings(weaponId = state.weaponId) {
+  const base = getWordLengthSettings();
+  const reduction = getStatValue("agility") - defaultPlayerStats.agility;
+  const normalBaseMax = base.normalMax ?? Math.max(base.normalMin + 8, 8);
+  const bossBaseMax = base.bossMax ?? Math.max(base.bossMin + 8, normalBaseMax + 2);
+  let normalMin = base.normalMin;
+  let bossMin = base.bossMin;
+  let normalMax = normalBaseMax;
+  let bossMax = bossBaseMax;
+  const weaponWordLength = getWeaponDefinition(weaponId).wordLength;
+
+  if (weaponWordLength?.fixed) {
+    return {
+      normalMin: Math.max(2, weaponWordLength.normalMin - reduction),
+      normalMax: Math.max(2, weaponWordLength.normalMax - reduction),
+      bossMin: Math.max(2, weaponWordLength.bossMin - reduction),
+      bossMax: Math.max(2, weaponWordLength.bossMax - reduction),
+    };
+  }
+
+  if (weaponWordLength) {
+    normalMin = Math.max(normalMin, weaponWordLength.normalMin || 0);
+    bossMin = Math.max(bossMin, weaponWordLength.bossMin || normalMin);
+    normalMax = Math.max(normalMax, normalMin + (weaponWordLength.maxSpan || 0));
+    bossMax = Math.max(bossMax, bossMin + (weaponWordLength.maxSpan || 0));
+  }
+
+  return {
+    normalMin: Math.max(2, normalMin - reduction),
+    normalMax: Math.max(minimumWordMaxLength, normalMax - reduction),
+    bossMin: Math.max(2, bossMin - reduction),
+    bossMax: Math.max(minimumWordMaxLength, bossMax - reduction),
+  };
+}
+
+function getWeaponDamageMultiplier(enemy = null) {
+  const weapon = getWeaponDefinition(enemy?.weaponId || getBattleWeaponId());
+
+  if (weapon.id !== "greatsword") {
+    return weapon.damageMultiplier || 1;
+  }
+
+  const misses = Math.max(0, Math.round(enemy?.typingMisses || 0));
+  return Math.max(
+    weapon.minDamageMultiplier,
+    weapon.maxDamageMultiplier - misses * weapon.missPenalty,
+  );
+}
+
+function getPlayerAttackDamage(enemy = null) {
+  const weaponId = enemy?.weaponId || getBattleWeaponId();
+  if (weaponId === unarmedWeapon.id) return unarmedWeapon.damage;
+  const damage = getStatValue("attack") * getWeaponDamageMultiplier(enemy);
+  return weaponId === "branch" ? Math.round(damage * 10) / 10 : Math.max(1, Math.round(damage));
+}
+
 function getSpecialGain() {
+  if (isUnarmedStory()) return 0;
   const settings = getSpecialGaugeSettings();
 
   if (state.successStreak < settings.chargeStartStreak) {
@@ -465,50 +434,176 @@ function resetSuccessStreak() {
 }
 
 function isSpecialReady() {
-  return state.specialGauge >= specialGaugeMax;
+  return !isUnarmedStory() && !isStoryDialogueOpen() && state.specialGauge >= specialGaugeMax;
 }
 
-function updateBaseVisual(playerHp) {
-  const critical = playerHp <= criticalBaseHpThreshold;
-  const damaged = !critical && playerHp <= damagedBaseHpThreshold;
-  const nextSrc = critical
-    ? els.homeImage.dataset.criticalSrc
-    : damaged
-      ? els.homeImage.dataset.damagedSrc
-      : els.homeImage.dataset.normalSrc;
+function updateStatusPanel() {
+  const activeWeapon = getActiveWeapon();
+  els.levelText.textContent = state.level;
+  els.statusHpText.textContent = `${Math.max(0, Math.round(state.hp))} / ${getMaxHp()}`;
+  els.statusAttackText.textContent = getStatValue("attack");
+  els.statusAgilityText.textContent = getStatValue("agility");
+  const wordLength = getAdjustedWordLengthSettings();
+  els.statusWordLengthText.textContent = `通常 ${wordLength.normalMin}〜${wordLength.normalMax}文字 / ボス ${wordLength.bossMin}〜${wordLength.bossMax}文字`;
+  const required = progression.experienceToNextLevel(state.level);
+  const atMaxLevel = required === 0;
+  const experienceLabel = atMaxLevel ? "MAX" : `${state.experience} / ${required} EXP`;
+  els.experienceText.textContent = experienceLabel;
+  els.experienceRemainingText.textContent = atMaxLevel
+    ? "最高レベルに到達しました"
+    : `次のレベルまで ${required - state.experience} EXP ・ 最大HP +10 / スキルポイント +1`;
+  els.skillPointsText.textContent = state.skillPoints;
+  els.battleLevelText.textContent = `Lv. ${state.level}`;
+  els.battleExperienceText.textContent = experienceLabel;
+  for (const [meter, fill] of [
+    [els.experienceMeter, els.experienceFill],
+    [els.battleExperienceMeter, els.battleExperienceFill],
+  ]) {
+    meter.setAttribute("aria-valuemax", String(required || 1));
+    meter.setAttribute("aria-valuenow", String(atMaxLevel ? 1 : state.experience));
+    meter.setAttribute("aria-valuetext", experienceLabel);
+    fill.style.width = `${atMaxLevel ? 100 : state.experience / required * 100}%`;
+  }
+  els.statusButton.textContent = state.skillPoints > 0 ? `ステータス（SP ${state.skillPoints}）` : "ステータス";
+  els.progressSaveStatus.textContent = progressionSaveAvailable
+    ? "育成状況はこのブラウザに自動保存されます。"
+    : "保存できないため、育成状況はこのページを開いている間だけ保持されます。";
+  els.progressionNotice.textContent = state.progressNotice;
+  els.progressionNotice.hidden = !state.progressNotice;
+  document.documentElement.dataset.weapon = activeWeapon.id;
 
-  if (nextSrc && els.homeImage.getAttribute("src") !== nextSrc) {
-    els.homeImage.setAttribute("src", nextSrc);
+  els.statusPanel.querySelectorAll("input[name='weapon']").forEach((input) => {
+    input.checked = input.value === activeWeapon.id;
+    input.disabled = state.running || (!state.introCompleted && input.value !== defaultWeaponId);
+  });
+
+  els.statusPanel.querySelectorAll("[data-stat][data-stat-delta]").forEach((button) => {
+    const stat = button.dataset.stat;
+    const capped = getStatValue(stat) >= progression.rules.statMax[stat];
+    button.disabled = state.running || !progression.canUpgrade(state, stat);
+    button.textContent = capped ? "MAX" : "＋1";
+    button.title = capped ? "強化上限です" : state.skillPoints > 0 ? "スキルポイントを1使って強化" : "レベルアップでスキルポイントを獲得";
+  });
+}
+
+function syncPlayerWeaponArt(weapon, chargePose = 0) {
+  const assets = getPlayerWeaponAssets(weapon.id);
+  const frames = [
+    [els.playerFrameIdle, assets.idle],
+    [els.playerFrameWindup, assets.windup],
+    [els.playerFrameStrike, assets.strike],
+  ];
+
+  if (assets.charge) {
+    frames.push([els.playerFrameCharge, assets.charge[chargePose]]);
   }
 
-  els.player.classList.toggle("is-damaged", damaged);
-  els.player.classList.toggle("is-critical", critical);
+  frames.forEach(([frame, src]) => {
+    if (frame.getAttribute("src") !== src) {
+      frame.src = src;
+    }
+  });
+
+  const playerLabel = weapon.id === "unarmed" ? "素手で構える主人公" : `${weapon.name}を装備した主人公`;
+  els.playerFrameIdle.alt = playerLabel;
+  els.player.setAttribute("aria-label", playerLabel);
+}
+
+function updateWeaponCharge() {
+  const t = labels();
+  const selectedEnemy = getCurrentEnemy();
+  const weapon = getWeaponDefinition(selectedEnemy?.weaponId || getBattleWeaponId());
+  const isGreatsword = weapon.id === "greatsword";
+  const typedLength = selectedEnemy?.typed.length || 0;
+  const totalLength = selectedEnemy?.matchedWord.length || 0;
+  const misses = selectedEnemy?.typingMisses || 0;
+  // Only characters entered since the last miss contribute to the current wind-up.
+  const chargeStartLength = Math.min(typedLength, selectedEnemy?.chargeStartLength || 0);
+  const chargedLength = Math.max(0, typedLength - chargeStartLength);
+  const meterMaximum = Math.max(1, totalLength - chargeStartLength);
+  const chargeProgress = Math.min(1, chargedLength / meterMaximum);
+  const chargePercent = chargeProgress * 100;
+  const chargeLevel = chargedLength > 0 ? Math.min(4, Math.ceil(chargeProgress * 4)) : 0;
+  const poseCount = getPlayerWeaponAssets(weapon.id).charge?.length || 1;
+  const chargePose = Math.min(poseCount - 1, Math.floor(chargeProgress * poseCount));
+  const damage = getPlayerAttackDamage(
+    selectedEnemy || { weaponId: weapon.id, typingMisses: 0 },
+  );
+
+  syncPlayerWeaponArt(weapon, chargePose);
+  els.battleWeaponName.textContent = weapon.name;
+  els.weaponCharge.hidden = !isGreatsword;
+  els.typingStatus.dataset.weapon = weapon.id;
+  els.player.dataset.weapon = weapon.id;
+  els.player.dataset.chargeLevel = String(isGreatsword ? chargeLevel : 0);
+  els.player.dataset.chargePose = String(isGreatsword ? chargePose : 0);
+  els.player.style.setProperty("--greatsword-charge", chargeProgress.toFixed(3));
+  els.player.style.setProperty("--greatsword-charge-scale", (0.7 + chargeProgress * 0.62).toFixed(3));
+  els.player.style.setProperty("--greatsword-charge-opacity", (0.16 + chargeProgress * 0.84).toFixed(3));
+  els.player.style.setProperty("--greatsword-charge-blur", `${Math.round(4 + chargeProgress * 18)}px`);
+  els.player.style.setProperty("--greatsword-charge-speed", `${(1.05 - chargeProgress * 0.42).toFixed(2)}s`);
+  els.player.classList.toggle(
+    "is-charging",
+    Boolean(
+      isGreatsword
+      && state.running
+      && selectedEnemy
+      && !selectedEnemy.resolving
+      && !state.specialInProgress
+      && chargedLength > 0
+      && typedLength < totalLength
+    ),
+  );
+
+  if (!isGreatsword) {
+    return;
+  }
+
+  els.weaponChargeText.textContent = totalLength
+    ? t.weaponChargeText(chargedLength, meterMaximum, misses)
+    : t.weaponChargeReady;
+  els.weaponDamagePreview.textContent = t.weaponDamagePreview(damage);
+  els.weaponChargeFill.style.width = `${chargePercent}%`;
+  els.weaponCharge.dataset.penalized = String(misses > 0);
+  els.weaponChargeMeter.setAttribute("aria-valuemax", String(meterMaximum));
+  els.weaponChargeMeter.setAttribute("aria-valuenow", String(chargedLength));
+  els.weaponChargeMeter.setAttribute(
+    "aria-valuetext",
+    totalLength
+      ? `ため${meterMaximum}文字中${chargedLength}文字、ミス${misses}回、予想${damage}ダメージ`
+      : `入力待ち、予想${damage}ダメージ`,
+  );
 }
 
 function updateHud() {
-  const { streakCap } = getSpecialGaugeSettings();
-  const streakProgress = (Math.min(state.successStreak, streakCap) / streakCap) * 100;
-  const specialGauge = Math.max(0, Math.min(state.specialGauge, specialGaugeMax));
-  const playerHp = Math.max(0, Math.min(state.hp, maxHp));
+  const playerHp = Math.max(0, Math.min(state.hp, getMaxHp()));
   els.scoreText.textContent = state.score;
   els.comboText.textContent = state.combo;
-  els.streakText.textContent = state.successStreak;
-  els.streakFill.style.width = `${streakProgress}%`;
-  els.specialGaugeText.textContent = `${Math.round(specialGauge)}%`;
-  els.specialGaugeFill.style.width = `${specialGauge}%`;
-  els.playerHpFill.style.width = `${(playerHp / maxHp) * 100}%`;
-  updateBaseVisual(playerHp);
-  els.streakFill.parentElement.setAttribute("aria-valuemax", String(streakCap));
-  els.streakFill.parentElement.setAttribute("aria-valuenow", String(Math.min(state.successStreak, streakCap)));
-  els.specialGaugeFill.parentElement.setAttribute("aria-valuenow", String(Math.round(specialGauge)));
-  els.playerHpTrack.setAttribute("aria-valuemax", String(maxHp));
+  els.playerHpFill.style.width = `${(playerHp / getMaxHp()) * 100}%`;
+  els.playerHpTrack.setAttribute("aria-valuemax", String(getMaxHp()));
   els.playerHpTrack.setAttribute("aria-valuenow", String(playerHp));
-  els.specialButton.disabled = !state.running || !isSpecialReady() || !state.activeEnemies.some((enemy) => enemy.hp > 0);
+  const hasResolvingEnemy = state.activeEnemies.some((enemy) => enemy.hp > 0 && enemy.resolving);
+  els.specialButton.disabled = (
+    !state.running
+    || state.specialInProgress
+    || hasResolvingEnemy
+    || !isSpecialReady()
+    || !state.activeEnemies.some((enemy) => enemy.hp > 0)
+  );
+  updateWeaponCharge();
+  updateStatusPanel();
 }
 
-function setMessage(title, text) {
-  els.messageTitle.textContent = title;
-  els.messageText.textContent = text;
+function showScreen(screen) {
+  els.startScreen.hidden = screen !== "start";
+  els.stageScreen.hidden = screen !== "stage";
+  els.statusScreen.hidden = screen !== "status";
+  els.battleScreen.hidden = screen !== "battle";
+  document.documentElement.dataset.screen = screen;
+}
+
+function focusStartSurface() {
+  els.introStartButton.focus({ preventScroll: true });
 }
 
 function focusGameSurface() {
@@ -516,16 +611,21 @@ function focusGameSurface() {
   document.body.focus({ preventScroll: true });
 }
 
-function updateTypingStatus() {
-  const t = labels();
-  const selectedEnemy = getCurrentEnemy();
-  els.typingStatusText.textContent = state.running ? selectedEnemy?.typed || t.inputHint : t.idle;
+function focusStageSurface() {
+  const focusedStage = els.stageChoices.querySelector(".stage-choice.is-selected:not(:disabled)");
+  const firstStage = els.stageChoices.querySelector(".stage-choice:not(:disabled)");
+  (focusedStage || firstStage || els.statusButton).focus({ preventScroll: true });
+}
+
+function focusStatusSurface() {
+  const selectedWeapon = els.statusPanel.querySelector("input[name='weapon']:checked");
+  const attackButton = els.statusPanel.querySelector("[data-stat='attack'][data-stat-delta='1']");
+  (selectedWeapon || attackButton || els.stageSelectButton).focus({ preventScroll: true });
 }
 
 function hideGameNotice() {
   els.gameNotice.classList.remove("is-visible", "is-actionable");
   els.gameNotice.setAttribute("aria-hidden", "true");
-  els.difficultyChoices.hidden = true;
 }
 
 function clearNoticeTimer() {
@@ -561,14 +661,14 @@ function scheduleBufferedInputFlush() {
     return;
   }
 
-  state.inputBufferTimerId = window.setTimeout(() => {
+  state.inputBufferTimerId = scheduleBattleTimeout(() => {
     state.inputBufferTimerId = 0;
     flushBufferedInput();
   }, inputBufferRetryMs);
 }
 
 function enqueueBufferedInput(action, value = "") {
-  if (!state.running) {
+  if (!state.running || state.specialInProgress || isUnarmedStory() || isStoryDialogueOpen()) {
     return;
   }
 
@@ -600,7 +700,7 @@ function applyBufferedInputEntry(enemy, entry) {
 }
 
 function flushBufferedInput() {
-  if (!state.running) {
+  if (!state.running || isStoryDialogueOpen()) {
     clearInputBuffer();
     return;
   }
@@ -632,20 +732,19 @@ function flushBufferedInput() {
 }
 
 function showGameNotice(kind, kicker, title, text, options = {}) {
-  const { persistent = false, duration = 900, choices = false } = options;
+  const { persistent = false, duration = 900 } = options;
 
   clearNoticeTimer();
   els.gameNotice.dataset.kind = kind;
   els.noticeKicker.textContent = kicker;
   els.noticeTitle.textContent = title;
   els.noticeText.textContent = text;
-  els.difficultyChoices.hidden = !choices;
-  els.gameNotice.classList.toggle("is-actionable", persistent || choices);
+  els.gameNotice.classList.toggle("is-actionable", persistent);
   els.gameNotice.classList.add("is-visible");
   els.gameNotice.setAttribute("aria-hidden", "false");
 
-  if (!persistent && !choices) {
-    state.noticeTimerId = window.setTimeout(() => {
+  if (!persistent) {
+    state.noticeTimerId = scheduleBattleTimeout(() => {
       state.noticeTimerId = 0;
       if (state.running) {
         hideGameNotice();
@@ -655,30 +754,232 @@ function showGameNotice(kind, kicker, title, text, options = {}) {
   }
 }
 
-function syncDifficultyButtons() {
-  els.difficultyChoices.querySelectorAll("[data-difficulty]").forEach((button) => {
-    const mode = getDifficultyMode(button.dataset.difficulty);
-    button.disabled = !mode.enabled;
-    button.setAttribute("aria-disabled", String(!mode.enabled));
-    button.classList.toggle("is-selected", mode.enabled && button.dataset.difficulty === state.difficulty);
+function isStoryDialogueOpen() {
+  return state.storyPhase === "encounter" || state.storyPhase === "weapon-offer";
+}
+
+function isUnarmedStory() {
+  return ["encounter", "unarmed", "weapon-offer"].includes(state.storyPhase);
+}
+
+function setStoryPhase(phase) {
+  state.storyPhase = phase;
+  const dialogueOpen = isStoryDialogueOpen();
+  els.battleScreen.dataset.storyPhase = phase;
+  els.storyDialog.hidden = !dialogueOpen;
+  els.storyItem.hidden = phase !== "weapon-offer";
+  els.typingBox.hidden = dialogueOpen;
+  els.storyText.textContent = phase === "encounter" ? "敵が現れた！" : phase === "weapon-offer" ? "これを使って！" : "";
+}
+
+function showStoryDialogue(phase) {
+  setStoryPhase(phase);
+  cancelAnimationFrame(state.rafId);
+  clearInputBuffer();
+  clearEnemyAnimationTimers();
+  updateHud();
+  renderWord();
+  els.storyNextButton.focus({ preventScroll: true });
+}
+
+function advanceStory() {
+  if (!state.running || !isStoryDialogueOpen()) return;
+  clearInputBuffer();
+
+  if (state.storyPhase === "encounter") {
+    setStoryPhase("unarmed");
+    spawnNextEnemy();
+  } else {
+    setStoryPhase("armed");
+    clearPlayerAttackAnimation();
+    state.weaponId = getStageDefinition(state.stageId).storyIntro.weaponId;
+    state.introCompleted = true;
+    state.activeEnemies.forEach((enemy) => {
+      enemy.weaponId = state.weaponId;
+      enemy.resolving = false;
+      enemy.nextAttackAt = performance.now() + repeatAttackMs;
+      setNextWord(enemy);
+      playEnemyAnimation(enemy, "idle");
+    });
+    setTargetEnemy(getCurrentEnemy());
+    savePlayerProgress();
+  }
+
+  updateHud();
+  startLoop();
+  focusGameSurface();
+}
+
+function syncStageButtons() {
+  els.stageChoices.querySelectorAll("[data-stage]").forEach((button) => {
+    const stageId = button.dataset.stage;
+    const stage = stageDefinitions[stageId];
+    const isEnabled = Boolean(stage?.enabled);
+    const isSelected = isEnabled && stageId === state.pendingStageId;
+    const code = button.querySelector(".stage-code");
+    const name = button.querySelector(".stage-name");
+    const meta = button.querySelector(".stage-meta");
+
+    button.disabled = !isEnabled;
+    button.setAttribute("aria-disabled", String(!isEnabled));
+    button.setAttribute("aria-controls", "stageConfirm");
+    button.setAttribute("aria-expanded", String(isSelected));
+    button.classList.toggle("is-selected", isSelected);
+
+    if (!stage) {
+      button.setAttribute("aria-label", "利用できないステージ");
+      return;
+    }
+
+    button.setAttribute("aria-label", [stage.code, stage.name, isEnabled ? "" : stage.meta].filter(Boolean).join(" "));
+
+    if (code) {
+      code.textContent = stage.code;
+    }
+
+    if (name) {
+      name.textContent = stage.name;
+    }
+
+    if (meta) {
+      meta.textContent = stage.meta;
+    }
   });
 }
 
-function showDifficultySelect() {
-  const t = labels();
+function hideStageConfirm() {
+  state.pendingStageId = "";
+  els.stageConfirm.hidden = true;
+  syncStageButtons();
+}
+
+function cancelPendingStageSelection() {
+  const selectedStageId = state.pendingStageId;
+  const selectedStageButton = [...els.stageChoices.querySelectorAll(".stage-choice[data-stage]")].find(
+    (button) => button.dataset.stage === selectedStageId && !button.disabled,
+  );
+
+  hideStageConfirm();
+  (selectedStageButton || els.stageChoices.querySelector(".stage-choice:not(:disabled)") || els.statusButton).focus({
+    preventScroll: true,
+  });
+}
+
+function showStageConfirm(stageId) {
+  const stage = stageDefinitions[stageId];
+
+  if (!stage?.enabled) {
+    return;
+  }
+
+  state.pendingStageId = stageId;
+  els.stageConfirmName.textContent = stage.name;
+  els.stageConfirmMeta.textContent = stage.meta;
+  els.stageConfirm.hidden = false;
+  syncStageButtons();
+  els.stageConfirmStart.focus({ preventScroll: true });
+}
+
+function startConfirmedStage() {
+  const stageId = state.pendingStageId;
+  const stage = stageDefinitions[stageId];
+
+  if (!stage?.enabled) {
+    return;
+  }
+
+  hideStageConfirm();
+  startGame(stageId);
+}
+
+function showStartScreen() {
+  setStoryPhase("none");
+  invalidateBattleGeneration();
   state.running = false;
+  state.pendingStageId = "";
   cancelAnimationFrame(state.rafId);
   clearStartDelayTimer();
   clearInputBuffer();
+  clearPlayerAttackAnimation();
   clearNoticeTimer();
   clearSpecialEffect();
   clearBossIntro();
   clearEnemies();
+  hideGameNotice();
   updateLanguageText();
   updateHud();
-  updateTypingStatus();
-  syncDifficultyButtons();
-  showGameNotice("difficulty", t.chooseKicker, t.chooseTitle, t.chooseText, { choices: true });
+  syncStageButtons();
+  els.stageConfirm.hidden = true;
+  showScreen("start");
+  focusStartSurface();
+}
+
+function showStageSelect() {
+  setStoryPhase("none");
+  state.pendingExperience = 0;
+  invalidateBattleGeneration();
+  state.running = false;
+  state.pendingStageId = "";
+  state.hp = getMaxHp();
+  cancelAnimationFrame(state.rafId);
+  clearStartDelayTimer();
+  clearInputBuffer();
+  clearPlayerAttackAnimation();
+  clearNoticeTimer();
+  clearSpecialEffect();
+  clearBossIntro();
+  clearEnemies();
+  hideGameNotice();
+  updateLanguageText();
+  updateHud();
+  syncStageButtons();
+  els.stageConfirm.hidden = true;
+  showScreen("stage");
+  focusStageSurface();
+}
+
+function showStatusScreen() {
+  setStoryPhase("none");
+  invalidateBattleGeneration();
+  state.running = false;
+  state.pendingStageId = "";
+  cancelAnimationFrame(state.rafId);
+  clearStartDelayTimer();
+  clearInputBuffer();
+  clearPlayerAttackAnimation();
+  clearNoticeTimer();
+  clearSpecialEffect();
+  clearBossIntro();
+  clearEnemies();
+  hideGameNotice();
+  updateLanguageText();
+  updateStatusPanel();
+  els.stageConfirm.hidden = true;
+  syncStageButtons();
+  showScreen("status");
+  focusStatusSurface();
+}
+
+function changePlayerStat(stat, delta) {
+  if (state.running || delta !== 1 || !progression.upgrade(state, stat)) return false;
+  savePlayerProgress();
+  els.skillFeedback.textContent = stat === "attack"
+    ? `攻撃力が ${state.stats.attack} になりました。スキルポイントを1使いました。`
+    : `俊敏性が ${state.stats.agility} になりました。入力文字数の範囲が短くなります。`;
+  updateHud();
+  return true;
+}
+
+function selectWeapon(weaponId) {
+  if (state.running || (!state.introCompleted && weaponId !== defaultWeaponId) || !Object.hasOwn(weaponDefinitions, weaponId) || state.weaponId === weaponId) {
+    updateStatusPanel();
+    return;
+  }
+
+  state.weaponId = weaponId;
+  savePlayerProgress();
+  updateHud();
+  renderWord();
 }
 
 function interruptGame() {
@@ -687,9 +988,7 @@ function interruptGame() {
   }
 
   resetGame();
-  const t = labels();
-  setMessage(t.interruptedTitle, t.interruptedText);
-  showDifficultySelect();
+  showStageSelect();
 }
 
 function getEnemyFrames(enemyType, animationName) {
@@ -740,7 +1039,9 @@ function playEnemyAnimation(enemy, animationName, options = {}) {
   enemy.sprite.dataset.animation = animationName;
   updateEnemyFrame(enemy);
 
-  if (frames.length > 1) {
+  const prefersReducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
+  if (frames.length > 1 && !prefersReducedMotion) {
     enemy.frameTimerId = window.setInterval(() => {
       if (!loop && enemy.frameIndex >= frames.length - 1) {
         window.clearInterval(enemy.frameTimerId);
@@ -754,10 +1055,22 @@ function playEnemyAnimation(enemy, animationName, options = {}) {
   }
 
   if (duration > 0) {
-    enemy.returnTimerId = window.setTimeout(() => {
+    enemy.returnTimerId = scheduleBattleTimeout(() => {
       playEnemyAnimation(enemy, next);
     }, duration);
   }
+}
+
+function stopEnemyWalkingAnimation(enemy) {
+  if (enemy.animation === "idle" && enemy.frameTimerId === 0 && enemy.frameIndex === 0) {
+    return;
+  }
+
+  clearEnemyAnimationTimers(enemy);
+  enemy.animation = "idle";
+  enemy.frameIndex = 0;
+  enemy.sprite.dataset.animation = "idle";
+  updateEnemyFrame(enemy);
 }
 
 function playTypingShakeEffect(enemy) {
@@ -765,10 +1078,76 @@ function playTypingShakeEffect(enemy) {
   enemy.element.classList.remove("typing-shake");
   void enemy.element.offsetWidth;
   enemy.element.classList.add("typing-shake");
-  enemy.typingShakeTimerId = window.setTimeout(() => {
+  enemy.typingShakeTimerId = scheduleBattleTimeout(() => {
     enemy.typingShakeTimerId = 0;
     enemy.element.classList.remove("typing-shake");
   }, 130);
+}
+
+function clearGreatswordImpact() {
+  window.clearTimeout(state.greatswordImpactDelayTimerId);
+  window.clearTimeout(state.greatswordImpactTimerId);
+  state.greatswordImpactDelayTimerId = 0;
+  state.greatswordImpactTimerId = 0;
+  els.greatswordImpact.classList.remove("is-active");
+  els.arena.classList.remove("is-greatsword-impact");
+  els.player.classList.remove("is-perfect-release");
+}
+
+function positionGreatswordImpact(enemy) {
+  const arenaRect = els.arena.getBoundingClientRect();
+  const targetRect = (enemy.sprite || enemy.element).getBoundingClientRect();
+  const impactX = Math.max(28, Math.min(arenaRect.width - 28, targetRect.left + targetRect.width * 0.5 - arenaRect.left));
+  const impactY = Math.max(28, Math.min(arenaRect.height - 28, targetRect.top + targetRect.height * 0.58 - arenaRect.top));
+  els.greatswordImpact.style.setProperty("--greatsword-impact-x", `${impactX}px`);
+  els.greatswordImpact.style.setProperty("--greatsword-impact-y", `${impactY}px`);
+}
+
+function playGreatswordImpact(enemy) {
+  state.greatswordImpactDelayTimerId = scheduleBattleTimeout(() => {
+    state.greatswordImpactDelayTimerId = 0;
+
+    if (!state.running || !enemy?.element?.isConnected) {
+      return;
+    }
+
+    positionGreatswordImpact(enemy);
+    els.greatswordImpact.classList.remove("is-active");
+    els.arena.classList.remove("is-greatsword-impact");
+    void els.greatswordImpact.offsetWidth;
+    els.greatswordImpact.classList.add("is-active");
+    els.arena.classList.add("is-greatsword-impact");
+    state.greatswordImpactTimerId = scheduleBattleTimeout(() => {
+      state.greatswordImpactTimerId = 0;
+      els.greatswordImpact.classList.remove("is-active");
+      els.arena.classList.remove("is-greatsword-impact");
+    }, greatswordImpactMs);
+  }, greatswordImpactDelayMs);
+}
+
+function playPlayerAttackAnimation(enemy, isPerfectGreatsword = false) {
+  window.clearTimeout(state.playerAttackTimerId);
+  clearGreatswordImpact();
+  els.player.classList.remove("is-attacking");
+  void els.player.offsetWidth;
+  els.player.classList.add("is-attacking");
+  els.player.classList.toggle("is-perfect-release", isPerfectGreatsword);
+
+  if (isPerfectGreatsword) {
+    playGreatswordImpact(enemy);
+  }
+
+  state.playerAttackTimerId = scheduleBattleTimeout(() => {
+    state.playerAttackTimerId = 0;
+    els.player.classList.remove("is-attacking", "is-perfect-release");
+  }, playerAttackMs);
+}
+
+function clearPlayerAttackAnimation() {
+  window.clearTimeout(state.playerAttackTimerId);
+  state.playerAttackTimerId = 0;
+  els.player.classList.remove("is-attacking", "is-perfect-release");
+  clearGreatswordImpact();
 }
 
 function playSpecialEffect() {
@@ -776,7 +1155,7 @@ function playSpecialEffect() {
   els.specialEffect.classList.remove("is-active");
   void els.specialEffect.offsetWidth;
   els.specialEffect.classList.add("is-active");
-  state.specialEffectTimerId = window.setTimeout(() => {
+  state.specialEffectTimerId = scheduleBattleTimeout(() => {
     state.specialEffectTimerId = 0;
     els.specialEffect.classList.remove("is-active");
   }, 680);
@@ -785,6 +1164,7 @@ function playSpecialEffect() {
 function clearSpecialEffect() {
   window.clearTimeout(state.specialEffectTimerId);
   state.specialEffectTimerId = 0;
+  state.specialInProgress = false;
   els.specialEffect.classList.remove("is-active");
 }
 
@@ -800,9 +1180,8 @@ function playBossIntro(enemy) {
   void els.bossIntro.offsetWidth;
   els.bossIntro.classList.add("is-active");
   enemy.element.classList.add("boss-entry");
-  setMessage(t.bossTitle, t.bossText);
 
-  state.bossIntroTimerId = window.setTimeout(() => {
+  state.bossIntroTimerId = scheduleBattleTimeout(() => {
     state.bossIntroTimerId = 0;
     els.bossIntro.classList.remove("is-active");
     enemy.element.classList.remove("boss-entry");
@@ -829,6 +1208,15 @@ function preloadEnemyFrames() {
   });
 }
 
+function preloadPlayerFrames() {
+  Object.values(playerWeaponAssets).forEach((weapon) => {
+    Object.values(weapon).flat().forEach((src) => {
+      const image = new Image();
+      image.src = src;
+    });
+  });
+}
+
 function renderWord() {
   const selectedEnemy = getCurrentEnemy();
 
@@ -836,14 +1224,14 @@ function renderWord() {
     els.wordTranslation.textContent = state.running ? "" : state.currentTranslation;
     els.typedWord.textContent = "";
     els.remainingWord.textContent = state.running ? "" : state.currentMatchedWord;
-    updateTypingStatus();
+    updateWeaponCharge();
     return;
   }
 
   els.wordTranslation.textContent = selectedEnemy.translation;
   els.typedWord.textContent = selectedEnemy.typed;
   els.remainingWord.textContent = selectedEnemy.matchedWord.slice(selectedEnemy.typed.length);
-  updateTypingStatus();
+  updateWeaponCharge();
 }
 
 function toShortestJapaneseInput(input) {
@@ -898,11 +1286,40 @@ function getWordInputs(word) {
   return createJapaneseInputVariants(word.text);
 }
 
+function getShortestWordInputLength(word) {
+  return getWordInputs(word).reduce(
+    (shortestLength, input) => Math.min(shortestLength, input.length),
+    word.text.length,
+  );
+}
+
 function chooseWord(options = {}) {
-  const { minLength = 0 } = options;
-  const wordList = words();
-  const eligibleWords = minLength > 0 ? wordList.filter((word) => word.text.length >= minLength) : wordList;
-  const poolBase = eligibleWords.length ? eligibleWords : wordList;
+  const { minLength = 0, maxLength = Infinity, useShortestInputLength = false } = options;
+  const normalizedMinLength = Math.max(0, Math.round(minLength));
+  const normalizedMaxLength = Number.isFinite(maxLength)
+    ? Math.max(normalizedMinLength, Math.round(maxLength))
+    : Infinity;
+  const wordList = options.wordList || words();
+  const getSelectionLength = useShortestInputLength
+    ? getShortestWordInputLength
+    : (word) => word.text.length;
+  const measuredWords = wordList.map((word) => ({ word, length: getSelectionLength(word) }));
+  const eligibleWords = measuredWords
+    .filter(({ length }) => length >= normalizedMinLength && length <= normalizedMaxLength)
+    .map(({ word }) => word);
+  const minimumOnlyWords = measuredWords
+    .filter(({ length }) => length >= normalizedMinLength)
+    .map(({ word }) => word);
+  const longestLength = Math.max(...measuredWords.map(({ length }) => length));
+  const longestWords = measuredWords
+    .filter(({ length }) => length === longestLength)
+    .map(({ word }) => word);
+  const fallbackWords = useShortestInputLength ? longestWords : wordList;
+  const poolBase = eligibleWords.length
+    ? eligibleWords
+    : minimumOnlyWords.length
+      ? minimumOnlyWords
+      : fallbackWords;
   const unusedWords = poolBase.filter((word) => !state.usedWords.includes(word.text));
   const pool = unusedWords.length ? unusedWords : poolBase;
   const next = pool[Math.floor(Math.random() * pool.length)];
@@ -930,6 +1347,7 @@ function getCurrentEnemy() {
 }
 
 function getInputEnemy() {
+  if (isStoryDialogueOpen()) return null;
   const selectedEnemy = getSelectedEnemy();
 
   if (selectedEnemy && selectedEnemy.hp > 0 && !selectedEnemy.resolving) {
@@ -937,6 +1355,25 @@ function getInputEnemy() {
   }
 
   return state.activeEnemies.find((enemy) => enemy.hp > 0 && !enemy.resolving) || null;
+}
+
+function normalizeAttackPower(attackPower = defaultEnemyAttackPower) {
+  if (typeof attackPower === "number") {
+    const max = Math.max(1, Math.round(attackPower));
+
+    return { min: 1, max };
+  }
+
+  const min = Math.max(1, Math.round(attackPower.min ?? defaultEnemyAttackPower.min));
+  const max = Math.max(min, Math.round(attackPower.max ?? defaultEnemyAttackPower.max));
+
+  return { min, max };
+}
+
+function rollAttackDamage(attackPower) {
+  const { min, max } = normalizeAttackPower(attackPower);
+
+  return min + Math.floor(Math.random() * (max - min + 1));
 }
 
 function getEnemyTypeForWave(wave, index) {
@@ -1011,13 +1448,23 @@ function setTargetEnemy(enemy) {
 }
 
 function setNextWord(enemy) {
-  const wordLength = getWordLengthSettings();
-  const next = chooseWord({ minLength: enemy.boss ? wordLength.bossMin : wordLength.normalMin });
+  const weapon = getWeaponDefinition(enemy.weaponId);
+  const wordLength = getAdjustedWordLengthSettings(weapon.id);
+  const next = weapon.id === "unarmed"
+    ? { text: "a", translation: "あ" }
+    : chooseWord({
+      minLength: enemy.boss ? wordLength.bossMin : wordLength.normalMin,
+      maxLength: enemy.boss ? wordLength.bossMax : wordLength.normalMax,
+      useShortestInputLength: Boolean(weapon.useShortestInputLength),
+      wordList: weapon.words,
+    });
   enemy.word = next.text;
   enemy.inputs = getWordInputs(next);
   enemy.matchedWord = enemy.inputs[0] || next.text;
   enemy.translation = next.translation;
   enemy.bestLength = 0;
+  enemy.typingMisses = 0;
+  enemy.chargeStartLength = 0;
   enemy.typed = "";
   updateEnemyWordLabel(enemy);
 }
@@ -1029,13 +1476,19 @@ function createEnemy(wave, index) {
     slot: 0,
     maxHp: wave.hp,
     hp: wave.hp,
+    attackPower: normalizeAttackPower(wave.attackPower),
     boss: Boolean(wave.boss),
+    experience: wave.experience ?? Math.max(1, Math.round(wave.hp * (wave.boss ? 10 : 5))),
+    experienceCounted: false,
+    weaponId: getBattleWeaponId(),
     word: "",
     inputs: [],
     matchedWord: "",
     translation: "",
     typed: "",
     bestLength: 0,
+    typingMisses: 0,
+    chargeStartLength: 0,
     progress: 0,
     atBase: false,
     resolving: false,
@@ -1091,7 +1544,7 @@ function addEnemyToWave(wave, index) {
 function spawnNextEnemy() {
   const wave = chooseEnemyWave();
 
-  if (!state.running || !wave) {
+  if (!state.running || isStoryDialogueOpen() || !wave) {
     return;
   }
 
@@ -1117,7 +1570,7 @@ function queueNextEnemy() {
     state.currentWaveSpawned = 0;
   }
 
-  window.setTimeout(() => {
+  scheduleBattleTimeout(() => {
     if (state.running) {
       spawnNextEnemy();
     }
@@ -1135,7 +1588,7 @@ function removeEnemy(enemy) {
 }
 
 function enemyLoop(now) {
-  if (!state.running) {
+  if (!state.running || isStoryDialogueOpen()) {
     return;
   }
 
@@ -1148,8 +1601,13 @@ function enemyLoop(now) {
     if (enemy.atBase) {
       setEnemyProgress(enemy, 1);
 
-      if (now >= enemy.nextAttackAt) {
+      if (!enemy.resolving && now >= enemy.nextAttackAt) {
         enemyAttack(enemy);
+        return;
+      }
+
+      if (!enemy.resolving) {
+        stopEnemyWalkingAnimation(enemy);
       }
 
       return;
@@ -1179,38 +1637,43 @@ function startLoop() {
 }
 
 function enemyAttack(enemy) {
-  const t = labels();
+  if (!state.running || isStoryDialogueOpen()) return;
   enemy.resolving = true;
   enemy.atBase = true;
-  state.hp -= 1;
+  const damage = rollAttackDamage(enemy.attackPower);
+  state.hp = Math.max(0, state.hp - damage);
   state.combo = 0;
   resetSuccessStreak();
   state.perfect = false;
   enemy.element.classList.add("attack");
-  playEnemyAnimation(enemy, "attack", { duration: 360, loop: false });
+  playEnemyAnimation(enemy, "attack", { loop: false });
   updateHud();
 
   if (state.hp <= 0) {
-    window.setTimeout(() => finishGame(false), 320);
+    scheduleBattleTimeout(() => finishGame(false), 320);
     return;
   }
 
-  setMessage(t.attackedTitle, t.attackedText);
-  window.setTimeout(() => {
+  scheduleBattleTimeout(() => {
     if (state.running) {
       enemy.resolving = false;
       enemy.nextAttackAt = performance.now() + repeatAttackMs;
       enemy.element.classList.remove("attack");
+      stopEnemyWalkingAnimation(enemy);
+      updateHud();
       flushBufferedInput();
     }
   }, 360);
 }
 
 function damageEnemy(enemy) {
-  const t = labels();
+  if (!state.running || isStoryDialogueOpen() || enemy.resolving) return;
+  const damage = getPlayerAttackDamage(enemy);
+  const isPerfectGreatsword = enemy.weaponId === "greatsword" && enemy.typingMisses === 0;
+  playPlayerAttackAnimation(enemy, isPerfectGreatsword);
   enemy.resolving = true;
   enemy.atBase = false;
-  enemy.hp -= 1;
+  enemy.hp = Math.max(0, Math.round((enemy.hp - damage) * 10) / 10);
   state.combo += 1;
   state.score += 35 + state.combo * 10;
   enemy.element.classList.add("hit");
@@ -1220,8 +1683,28 @@ function damageEnemy(enemy) {
   updateEnemyHud(enemy);
   updateHud();
 
+  if (enemy.weaponId === "unarmed") {
+    state.storyPunches += 1;
+    clearInputBuffer();
+    scheduleBattleTimeout(() => {
+      if (!state.running || state.storyPhase !== "unarmed") return;
+      enemy.element.classList.remove("hit");
+      playEnemyAnimation(enemy, "idle");
+      if (state.storyPunches >= getStageDefinition(state.stageId).storyIntro.punches) {
+        showStoryDialogue("weapon-offer");
+      } else {
+        enemy.resolving = false;
+        enemy.lastTick = performance.now();
+        setNextWord(enemy);
+        setTargetEnemy(enemy);
+        updateHud();
+      }
+    }, playerAttackMs);
+    return;
+  }
+
   if (enemy.hp <= 0) {
-    window.setTimeout(() => {
+    scheduleBattleTimeout(() => {
       if (state.running) {
         defeatEnemy(enemy);
       }
@@ -1229,8 +1712,7 @@ function damageEnemy(enemy) {
     return;
   }
 
-  setMessage(t.hitTitle, t.hitText(enemy.hp));
-  window.setTimeout(() => {
+  scheduleBattleTimeout(() => {
     if (state.running) {
       enemy.element.classList.remove("hit");
       enemy.resolving = false;
@@ -1238,22 +1720,24 @@ function damageEnemy(enemy) {
       setTargetEnemy(enemy);
       enemy.lastTick = performance.now();
       playEnemyAnimation(enemy, "idle");
+      updateHud();
       flushBufferedInput();
     }
   }, 220);
 }
 
 function useSpecialMove() {
-  if (!state.running || !isSpecialReady() || !state.activeEnemies.length) {
+  if (!state.running || state.specialInProgress || !isSpecialReady() || !state.activeEnemies.length) {
     return false;
   }
 
-  const t = labels();
   const targets = state.activeEnemies.filter((enemy) => enemy.hp > 0);
-  if (!targets.length) {
+  if (!targets.length || targets.some((enemy) => enemy.resolving)) {
     updateHud();
     return false;
   }
+  clearInputBuffer();
+  state.specialInProgress = true;
   const { streakCap } = getSpecialGaugeSettings();
   state.specialGauge = 0;
   state.score += targets.length * 120 + Math.min(state.successStreak, streakCap) * 20;
@@ -1274,8 +1758,10 @@ function useSpecialMove() {
 
   const remainingEnemies = targets.filter((enemy) => enemy.hp > 0);
   if (!remainingEnemies.length) {
-    window.setTimeout(() => {
+    scheduleBattleTimeout(() => {
       if (state.running) {
+        clearInputBuffer();
+        state.specialInProgress = false;
         targets.forEach((enemy) => {
           enemy.element.classList.remove("special");
           defeatEnemy(enemy);
@@ -1285,9 +1771,10 @@ function useSpecialMove() {
     return true;
   }
 
-  setMessage(t.specialTitle, t.specialAllText(targets.length));
-  window.setTimeout(() => {
+  scheduleBattleTimeout(() => {
     if (state.running) {
+      clearInputBuffer();
+      state.specialInProgress = false;
       remainingEnemies.forEach((enemy) => {
         enemy.element.classList.remove("special");
         enemy.resolving = false;
@@ -1296,6 +1783,7 @@ function useSpecialMove() {
         playEnemyAnimation(enemy, "idle");
       });
       setTargetEnemy(remainingEnemies[0]);
+      updateHud();
       flushBufferedInput();
       targets.filter((enemy) => enemy.hp <= 0).forEach((enemy) => {
         enemy.element.classList.remove("special");
@@ -1308,8 +1796,7 @@ function useSpecialMove() {
 }
 
 function defeatEnemy(enemy) {
-  const t = labels();
-  if (!state.activeEnemies.includes(enemy)) {
+  if (!state.running || !state.activeEnemies.includes(enemy) || enemy.hp > 0 || enemy.experienceCounted) {
     return;
   }
 
@@ -1317,22 +1804,24 @@ function defeatEnemy(enemy) {
   if (state.selectedEnemyId === enemy.id) {
     setTargetEnemy(null);
   }
+  enemy.experienceCounted = true;
+  state.pendingExperience += enemy.experience;
   state.cleared += 1;
   state.score += 120 + state.combo * 20;
   enemy.element.classList.remove("hit", "special", "typing-shake");
   enemy.element.classList.add("defeating");
-  playEnemyAnimation(enemy, "defeat", { duration: 520, loop: false });
+  playEnemyAnimation(enemy, "defeat", { loop: false });
   updateHud();
 
   if (state.cleared >= state.roundLimit) {
-    window.setTimeout(() => finishGame(true), 620);
+    scheduleBattleTimeout(() => finishGame(true), 620);
     return;
   }
 
-  setMessage(t.defeatedTitle, t.defeatedText(state.roundLimit - state.cleared));
-  window.setTimeout(() => {
+  scheduleBattleTimeout(() => {
     if (state.running) {
       removeEnemy(enemy);
+      updateHud();
       if (!state.activeEnemies.length) {
         queueNextEnemy();
       } else {
@@ -1344,40 +1833,67 @@ function defeatEnemy(enemy) {
 }
 
 function finishGame(cleared) {
+  if (!state.running || (cleared && state.cleared < state.roundLimit)) {
+    return;
+  }
+
+  setStoryPhase("none");
   const t = labels();
+  const noDamageClear = state.perfect && state.hp === getMaxHp();
+  invalidateBattleGeneration();
   state.running = false;
   cancelAnimationFrame(state.rafId);
   clearStartDelayTimer();
   clearInputBuffer();
+  clearPlayerAttackAnimation();
   clearEnemyAnimationTimers();
   clearSpecialEffect();
   clearBossIntro();
   els.startButton.textContent = t.start;
+
+  let resultText = "獲得経験値 0 EXP";
+  if (cleared) {
+    const previousLevel = state.level;
+    const reward = progression.gainExperience(state, state.pendingExperience);
+    state.battleExperience = reward.gained;
+    state.battleLevelsGained = reward.levels;
+    state.hp = Math.min(getMaxHp(), state.hp + reward.hpGained);
+    resultText = `獲得経験値 ${reward.gained} EXP`;
+    if (reward.levels > 0) {
+      resultText += `\nレベルアップ！ Lv.${previousLevel} → Lv.${state.level}`;
+      resultText += `\n最大HP +${reward.hpGained} ／ スキルポイント +${reward.levels * progression.rules.pointsPerLevel}`;
+    }
+    savePlayerProgress();
+  }
+  state.pendingExperience = 0;
   updateHud();
 
   if (!cleared) {
-    setMessage(t.gameOverTitle, t.gameOverText(state.score));
-    showGameNotice("over", "GAME OVER", t.gameOverTitle, `${t.score} ${state.score}`, { persistent: true });
-    return;
-  }
-
-  const noDamageClear = state.perfect && state.hp === maxHp;
-
-  if (noDamageClear) {
-    setMessage(t.perfectTitle, t.perfectText(state.score));
-    showGameNotice("clear", "PERFECT", t.perfectTitle, t.perfectText(state.score), { persistent: true });
+    showGameNotice("over", "GAME OVER", t.gameOverTitle, resultText, { persistent: true });
   } else {
-    setMessage(t.clearTitle, t.clearText(state.score));
-    showGameNotice("clear", "CLEAR", t.clearTitle, `${t.score} ${state.score}`, { persistent: true });
+    showGameNotice(
+      "clear",
+      noDamageClear ? "PERFECT" : "CLEAR",
+      noDamageClear ? t.perfectTitle : t.clearTitle,
+      resultText,
+      { persistent: true },
+    );
   }
 }
 
 function resetGame() {
-  const t = labels();
+  state.storyPunches = 0;
+  setStoryPhase("none");
+  invalidateBattleGeneration();
   state.running = false;
+  state.pendingStageId = "";
   state.language = "ja";
-  state.hp = maxHp;
+  state.hp = getMaxHp();
   state.score = 0;
+  state.pendingExperience = 0;
+  state.battleExperience = 0;
+  state.battleLevelsGained = 0;
+  state.progressNotice = "";
   state.combo = 0;
   resetSuccessStreak();
   state.specialGauge = 0;
@@ -1395,6 +1911,7 @@ function resetGame() {
   cancelAnimationFrame(state.rafId);
   clearStartDelayTimer();
   clearInputBuffer();
+  clearPlayerAttackAnimation();
   clearNoticeTimer();
   clearSpecialEffect();
   clearBossIntro();
@@ -1403,32 +1920,43 @@ function resetGame() {
   updateLanguageText();
   updateHud();
   renderWord();
-  setMessage(t.readyTitle, t.readyText);
 }
 
-function startGame(difficulty = state.difficulty) {
-  const mode = getDifficultyMode(difficulty);
+function startGame(stageId = state.stageId) {
+  const resolvedStageId = stageDefinitions[stageId] ? stageId : defaultStageId;
+  const stage = getStageDefinition(resolvedStageId);
 
-  if (!mode.enabled) {
+  if (!stage.enabled) {
     return;
   }
 
+  invalidateBattleGeneration();
+  const needsIntroduction = Boolean(stage.storyIntro && !state.introCompleted);
+  state.storyPunches = 0;
+  setStoryPhase(needsIntroduction ? "encounter" : "none");
   state.language = "ja";
-  state.difficulty = difficulty;
-  state.playableEnemyWaves = buildPlayableEnemyWaves(mode.waves);
+  state.stageId = resolvedStageId;
+  state.pendingStageId = "";
+  state.playableEnemyWaves = buildPlayableEnemyWaves(stage.waves);
   state.roundLimit = getRoundLimit(state.playableEnemyWaves);
   updateEnemyTypeDataset(state.playableEnemyWaves);
+  showScreen("battle");
 
   const t = labels();
   cancelAnimationFrame(state.rafId);
   clearStartDelayTimer();
   clearInputBuffer();
+  clearPlayerAttackAnimation();
   clearNoticeTimer();
   clearSpecialEffect();
   clearBossIntro();
   state.running = true;
-  state.hp = maxHp;
+  state.hp = getMaxHp();
   state.score = 0;
+  state.pendingExperience = 0;
+  state.battleExperience = 0;
+  state.battleLevelsGained = 0;
+  state.progressNotice = "";
   state.combo = 0;
   resetSuccessStreak();
   state.specialGauge = 0;
@@ -1443,10 +1971,13 @@ function startGame(difficulty = state.difficulty) {
   updateLanguageText();
   els.startButton.textContent = t.restart;
   updateHud();
-  setMessage(t.startedTitle, t.startedText(state.roundLimit));
-  showGameNotice("start", "START", t.startTitle, t.startText, { duration: startNoticeMs });
+  if (needsIntroduction) {
+    showStoryDialogue("encounter");
+    return;
+  }
+  showGameNotice("start", "START", t.startTitle, t.startText(stage.name), { duration: startNoticeMs });
   spawnNextEnemy();
-  state.startDelayTimerId = window.setTimeout(() => {
+  state.startDelayTimerId = scheduleBattleTimeout(() => {
     state.startDelayTimerId = 0;
     if (!state.running) {
       return;
@@ -1461,28 +1992,31 @@ function normalizeTypedValue(value) {
   return value
     .normalize("NFKC")
     .toLowerCase()
-    .replace(/[^a-z]/g, "");
+    .replace(/[^a-z-]/g, "");
 }
 
 function applyTypedValue(enemy, value) {
-  if (!state.running || !enemy || enemy.resolving) {
+  if (!state.running || isStoryDialogueOpen() || !enemy || enemy.resolving) {
     return;
   }
 
-  const t = labels();
   const nextValue = normalizeTypedValue(value);
   const matchedWord = enemy.inputs.find((input) => input.startsWith(nextValue));
 
   if (!matchedWord) {
     state.combo = 0;
     resetSuccessStreak();
+    if (enemy.weaponId === "greatsword") {
+      enemy.typingMisses += 1;
+      enemy.chargeStartLength = enemy.typed.length;
+    }
     updateHud();
-    setMessage(t.missTitle, t.missText);
     return;
   }
 
   const typedMoreCharacters = nextValue.length > enemy.typed.length;
   const newSuccessfulCharacterCount = Math.max(0, nextValue.length - enemy.bestLength);
+  enemy.chargeStartLength = Math.min(enemy.chargeStartLength, nextValue.length);
   enemy.typed = nextValue;
   enemy.matchedWord = matchedWord;
   updateEnemyWordLabel(enemy);
@@ -1501,7 +2035,7 @@ function applyTypedValue(enemy, value) {
   }
 }
 
-function getAsciiLetterFromKey(event) {
+function getTypingCharacterFromKey(event) {
   if (event.altKey || event.ctrlKey || event.metaKey) {
     return "";
   }
@@ -1512,7 +2046,7 @@ function getAsciiLetterFromKey(event) {
 
   if (event.key.length === 1) {
     const normalizedKey = normalizeTypedValue(event.key);
-    return /^[a-z]$/.test(normalizedKey) ? normalizedKey : "";
+    return /^[a-z-]$/.test(normalizedKey) ? normalizedKey : "";
   }
 
   return "";
@@ -1522,33 +2056,40 @@ function isSpaceStartKey(event) {
   return !event.altKey && !event.ctrlKey && !event.metaKey && (event.code === "Space" || event.key === " ");
 }
 
-function getFocusedDifficulty() {
-  const focusedButton = document.activeElement?.closest?.("[data-difficulty]");
-  const focusedMode = focusedButton ? getDifficultyMode(focusedButton.dataset.difficulty) : null;
-
-  if (focusedMode?.enabled) {
-    return focusedButton.dataset.difficulty;
-  }
-
-  return state.difficulty;
+function isStartScreenVisible() {
+  return document.documentElement.dataset.screen === "start";
 }
 
 function handleTypingKeydown(event) {
   if (event.code === "Escape") {
-    if (state.running) {
+    if (!els.stageScreen.hidden && !els.stageConfirm.hidden) {
+      event.preventDefault();
+      cancelPendingStageSelection();
+    } else if (state.running) {
       event.preventDefault();
       interruptGame();
     }
     return;
   }
 
+  if (isStoryDialogueOpen()) {
+    if (event.repeat && (isSpaceStartKey(event) || event.key === "Enter")) event.preventDefault();
+    return;
+  }
+
   if (isSpaceStartKey(event)) {
-    event.preventDefault();
-    if (state.running) {
-      useSpecialMove();
-    } else {
-      startGame(getFocusedDifficulty());
+    if (isStartScreenVisible()) {
+      event.preventDefault();
+      showStageSelect();
+      return;
     }
+
+    if (state.running) {
+      event.preventDefault();
+      useSpecialMove();
+      return;
+    }
+
     return;
   }
 
@@ -1556,7 +2097,7 @@ function handleTypingKeydown(event) {
     return;
   }
 
-  const letter = getAsciiLetterFromKey(event);
+  const letter = getTypingCharacterFromKey(event);
 
   if (letter) {
     event.preventDefault();
@@ -1590,24 +2131,61 @@ function handleTypingKeydown(event) {
   }
 }
 
+els.storyNextButton.addEventListener("click", advanceStory);
 els.specialButton.addEventListener("click", useSpecialMove);
-els.startButton.addEventListener("click", showDifficultySelect);
-els.resetButton.addEventListener("click", () => {
-  resetGame();
-  showDifficultySelect();
-});
-els.noticeButton.addEventListener("click", showDifficultySelect);
-els.difficultyChoices.addEventListener("click", (event) => {
-  const button = event.target.closest("[data-difficulty]");
+els.introStartButton.addEventListener("click", showStageSelect);
+els.statusButton.addEventListener("click", showStatusScreen);
+els.stageSelectButton.addEventListener("click", showStageSelect);
+els.stageConfirmStart.addEventListener("click", startConfirmedStage);
+els.stageConfirmCancel.addEventListener("click", cancelPendingStageSelection);
+els.statusPanel.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-stat][data-stat-delta]");
 
   if (!button || button.disabled) {
     return;
   }
 
-  startGame(button.dataset.difficulty);
+  changePlayerStat(button.dataset.stat, Number(button.dataset.statDelta || 0));
+});
+els.statusPanel.addEventListener("change", (event) => {
+  const input = event.target.closest("input[name='weapon']");
+
+  if (!input) {
+    return;
+  }
+
+  selectWeapon(input.value);
+});
+els.startButton.addEventListener("click", () => {
+  if (state.running) {
+    startGame(state.stageId);
+    return;
+  }
+
+  showStageSelect();
+});
+els.resetButton.addEventListener("click", () => {
+  resetGame();
+  showStageSelect();
+});
+els.noticeButton.addEventListener("click", showStageSelect);
+els.stageChoices.addEventListener("click", (event) => {
+  if (event.target.closest("#stageConfirm")) {
+    return;
+  }
+
+  const button = event.target.closest(".stage-choice[data-stage]");
+  const stage = stageDefinitions[button?.dataset.stage];
+
+  if (!button || button.disabled || !stage?.enabled) {
+    return;
+  }
+
+  showStageConfirm(button.dataset.stage);
 });
 document.addEventListener("keydown", handleTypingKeydown);
 
 preloadEnemyFrames();
+preloadPlayerFrames();
 resetGame();
-showDifficultySelect();
+showStartScreen();

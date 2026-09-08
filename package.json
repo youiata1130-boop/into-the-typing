@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node scripts/serve.mjs",
     "serve": "node scripts/serve.mjs",
-    "check": "node --check src/app/game.js && node --check src/config/enemyAnimations.js"
+    "check": "node scripts/check.mjs",
+    "test": "node --test"
   }
 }

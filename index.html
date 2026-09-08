@@ -4,47 +4,214 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Into the Typing</title>
-    <link rel="stylesheet" href="src/styles/main.css">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='52'%3E%E2%9A%94%EF%B8%8F%3C/text%3E%3C/svg%3E">
+    <link rel="stylesheet" href="src/styles/main.css?v=branch-intro-v1">
   </head>
   <body>
     <main class="game-shell">
-      <section class="ability-panel ability-panel-top" aria-label="必殺技ゲージ">
-        <div class="ability-meter-row">
-          <div class="ability-meter-head">
-            <span id="streakLabel">連続成功</span>
-            <strong id="streakText">0</strong>
-          </div>
-          <div class="ability-meter-track" role="meter" aria-label="Success streak" aria-valuemin="0" aria-valuemax="16" aria-valuenow="0">
-            <i id="streakFill"></i>
-          </div>
+      <section class="start-screen" id="startScreen" aria-label="スタート画面">
+        <div class="start-hero">
+          <span class="start-kicker">TYPING RPG</span>
+          <h1>Into the Typing</h1>
+          <p class="start-copy">言葉の力で敵を迎え撃つタイピングRPG</p>
+          <button class="intro-start-button" id="introStartButton" type="button">スタート</button>
         </div>
-        <div class="ability-meter-row">
-          <div class="ability-meter-head">
-            <span id="specialLabel">必殺技</span>
-            <strong id="specialGaugeText">0%</strong>
+      </section>
+
+      <section class="stage-screen" id="stageScreen" aria-label="ステージ選択" hidden>
+        <header class="stage-screen-head">
+          <div>
+            <span class="stage-kicker">WORLD 1</span>
+            <h1>ステージ選択</h1>
           </div>
-          <div class="ability-meter-track special-meter-track" role="meter" aria-label="Special gauge" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-            <i id="specialGaugeFill"></i>
+          <button class="status-button" id="statusButton" type="button">ステータス</button>
+        </header>
+
+        <div class="stage-map-panel">
+          <picture class="stage-map-art" aria-hidden="true">
+            <source media="(orientation: portrait)" srcset="src/assets/images/backgrounds/stage_map/desk_portrait.jpg">
+            <img src="src/assets/images/backgrounds/stage_map/desk_landscape.jpg" alt="">
+          </picture>
+          <div class="stage-choices" id="stageChoices" role="group" aria-label="クエスト地点">
+            <button class="stage-choice" id="stageChoiceForest" type="button" data-stage="forest_path" aria-label="1-1 はじまりの森" aria-controls="stageConfirm" aria-expanded="false">
+              <span class="stage-circle"><strong class="stage-code">1-1</strong></span>
+              <span class="stage-node-copy" aria-hidden="true">
+                <span class="stage-name">はじまりの森</span>
+                <em class="stage-meta">推奨Lv.1</em>
+              </span>
+            </button>
+            <button class="stage-choice" id="stageChoiceMist" type="button" data-stage="mist_road" aria-label="1-2 霧の古道（準備中）" aria-controls="stageConfirm" aria-expanded="false" disabled aria-disabled="true">
+              <span class="stage-circle"><strong class="stage-code">1-2</strong></span>
+              <span class="stage-node-copy" aria-hidden="true">
+                <span class="stage-name">霧の古道</span>
+                <em class="stage-meta">準備中</em>
+              </span>
+            </button>
+            <button class="stage-choice" id="stageChoiceCastle" type="button" data-stage="sky_castle" aria-label="1-3 天空城（封印中）" aria-controls="stageConfirm" aria-expanded="false" disabled aria-disabled="true">
+              <span class="stage-circle"><strong class="stage-code">1-3</strong></span>
+              <span class="stage-node-copy" aria-hidden="true">
+                <span class="stage-name">天空城</span>
+                <em class="stage-meta">封印中</em>
+              </span>
+            </button>
+          </div>
+          <div class="stage-confirm" id="stageConfirm" role="dialog" aria-labelledby="stageConfirmName" aria-describedby="stageConfirmMeta" hidden>
+            <div class="stage-confirm-copy">
+              <strong id="stageConfirmName">はじまりの森</strong>
+              <em id="stageConfirmMeta">推奨Lv.1</em>
+            </div>
+            <div class="stage-confirm-actions">
+              <button id="stageConfirmStart" type="button">はじめる</button>
+              <button class="stage-confirm-cancel" id="stageConfirmCancel" type="button">選び直す</button>
+            </div>
           </div>
         </div>
       </section>
 
-      <section class="arena" aria-label="戦闘エリア">
+      <section class="status-screen" id="statusScreen" aria-label="ステータス画面" hidden>
+        <header class="status-screen-head">
+          <div>
+            <span class="stage-kicker">HERO</span>
+            <h1>ステータス</h1>
+          </div>
+          <button class="stage-select-button" id="stageSelectButton" type="button">ステージ選択へ</button>
+        </header>
+
+        <div class="status-room-layout">
+          <aside class="status-panel" id="statusPanel" aria-label="ステータス">
+            <div class="status-panel-row">
+              <span>レベル</span>
+              <strong id="levelText">1</strong>
+            </div>
+            <div class="experience-card">
+              <div class="experience-heading"><span>経験値</span><strong id="experienceText">0 / 40 EXP</strong></div>
+              <div class="experience-track" id="experienceMeter" role="progressbar" aria-label="次のレベルまでの経験値" aria-valuemin="0" aria-valuemax="40" aria-valuenow="0"><i id="experienceFill"></i></div>
+              <p id="experienceRemainingText">次のレベルまで 40 EXP ・ 最大HP +10 / スキルポイント +1</p>
+            </div>
+            <div class="status-panel-row skill-points-row">
+              <span>スキルポイント</span>
+              <strong><span id="skillPointsText">0</span> SP</strong>
+            </div>
+            <div class="status-panel-row">
+              <span>体力</span>
+              <strong id="statusHpText">100 / 100</strong>
+            </div>
+            <div class="status-panel-row status-panel-row-control">
+              <div class="status-stat-copy"><span>攻撃力</span><small>1 SPで攻撃力＋1</small></div>
+              <div class="status-stepper" data-stat-control="attack">
+                <strong id="statusAttackText">1</strong>
+                <button type="button" data-stat="attack" data-stat-delta="1" aria-label="1スキルポイントで攻撃力を上げる" disabled>＋1</button>
+              </div>
+            </div>
+            <div class="status-panel-row status-panel-row-control">
+              <div class="status-stat-copy"><span>俊敏性（文字数）</span><small>1 SPで入力範囲を1文字短縮</small></div>
+              <div class="status-stepper" data-stat-control="agility">
+                <strong id="statusAgilityText">1</strong>
+                <button type="button" data-stat="agility" data-stat-delta="1" aria-label="1スキルポイントで俊敏性を上げる" disabled>＋1</button>
+              </div>
+            </div>
+            <div class="status-panel-row word-length-row">
+              <span>選択中ステージの入力範囲</span>
+              <strong id="statusWordLengthText">通常 2〜8文字 / ボス 7〜15文字</strong>
+            </div>
+            <p class="growth-help">ステージクリアで経験値を獲得し、レベルアップで強化できます。</p>
+            <p class="skill-feedback" id="skillFeedback" role="status"></p>
+            <p class="progress-save-status" id="progressSaveStatus">育成状況はこのブラウザに自動保存されます。</p>
+            <fieldset class="weapon-picker" aria-describedby="weaponPickerHelp">
+              <legend>武器を選択</legend>
+              <p id="weaponPickerHelp">クエストへ持っていく武器を選べます。</p>
+              <div class="weapon-options">
+                <label class="weapon-option" for="weaponBranch">
+                  <input id="weaponBranch" type="radio" name="weapon" value="branch" checked aria-labelledby="weaponBranchName" aria-describedby="weaponBranchDescription">
+                  <span class="weapon-option-body">
+                    <span class="weapon-option-head">
+                      <strong id="weaponBranchName">木の枝</strong>
+                      <em>はじめの武器</em>
+                    </span>
+                    <small id="weaponBranchDescription">2〜3文字で攻撃。素手より少し強い。</small>
+                  </span>
+                </label>
+                <label class="weapon-option" for="weaponSword">
+                  <input id="weaponSword" type="radio" name="weapon" value="sword" aria-labelledby="weaponSwordName" aria-describedby="weaponSwordDescription weaponSwordDamage">
+                  <span class="weapon-option-body">
+                    <span class="weapon-option-head">
+                      <strong id="weaponSwordName">片手剣</strong>
+                      <em>安定</em>
+                    </span>
+                    <small id="weaponSwordDescription">今までの剣。短めの言葉で素早く攻撃します。</small>
+                    <b id="weaponSwordDamage">通常ダメージ ×1</b>
+                  </span>
+                </label>
+                <label class="weapon-option" for="weaponGreatsword">
+                  <input id="weaponGreatsword" type="radio" name="weapon" value="greatsword" aria-labelledby="weaponGreatswordName" aria-describedby="weaponGreatswordDescription weaponGreatswordDamage">
+                  <span class="weapon-option-body">
+                    <span class="weapon-option-head">
+                      <strong id="weaponGreatswordName">大剣</strong>
+                      <em>長文・ため</em>
+                    </span>
+                    <small id="weaponGreatswordDescription">長い言葉をためて攻撃。ミスするたびに威力が下がります。</small>
+                    <b id="weaponGreatswordDamage">ノーミスダメージ ×4</b>
+                  </span>
+                </label>
+              </div>
+            </fieldset>
+          </aside>
+        </div>
+      </section>
+
+      <section class="battle-screen" id="battleScreen" aria-label="戦闘画面" hidden>
+        <header class="battle-toolbar">
+          <button id="resetButton" type="button" aria-label="ステージ選択へ戻る"><span aria-hidden="true">←</span> 戻る</button>
+          <section class="battle-progression" aria-label="育成状況">
+            <div class="battle-progression-summary">
+              <strong id="battleLevelText">Lv. 1</strong>
+              <span id="battleExperienceText">0 / 40 EXP</span>
+            </div>
+            <div class="experience-track" id="battleExperienceMeter" role="progressbar" aria-label="戦闘中の経験値" aria-valuemin="0" aria-valuemax="40" aria-valuenow="0"><i id="battleExperienceFill"></i></div>
+            <p id="progressionNotice" role="status" hidden></p>
+          </section>
+        </header>
+        <section class="arena" aria-label="戦闘エリア">
         <div class="sky">
           <div class="cloud cloud-a"></div>
           <div class="cloud cloud-b"></div>
         </div>
         <div class="lane" id="lane">
-          <div class="player" aria-label="拠点">
+          <div class="player" aria-label="プレイヤー剣士">
             <div class="character-hp player-hp">
-              <span>BASE</span>
-              <div class="character-hp-track" id="playerHpTrack" role="meter" aria-label="拠点HP" aria-valuemin="0" aria-valuemax="5" aria-valuenow="5">
+              <span>HP</span>
+              <div class="character-hp-track" id="playerHpTrack" role="meter" aria-label="体力" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100">
                 <i id="playerHpFill"></i>
               </div>
             </div>
-            <img class="home-image" id="homeImage" src="src/assets/images/home/home_01.png" data-normal-src="src/assets/images/home/home_01.png" data-damaged-src="src/assets/images/home/home_damaged.png" data-critical-src="src/assets/images/home/home_critical.png" alt="拠点">
+            <div class="greatsword-charge-effect" aria-hidden="true">
+              <span class="greatsword-charge-aura"></span>
+              <span class="greatsword-charge-ring greatsword-charge-ring-a"></span>
+              <span class="greatsword-charge-ring greatsword-charge-ring-b"></span>
+              <span class="greatsword-charge-spark greatsword-charge-spark-a"></span>
+              <span class="greatsword-charge-spark greatsword-charge-spark-b"></span>
+              <span class="greatsword-charge-spark greatsword-charge-spark-c"></span>
+              <span class="greatsword-charge-spark greatsword-charge-spark-d"></span>
+            </div>
+            <div class="player-art">
+              <img class="player-image player-frame player-frame-idle" id="playerFrameIdle" src="src/assets/images/player/sword/idle/frame_01.png?v=greatsword-charge-v1" alt="剣を構えるプレイヤー剣士">
+              <img class="player-image player-frame player-frame-charge" id="playerFrameCharge" src="src/assets/images/player/greatsword/attack/frame_01.png?v=greatsword-charge-v1" alt="" aria-hidden="true">
+              <img class="player-image player-frame player-frame-windup" id="playerFrameWindup" src="src/assets/images/player/sword/attack/frame_01.png?v=greatsword-charge-v1" alt="">
+              <img class="player-image player-frame player-frame-strike" id="playerFrameStrike" src="src/assets/images/player/sword/attack/frame_02.png?v=greatsword-charge-v1" alt="">
+            </div>
           </div>
           <div class="enemy-layer" id="enemyLayer" aria-label="敵"></div>
+        </div>
+        <div class="greatsword-impact" id="greatswordImpact" aria-hidden="true">
+          <span class="greatsword-impact-flash"></span>
+          <span class="greatsword-impact-slash"></span>
+          <span class="greatsword-impact-ring greatsword-impact-ring-a"></span>
+          <span class="greatsword-impact-ring greatsword-impact-ring-b"></span>
+          <span class="greatsword-impact-spark greatsword-impact-spark-a"></span>
+          <span class="greatsword-impact-spark greatsword-impact-spark-b"></span>
+          <span class="greatsword-impact-spark greatsword-impact-spark-c"></span>
+          <span class="greatsword-impact-spark greatsword-impact-spark-d"></span>
+          <span class="greatsword-impact-spark greatsword-impact-spark-e"></span>
         </div>
         <div class="special-effect" id="specialEffect" aria-hidden="true">
           <span class="special-flash"></span>
@@ -67,35 +234,40 @@
           </div>
         </div>
         <div class="ground"></div>
-        <div class="game-notice" id="gameNotice" data-kind="difficulty" aria-live="polite" aria-hidden="true">
+        <div class="game-notice" id="gameNotice" data-kind="start" aria-live="polite" aria-hidden="true">
           <div class="notice-card">
-            <span class="notice-kicker" id="noticeKicker">難易度</span>
-            <strong id="noticeTitle">難易度を選択</strong>
-            <span id="noticeText">初級と中級をプレイできます。上級は準備中です。</span>
-            <div class="difficulty-choices" id="difficultyChoices">
-              <button class="difficulty-choice" type="button" data-difficulty="beginner">
-                <span>初級</span>
-                <small>レベル1の敵とレベル2のボス</small>
-              </button>
-              <button class="difficulty-choice" type="button" data-difficulty="intermediate">
-                <span>中級</span>
-                <small>少ない敵と長めの単語</small>
-              </button>
-              <button class="difficulty-choice" type="button" data-difficulty="advanced" disabled aria-disabled="true">
-                <span>上級</span>
-                <small>準備中</small>
-              </button>
-            </div>
-            <button id="noticeButton" type="button">もう一度</button>
+            <span class="notice-kicker" id="noticeKicker">START</span>
+            <strong id="noticeTitle">開始</strong>
+            <span id="noticeText">はじまりの森へ向かいます。</span>
+            <button id="noticeButton" type="button">ステージへ</button>
           </div>
         </div>
-      </section>
+        </section>
 
-      <section class="control-panel">
+        <section class="control-panel">
+        <div class="story-dialog" id="storyDialog" role="region" aria-label="会話" hidden>
+          <div class="story-item" id="storyItem" hidden>
+            <img id="storyItemImage" src="src/assets/images/items/weapons/branch.png?v=branch-intro-v1" alt="木の枝">
+            <span>木の枝</span>
+          </div>
+          <p id="storyText" aria-live="polite"></p>
+          <button id="storyNextButton" type="button">次へ <span aria-hidden="true">→</span></button>
+        </div>
         <div class="typing-box" aria-label="入力状況">
-          <span class="typing-label" id="typingLabel">入力</span>
-          <div class="typing-status" id="typingStatus" aria-live="polite">
-            <span class="typing-status-text" id="typingStatusText">待機中</span>
+          <div class="typing-box-head">
+            <span class="typing-label" id="typingLabel">入力</span>
+            <span class="battle-weapon-badge" id="battleWeaponName">片手剣</span>
+          </div>
+          <div class="weapon-charge" id="weaponCharge" hidden>
+            <div class="weapon-charge-head">
+              <span id="weaponChargeText">ため 0 / 1 ・ ミス 0</span>
+              <strong id="weaponDamagePreview">予想 4ダメージ</strong>
+            </div>
+            <div class="weapon-charge-track" id="weaponChargeMeter" role="meter" aria-label="大剣のため" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0">
+              <i id="weaponChargeFill"></i>
+            </div>
+          </div>
+          <div class="typing-status" id="typingStatus" data-weapon="sword" aria-live="polite">
             <span class="word-card typing-word-card">
               <span class="word-translation" id="wordTranslation">はじめ</span>
               <span class="word-target"><span id="typedWord"></span><span id="remainingWord">hajime</span></span>
@@ -116,20 +288,20 @@
           <div class="actions">
             <button id="specialButton" type="button" disabled>必殺技</button>
             <button id="startButton" type="button">スタート</button>
-            <button id="resetButton" type="button" aria-label="戻る">戻</button>
           </div>
         </div>
-      </section>
+        </section>
 
-      <section class="message-panel" id="messagePanel" aria-live="polite">
-        <strong id="messageTitle">準備OK</strong>
-        <span id="messageText">スタートを押して、敵の言葉をタイプしてください。</span>
+        <p class="key-hint" id="keyHint">Spaceキーで必殺技を使えます</p>
       </section>
-
-      <p class="key-hint">Spaceキーで必殺技を使えます</p>
     </main>
 
-    <script src="src/config/enemyAnimations.js"></script>
-    <script src="src/app/game.js"></script>
+    <script src="src/data/words.js?v=branch-intro-v1"></script>
+    <script src="src/data/labels.js?v=folder-layout-v2"></script>
+    <script src="src/config/weapons.js?v=branch-intro-v1"></script>
+    <script src="src/config/stages.js?v=branch-intro-v1"></script>
+    <script src="src/config/enemyAnimations.js?v=greatsword-charge-v1"></script>
+    <script src="src/config/playerProgression.js?v=player-progression-v1"></script>
+    <script src="src/app/game.js?v=branch-intro-v1"></script>
   </body>
 </html>
