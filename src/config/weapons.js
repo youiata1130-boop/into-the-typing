@@ -5,7 +5,7 @@ const weaponDefinitions = {
     name: "木の枝",
     damageMultiplier: 0.2,
     words: wordSets.branch,
-    wordLength: { fixed: true, normalMin: 2, normalMax: 3, bossMin: 2, bossMax: 3 },
+    wordLength: { fixed: true, normalMin: 2, normalMax: 3 },
   },
   sword: {
     id: "sword",
@@ -17,7 +17,6 @@ const weaponDefinitions = {
     name: "大剣",
     wordLength: {
       normalMin: 12,
-      bossMin: 14,
       maxSpan: 8,
     },
     useShortestInputLength: true,

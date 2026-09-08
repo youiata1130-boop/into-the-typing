@@ -20,7 +20,6 @@ const stageDefinitions = {
     storyIntro: { punches: 3, weaponId: "branch" },
     wordLength: {
       normalMin: 0,
-      bossMin: 7,
     },
     specialGauge: {
       chargeStartStreak: 3,
@@ -42,7 +41,6 @@ const stageDefinitions = {
     enabled: false,
     wordLength: {
       normalMin: 9,
-      bossMin: 13,
     },
     specialGauge: {
       streakCap: 50,

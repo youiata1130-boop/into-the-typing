@@ -340,7 +340,6 @@ function getSpecialGaugeSettings() {
 function getWordLengthSettings() {
   return {
     normalMin: 0,
-    bossMin: 7,
     ...(getStageDefinition(state.stageId).wordLength || {}),
   };
 }
@@ -353,34 +352,25 @@ function getAdjustedWordLengthSettings(weaponId = state.weaponId) {
   const base = getWordLengthSettings();
   const reduction = getStatValue("agility") - defaultPlayerStats.agility;
   const normalBaseMax = base.normalMax ?? Math.max(base.normalMin + 8, 8);
-  const bossBaseMax = base.bossMax ?? Math.max(base.bossMin + 8, normalBaseMax + 2);
   let normalMin = base.normalMin;
-  let bossMin = base.bossMin;
   let normalMax = normalBaseMax;
-  let bossMax = bossBaseMax;
   const weaponWordLength = getWeaponDefinition(weaponId).wordLength;
 
   if (weaponWordLength?.fixed) {
     return {
       normalMin: Math.max(2, weaponWordLength.normalMin - reduction),
       normalMax: Math.max(2, weaponWordLength.normalMax - reduction),
-      bossMin: Math.max(2, weaponWordLength.bossMin - reduction),
-      bossMax: Math.max(2, weaponWordLength.bossMax - reduction),
     };
   }
 
   if (weaponWordLength) {
     normalMin = Math.max(normalMin, weaponWordLength.normalMin || 0);
-    bossMin = Math.max(bossMin, weaponWordLength.bossMin || normalMin);
     normalMax = Math.max(normalMax, normalMin + (weaponWordLength.maxSpan || 0));
-    bossMax = Math.max(bossMax, bossMin + (weaponWordLength.maxSpan || 0));
   }
 
   return {
     normalMin: Math.max(2, normalMin - reduction),
     normalMax: Math.max(minimumWordMaxLength, normalMax - reduction),
-    bossMin: Math.max(2, bossMin - reduction),
-    bossMax: Math.max(minimumWordMaxLength, bossMax - reduction),
   };
 }
 
@@ -445,7 +435,7 @@ function updateStatusPanel() {
   els.statusAttackText.textContent = getStatValue("attack");
   els.statusAgilityText.textContent = getStatValue("agility");
   const wordLength = getAdjustedWordLengthSettings();
-  els.statusWordLengthText.textContent = `通常 ${wordLength.normalMin}〜${wordLength.normalMax}文字 / ボス ${wordLength.bossMin}〜${wordLength.bossMax}文字`;
+  els.statusWordLengthText.textContent = `${wordLength.normalMin}〜${wordLength.normalMax}文字`;
   const required = progression.experienceToNextLevel(state.level);
   const atMaxLevel = required === 0;
   const experienceLabel = atMaxLevel ? "MAX" : `${state.experience} / ${required} EXP`;
@@ -1464,8 +1454,8 @@ function setNextWord(enemy) {
   const next = weapon.id === "unarmed"
     ? { text: "a", translation: "あ" }
     : chooseWord({
-      minLength: enemy.boss ? wordLength.bossMin : wordLength.normalMin,
-      maxLength: enemy.boss ? wordLength.bossMax : wordLength.normalMax,
+      minLength: wordLength.normalMin,
+      maxLength: wordLength.normalMax,
       useShortestInputLength: Boolean(weapon.useShortestInputLength),
       wordList: weapon.words,
     });
