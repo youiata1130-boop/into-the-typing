@@ -265,20 +265,25 @@ const els = {
   weaponChargeFill: document.querySelector("#weaponChargeFill"),
   startScreen: document.querySelector("#startScreen"),
   stageScreen: document.querySelector("#stageScreen"),
+  homeScreen: document.querySelector("#homeScreen"),
+  weaponScreen: document.querySelector("#weaponScreen"),
   statusScreen: document.querySelector("#statusScreen"),
+  homeWeaponsButton: document.querySelector("#homeWeaponsButton"),
+  homeStatusButton: document.querySelector("#homeStatusButton"),
+  weaponHomeButton: document.querySelector("#weaponHomeButton"),
+  statusHomeButton: document.querySelector("#statusHomeButton"),
+  weaponPanel: document.querySelector("#weaponPanel"),
   battleScreen: document.querySelector("#battleScreen"),
   introStartButton: document.querySelector("#introStartButton"),
-  statusButton: document.querySelector("#statusButton"),
+  homeButton: document.querySelector("#homeButton"),
   stageSelectButton: document.querySelector("#stageSelectButton"),
   statusPanel: document.querySelector("#statusPanel"),
   levelText: document.querySelector("#levelText"),
   statusHpText: document.querySelector("#statusHpText"),
   experienceText: document.querySelector("#experienceText"),
-  experienceRemainingText: document.querySelector("#experienceRemainingText"),
   experienceMeter: document.querySelector("#experienceMeter"),
   experienceFill: document.querySelector("#experienceFill"),
   skillPointsText: document.querySelector("#skillPointsText"),
-  skillFeedback: document.querySelector("#skillFeedback"),
   progressSaveStatus: document.querySelector("#progressSaveStatus"),
   battleLevelText: document.querySelector("#battleLevelText"),
   battleExperienceText: document.querySelector("#battleExperienceText"),
@@ -440,9 +445,6 @@ function updateStatusPanel() {
   const atMaxLevel = required === 0;
   const experienceLabel = atMaxLevel ? "MAX" : `${state.experience} / ${required} EXP`;
   els.experienceText.textContent = experienceLabel;
-  els.experienceRemainingText.textContent = atMaxLevel
-    ? "最高レベルに到達しました"
-    : `次のレベルまで ${required - state.experience} EXP ・ 最大HP +10 / スキルポイント +1`;
   els.skillPointsText.textContent = state.skillPoints;
   els.battleLevelText.textContent = `Lv. ${state.level}`;
   els.battleExperienceText.textContent = experienceLabel;
@@ -455,15 +457,14 @@ function updateStatusPanel() {
     meter.setAttribute("aria-valuetext", experienceLabel);
     fill.style.width = `${atMaxLevel ? 100 : state.experience / required * 100}%`;
   }
-  els.statusButton.textContent = state.skillPoints > 0 ? `ステータス（SP ${state.skillPoints}）` : "ステータス";
-  els.progressSaveStatus.textContent = progressionSaveAvailable
-    ? "育成状況はこのブラウザに自動保存されます。"
-    : "保存できないため、育成状況はこのページを開いている間だけ保持されます。";
+  els.homeButton.textContent = "ホーム";
+  els.progressSaveStatus.hidden = progressionSaveAvailable;
+  els.progressSaveStatus.textContent = progressionSaveAvailable ? "" : "保存できませんでした。";
   els.progressionNotice.textContent = state.progressNotice;
   els.progressionNotice.hidden = !state.progressNotice;
   document.documentElement.dataset.weapon = activeWeapon.id;
 
-  els.statusPanel.querySelectorAll("input[name='weapon']").forEach((input) => {
+  els.weaponPanel.querySelectorAll("input[name='weapon']").forEach((input) => {
     input.checked = input.value === activeWeapon.id;
     input.disabled = state.running || (!state.introCompleted && input.value !== defaultWeaponId);
   });
@@ -588,6 +589,8 @@ function updateHud() {
 function showScreen(screen) {
   els.startScreen.hidden = screen !== "start";
   els.stageScreen.hidden = screen !== "stage";
+  els.homeScreen.hidden = screen !== "home";
+  els.weaponScreen.hidden = screen !== "weapons";
   els.statusScreen.hidden = screen !== "status";
   els.battleScreen.hidden = screen !== "battle";
   document.documentElement.dataset.screen = screen;
@@ -613,13 +616,7 @@ function focusGameSurface({ userGesture = false } = {}) {
 function focusStageSurface() {
   const focusedStage = els.stageChoices.querySelector(".stage-choice.is-selected:not(:disabled)");
   const firstStage = els.stageChoices.querySelector(".stage-choice:not(:disabled)");
-  (focusedStage || firstStage || els.statusButton).focus({ preventScroll: true });
-}
-
-function focusStatusSurface() {
-  const selectedWeapon = els.statusPanel.querySelector("input[name='weapon']:checked");
-  const attackButton = els.statusPanel.querySelector("[data-stat='attack'][data-stat-delta='1']");
-  (selectedWeapon || attackButton || els.stageSelectButton).focus({ preventScroll: true });
+  (focusedStage || firstStage || els.homeButton).focus({ preventScroll: true });
 }
 
 function hideGameNotice() {
@@ -859,7 +856,7 @@ function cancelPendingStageSelection() {
   );
 
   hideStageConfirm();
-  (selectedStageButton || els.stageChoices.querySelector(".stage-choice:not(:disabled)") || els.statusButton).focus({
+  (selectedStageButton || els.stageChoices.querySelector(".stage-choice:not(:disabled)") || els.homeButton).focus({
     preventScroll: true,
   });
 }
@@ -937,7 +934,7 @@ function showStageSelect() {
   focusStageSurface();
 }
 
-function showStatusScreen() {
+function showMenuScreen(screen) {
   setStoryPhase("none");
   invalidateBattleGeneration();
   state.running = false;
@@ -955,16 +952,29 @@ function showStatusScreen() {
   updateStatusPanel();
   els.stageConfirm.hidden = true;
   syncStageButtons();
-  showScreen("status");
-  focusStatusSurface();
+  showScreen(screen);
+}
+
+function showHomeScreen() {
+  const fromStatus = !els.statusScreen.hidden;
+  showMenuScreen("home");
+  (fromStatus ? els.homeStatusButton : els.homeWeaponsButton).focus({ preventScroll: true });
+}
+
+function showWeaponScreen() {
+  showMenuScreen("weapons");
+  const selected = els.weaponPanel.querySelector("input[name='weapon']:checked:not(:disabled)");
+  (selected || els.weaponHomeButton).focus({ preventScroll: true });
+}
+
+function showStatusScreen() {
+  showMenuScreen("status");
+  els.statusHomeButton.focus({ preventScroll: true });
 }
 
 function changePlayerStat(stat, delta) {
   if (state.running || delta !== 1 || !progression.upgrade(state, stat)) return false;
   savePlayerProgress();
-  els.skillFeedback.textContent = stat === "attack"
-    ? `攻撃力が ${state.stats.attack} になりました。スキルポイントを1使いました。`
-    : `俊敏性が ${state.stats.agility} になりました。入力文字数の範囲が短くなります。`;
   updateHud();
   return true;
 }
@@ -2075,6 +2085,12 @@ function handleTypingKeydown(event) {
     if (!els.stageScreen.hidden && !els.stageConfirm.hidden) {
       event.preventDefault();
       cancelPendingStageSelection();
+    } else if (!els.weaponScreen.hidden || !els.statusScreen.hidden) {
+      event.preventDefault();
+      showHomeScreen();
+    } else if (!els.homeScreen.hidden) {
+      event.preventDefault();
+      showStageSelect();
     } else if (state.running) {
       event.preventDefault();
       interruptGame();
@@ -2144,7 +2160,11 @@ function handleTypingKeydown(event) {
 els.storyNextButton.addEventListener("click", advanceStory);
 els.specialButton.addEventListener("click", useSpecialMove);
 els.introStartButton.addEventListener("click", showStageSelect);
-els.statusButton.addEventListener("click", showStatusScreen);
+els.homeButton.addEventListener("click", showHomeScreen);
+els.homeWeaponsButton.addEventListener("click", showWeaponScreen);
+els.homeStatusButton.addEventListener("click", showStatusScreen);
+els.weaponHomeButton.addEventListener("click", showHomeScreen);
+els.statusHomeButton.addEventListener("click", showHomeScreen);
 els.stageSelectButton.addEventListener("click", showStageSelect);
 els.stageConfirmStart.addEventListener("click", startConfirmedStage);
 els.stageConfirmCancel.addEventListener("click", cancelPendingStageSelection);
@@ -2157,7 +2177,7 @@ els.statusPanel.addEventListener("click", (event) => {
 
   changePlayerStat(button.dataset.stat, Number(button.dataset.statDelta || 0));
 });
-els.statusPanel.addEventListener("change", (event) => {
+els.weaponPanel.addEventListener("change", (event) => {
   const input = event.target.closest("input[name='weapon']");
 
   if (!input) {

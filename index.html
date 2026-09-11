@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>Into the Typing</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='52'%3E%E2%9A%94%EF%B8%8F%3C/text%3E%3C/svg%3E">
-    <link rel="stylesheet" href="src/styles/main.css?v=mobile-layout-v2">
+    <link rel="stylesheet" href="src/styles/main.css?v=home-menu-v1">
   </head>
   <body>
     <main class="game-shell">
@@ -24,7 +24,7 @@
             <span class="stage-kicker">WORLD 1</span>
             <h1>ステージ選択</h1>
           </div>
-          <button class="status-button" id="statusButton" type="button">ステータス</button>
+          <button class="status-button" id="homeButton" type="button">ホーム</button>
         </header>
 
         <div class="stage-map-panel">
@@ -68,94 +68,76 @@
         </div>
       </section>
 
-      <section class="status-screen" id="statusScreen" aria-label="ステータス画面" hidden>
-        <header class="status-screen-head">
-          <div>
-            <span class="stage-kicker">HERO</span>
-            <h1>ステータス</h1>
-          </div>
+      <section class="menu-screen home-screen" id="homeScreen" aria-label="ホーム" hidden>
+        <header class="menu-screen-head">
+          <h1>ホーム</h1>
           <button class="stage-select-button" id="stageSelectButton" type="button">ステージ選択へ</button>
         </header>
+        <nav class="home-actions" aria-label="ホーム">
+          <button id="homeWeaponsButton" type="button">武器</button>
+          <button id="homeStatusButton" type="button">ステータス</button>
+        </nav>
+      </section>
 
-        <div class="status-room-layout">
-          <aside class="status-panel" id="statusPanel" aria-label="ステータス">
-            <div class="status-panel-row">
-              <span>レベル</span>
-              <strong id="levelText">1</strong>
+      <section class="menu-screen" id="weaponScreen" aria-label="武器" hidden>
+        <header class="menu-screen-head">
+          <h1>武器</h1>
+          <button class="menu-back-button" id="weaponHomeButton" type="button">ホーム</button>
+        </header>
+        <fieldset class="weapon-picker" id="weaponPanel" aria-label="武器">
+          <div class="weapon-options">
+            <label class="weapon-option" for="weaponBranch">
+              <input id="weaponBranch" type="radio" name="weapon" value="branch" checked aria-labelledby="weaponBranchName">
+              <span class="weapon-option-body"><strong id="weaponBranchName">木の枝</strong></span>
+            </label>
+            <label class="weapon-option" for="weaponSword">
+              <input id="weaponSword" type="radio" name="weapon" value="sword" aria-labelledby="weaponSwordName">
+              <span class="weapon-option-body"><strong id="weaponSwordName">片手剣</strong></span>
+            </label>
+            <label class="weapon-option" for="weaponGreatsword">
+              <input id="weaponGreatsword" type="radio" name="weapon" value="greatsword" aria-labelledby="weaponGreatswordName">
+              <span class="weapon-option-body"><strong id="weaponGreatswordName">大剣</strong></span>
+            </label>
+          </div>
+        </fieldset>
+      </section>
+
+      <section class="menu-screen" id="statusScreen" aria-label="ステータス" hidden>
+        <header class="menu-screen-head">
+          <h1>ステータス</h1>
+          <button class="menu-back-button" id="statusHomeButton" type="button">ホーム</button>
+        </header>
+        <div class="status-panel" id="statusPanel" aria-label="ステータス" aria-live="polite">
+          <div class="status-panel-row">
+            <span>レベル</span><strong id="levelText">1</strong>
+          </div>
+          <div class="experience-card">
+            <div class="experience-heading"><span>経験値</span><strong id="experienceText">0 / 40 EXP</strong></div>
+            <div class="experience-track" id="experienceMeter" role="progressbar" aria-label="次のレベルまでの経験値" aria-valuemin="0" aria-valuemax="40" aria-valuenow="0"><i id="experienceFill"></i></div>
+          </div>
+          <div class="status-panel-row skill-points-row">
+            <span>スキルポイント</span><strong><span id="skillPointsText">0</span> SP</strong>
+          </div>
+          <div class="status-panel-row">
+            <span>体力</span><strong id="statusHpText">100 / 100</strong>
+          </div>
+          <div class="status-panel-row status-panel-row-control">
+            <span>攻撃力</span>
+            <div class="status-stepper" data-stat-control="attack">
+              <strong id="statusAttackText">1</strong>
+              <button type="button" data-stat="attack" data-stat-delta="1" aria-label="1スキルポイントで攻撃力を上げる" disabled>＋1</button>
             </div>
-            <div class="experience-card">
-              <div class="experience-heading"><span>経験値</span><strong id="experienceText">0 / 40 EXP</strong></div>
-              <div class="experience-track" id="experienceMeter" role="progressbar" aria-label="次のレベルまでの経験値" aria-valuemin="0" aria-valuemax="40" aria-valuenow="0"><i id="experienceFill"></i></div>
-              <p id="experienceRemainingText">次のレベルまで 40 EXP ・ 最大HP +10 / スキルポイント +1</p>
+          </div>
+          <div class="status-panel-row status-panel-row-control">
+            <span>俊敏性</span>
+            <div class="status-stepper" data-stat-control="agility">
+              <strong id="statusAgilityText">1</strong>
+              <button type="button" data-stat="agility" data-stat-delta="1" aria-label="1スキルポイントで俊敏性を上げる" disabled>＋1</button>
             </div>
-            <div class="status-panel-row skill-points-row">
-              <span>スキルポイント</span>
-              <strong><span id="skillPointsText">0</span> SP</strong>
-            </div>
-            <div class="status-panel-row">
-              <span>体力</span>
-              <strong id="statusHpText">100 / 100</strong>
-            </div>
-            <div class="status-panel-row status-panel-row-control">
-              <div class="status-stat-copy"><span>攻撃力</span><small>1 SPで攻撃力＋1</small></div>
-              <div class="status-stepper" data-stat-control="attack">
-                <strong id="statusAttackText">1</strong>
-                <button type="button" data-stat="attack" data-stat-delta="1" aria-label="1スキルポイントで攻撃力を上げる" disabled>＋1</button>
-              </div>
-            </div>
-            <div class="status-panel-row status-panel-row-control">
-              <div class="status-stat-copy"><span>俊敏性（文字数）</span><small>1 SPで入力範囲を1文字短縮</small></div>
-              <div class="status-stepper" data-stat-control="agility">
-                <strong id="statusAgilityText">1</strong>
-                <button type="button" data-stat="agility" data-stat-delta="1" aria-label="1スキルポイントで俊敏性を上げる" disabled>＋1</button>
-              </div>
-            </div>
-            <div class="status-panel-row word-length-row">
-              <span>選択中ステージの入力範囲</span>
-              <strong id="statusWordLengthText">2〜3文字</strong>
-            </div>
-            <p class="growth-help">ステージクリアで経験値を獲得し、レベルアップで強化できます。</p>
-            <p class="skill-feedback" id="skillFeedback" role="status"></p>
-            <p class="progress-save-status" id="progressSaveStatus">育成状況はこのブラウザに自動保存されます。</p>
-            <fieldset class="weapon-picker" aria-describedby="weaponPickerHelp">
-              <legend>武器を選択</legend>
-              <p id="weaponPickerHelp">クエストへ持っていく武器を選べます。</p>
-              <div class="weapon-options">
-                <label class="weapon-option" for="weaponBranch">
-                  <input id="weaponBranch" type="radio" name="weapon" value="branch" checked aria-labelledby="weaponBranchName" aria-describedby="weaponBranchDescription">
-                  <span class="weapon-option-body">
-                    <span class="weapon-option-head">
-                      <strong id="weaponBranchName">木の枝</strong>
-                      <em>はじめの武器</em>
-                    </span>
-                    <small id="weaponBranchDescription">2〜3文字で攻撃。素手より少し強い。</small>
-                  </span>
-                </label>
-                <label class="weapon-option" for="weaponSword">
-                  <input id="weaponSword" type="radio" name="weapon" value="sword" aria-labelledby="weaponSwordName" aria-describedby="weaponSwordDescription weaponSwordDamage">
-                  <span class="weapon-option-body">
-                    <span class="weapon-option-head">
-                      <strong id="weaponSwordName">片手剣</strong>
-                      <em>安定</em>
-                    </span>
-                    <small id="weaponSwordDescription">今までの剣。短めの言葉で素早く攻撃します。</small>
-                    <b id="weaponSwordDamage">通常ダメージ ×1</b>
-                  </span>
-                </label>
-                <label class="weapon-option" for="weaponGreatsword">
-                  <input id="weaponGreatsword" type="radio" name="weapon" value="greatsword" aria-labelledby="weaponGreatswordName" aria-describedby="weaponGreatswordDescription weaponGreatswordDamage">
-                  <span class="weapon-option-body">
-                    <span class="weapon-option-head">
-                      <strong id="weaponGreatswordName">大剣</strong>
-                      <em>長文・ため</em>
-                    </span>
-                    <small id="weaponGreatswordDescription">長い言葉をためて攻撃。ミスするたびに威力が下がります。</small>
-                    <b id="weaponGreatswordDamage">ノーミスダメージ ×4</b>
-                  </span>
-                </label>
-              </div>
-            </fieldset>
-          </aside>
+          </div>
+          <div class="status-panel-row">
+            <span>文字数</span><strong id="statusWordLengthText">2〜3文字</strong>
+          </div>
         </div>
       </section>
 
@@ -295,6 +277,7 @@
 
         <p class="key-hint" id="keyHint">Spaceキーで必殺技を使えます</p>
       </section>
+      <p class="save-error" id="progressSaveStatus" role="alert" hidden></p>
     </main>
 
     <script src="src/data/words.js?v=flick-input-v1"></script>
@@ -306,6 +289,6 @@
     <script src="src/input/japanese.js?v=flick-input-v1"></script>
     <script src="src/ui/battleLayout.js?v=mobile-layout-v2"></script>
     <script src="src/input/mobile.js?v=mobile-layout-v2"></script>
-    <script src="src/app/game.js?v=shared-word-length-v1"></script>
+    <script src="src/app/game.js?v=home-menu-v1"></script>
   </body>
 </html>
