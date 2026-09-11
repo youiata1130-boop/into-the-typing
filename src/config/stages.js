@@ -17,7 +17,7 @@ const stageDefinitions = {
     description: "短い単語でテンポよく進むステージ",
     meta: "推奨Lv.1",
     enabled: true,
-    storyIntro: { punches: 3, weaponId: "branch" },
+    storyIntro: { punches: 3, branchHits: 4, weaponId: "branch" },
     wordLength: {
       normalMin: 0,
     },
@@ -29,8 +29,8 @@ const stageDefinitions = {
     },
     waves: [
       { types: ["egg_level_1"], hp: 2, attackPower: { min: 6, max: 10 }, count: 3, experience: 10 },
-      { types: ["egg_level_1", "chick_level_1"], hp: 3, attackPower: { min: 8, max: 12 }, count: 3, experience: 15 },
-      { types: ["chick_level_1"], hp: 4, attackPower: { min: 12, max: 18 }, count: 1, experience: 35, boss: true },
+      { types: ["egg_level_1"], hp: 3, attackPower: { min: 8, max: 12 }, count: 3, experience: 15 },
+      { types: ["egg_level_1"], hp: 4, attackPower: { min: 12, max: 18 }, count: 1, experience: 35, boss: true },
     ],
   },
   mist_road: {

@@ -6,7 +6,7 @@ function battle(weapon = "branch") {
   const game = createGame({
     "into-the-typing.player.v2": JSON.stringify({
       version: 2, totalExperience: 0, stats: { attack: 1, agility: 1 },
-      weaponId: weapon, introCompleted: true,
+      weaponId: weapon, introCompleted: true, equipmentTutorialCompleted: true,
     }),
   }, { touch: true });
   game.run("startGame()");
@@ -45,19 +45,24 @@ test("flick input completes all three punches and the branch handoff keeps the i
   assert.equal(game.run("document.activeElement === els.flickInput"), true);
   for (let i = 1; i <= 3; i++) {
     input(game, "あ");
-    assert.equal(game.run("state.storyPunches"), i);
+    assert.equal(game.run("(getCurrentEnemy()?.tutorial?.punches || 0)"), i);
     game.advance(480);
   }
   assert.equal(game.run("state.storyPhase"), "weapon-offer");
   input(game, "き");
-  assert.equal(game.run("state.storyPunches"), 3);
+  assert.equal(game.run("(getCurrentEnemy()?.tutorial?.punches || 0)"), 3);
   game.run("advanceStory()");
   assert.equal(game.run("getCurrentEnemy().weaponId"), "branch");
   assert.equal(game.run("document.activeElement === els.flickInput"), true);
-  const reading = game.run("getFlickReading(getCurrentEnemy()).reading");
-  input(game, reading);
-  assert.equal(game.run("getCurrentEnemy().hp"), 1.5);
-  assert.equal(game.run("els.flickInput.value"), "");
+  for (const remaining of [72.75, 48.5, 24.25, 0]) {
+    const reading = game.run("getFlickReading(getCurrentEnemy()).reading");
+    input(game, reading);
+    assert.equal(game.run("Number(getCurrentEnemy().hpTrack.getAttribute('aria-valuenow'))"), remaining);
+    assert.equal(game.run("els.flickInput.value"), "");
+    assert.equal(game.run("document.activeElement === els.flickInput"), true);
+    game.advance(220);
+  }
+  assert.equal(game.run("state.cleared"), 1);
 });
 
 test("IME composition does not penalize unfinished dakuten, and its final events attack only once", () => {
@@ -125,12 +130,12 @@ test("stale IME commits and scheduled input cannot attack a restarted encounter"
   const game = createGame({}, { touch: true });
   game.run('startGame(); advanceStory(); handleFlickCompositionStart(); els.flickInput.value = "あ"; startGame(); advanceStory(); handleFlickCompositionEnd()');
   game.advance(0);
-  assert.equal(game.run("state.storyPunches"), 0);
+  assert.equal(game.run("(getCurrentEnemy()?.tutorial?.punches || 0)"), 0);
   game.run('els.flickInput.value = "あ"; handleFlickInput({ isComposing: false }); startGame(); advanceStory()');
   game.advance(0);
-  assert.equal(game.run("state.storyPunches"), 0);
+  assert.equal(game.run("(getCurrentEnemy()?.tutorial?.punches || 0)"), 0);
   input(game, "あ");
-  assert.equal(game.run("state.storyPunches"), 1);
+  assert.equal(game.run("(getCurrentEnemy()?.tutorial?.punches || 0)"), 1);
 });
 
 test("native Space, Backspace, Enter, and composing keydowns are left to the IME", () => {
@@ -151,7 +156,7 @@ test("Return confirms consecutive words without another tap on the editor", () =
   for (let count = 1; count <= 2; count++) {
     game.run('els.flickInput.value = "あ"; handleFlickKeydown({ key: "Enter", preventDefault() { returns++; } })');
     game.advance(0);
-    assert.equal(game.run("state.storyPunches"), count);
+    assert.equal(game.run("(getCurrentEnemy()?.tutorial?.punches || 0)"), count);
     assert.equal(game.run("document.activeElement === els.flickInput"), true);
     assert.equal(game.run("els.flickInput.value"), "");
     game.advance(480);
@@ -165,10 +170,10 @@ test("line-break input submits once and never accumulates blank lines", () => {
   game.run('startGame(); advanceStory(); let prevented = false; els.flickInput.value = "あ"; handleFlickBeforeInput({ inputType: "insertLineBreak", cancelable: true, preventDefault() { prevented = true; } }); handleFlickKeydown({ key: "Enter", preventDefault() {} })');
   game.advance(0);
   assert.equal(game.run("prevented"), true);
-  assert.equal(game.run("state.storyPunches"), 1);
+  assert.equal(game.run("(getCurrentEnemy()?.tutorial?.punches || 0)"), 1);
   game.advance(480);
   input(game, "あ\n");
-  assert.equal(game.run("state.storyPunches"), 2);
+  assert.equal(game.run("(getCurrentEnemy()?.tutorial?.punches || 0)"), 2);
   assert.equal(game.run("els.flickInput.value"), "");
   assert.equal(game.run("document.activeElement === els.flickInput"), true);
 });

@@ -6,7 +6,7 @@ function startGreatswordBattle() {
   const game = createGame({
     "into-the-typing.player.v2": JSON.stringify({
       version: 2, totalExperience: 0, stats: { attack: 1, agility: 1 },
-      weaponId: "greatsword", introCompleted: true,
+      weaponId: "greatsword", introCompleted: true, equipmentTutorialCompleted: true,
     }),
   });
   game.run("startGame()");

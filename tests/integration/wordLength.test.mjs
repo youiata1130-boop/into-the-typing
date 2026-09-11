@@ -6,7 +6,7 @@ test("bosses use the normal word pool for every weapon, stage, and agility setti
   const game = createGame({
     "into-the-typing.player.v2": JSON.stringify({
       version: 2, totalExperience: 0, stats: { attack: 1, agility: 1 },
-      weaponId: "sword", introCompleted: true,
+      weaponId: "sword", introCompleted: true, equipmentTutorialCompleted: true,
     }),
   });
   game.run("startGame()");

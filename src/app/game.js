@@ -135,12 +135,13 @@ function loadPlayerProgress() {
         ...progression.restore(saved),
         weaponId: saved.introCompleted === true && Object.hasOwn(weaponDefinitions, saved.weaponId) ? saved.weaponId : defaultWeaponId,
         introCompleted: saved.introCompleted === true,
+        equipmentTutorialCompleted: saved.introCompleted === true && saved.equipmentTutorialCompleted === true,
       };
     }
   } catch {
     progressionSaveAvailable = false;
   }
-  return { ...progression.restore(), weaponId: defaultWeaponId, introCompleted: false };
+  return { ...progression.restore(), weaponId: defaultWeaponId, introCompleted: false, equipmentTutorialCompleted: false };
 }
 
 function savePlayerProgress() {
@@ -151,6 +152,7 @@ function savePlayerProgress() {
       stats: state.stats,
       weaponId: state.weaponId,
       introCompleted: state.introCompleted,
+      equipmentTutorialCompleted: state.equipmentTutorialCompleted,
     }));
     progressionSaveAvailable = true;
   } catch {
@@ -169,7 +171,6 @@ const state = {
   ...loadPlayerProgress(),
   running: false,
   storyPhase: "none",
-  storyPunches: 0,
   hp: progression.rules.baseHp,
   pendingExperience: 0,
   battleExperience: 0,
@@ -430,7 +431,9 @@ function resetSuccessStreak() {
 }
 
 function isSpecialReady() {
-  return !isUnarmedStory() && !isStoryDialogueOpen() && state.specialGauge >= specialGaugeMax;
+  return !isUnarmedStory() && !isStoryDialogueOpen()
+    && !state.activeEnemies.some(enemy => enemy.tutorial && isEnemyAlive(enemy))
+    && state.specialGauge >= specialGaugeMax;
 }
 
 function updateStatusPanel() {
@@ -574,13 +577,13 @@ function updateHud() {
   els.playerHpFill.style.width = `${(playerHp / getMaxHp()) * 100}%`;
   els.playerHpTrack.setAttribute("aria-valuemax", String(getMaxHp()));
   els.playerHpTrack.setAttribute("aria-valuenow", String(playerHp));
-  const hasResolvingEnemy = state.activeEnemies.some((enemy) => enemy.hp > 0 && enemy.resolving);
+  const hasResolvingEnemy = state.activeEnemies.some((enemy) => isEnemyAlive(enemy) && enemy.resolving);
   els.specialButton.disabled = (
     !state.running
     || state.specialInProgress
     || hasResolvingEnemy
     || !isSpecialReady()
-    || !state.activeEnemies.some((enemy) => enemy.hp > 0)
+    || !state.activeEnemies.some((enemy) => isEnemyAlive(enemy))
   );
   updateWeaponCharge();
   updateStatusPanel();
@@ -764,6 +767,7 @@ function setStoryPhase(phase) {
   els.battleScreen.dataset.storyPhase = phase;
   els.storyDialog.hidden = !dialogueOpen;
   els.storyItem.hidden = phase !== "weapon-offer";
+  els.storyNextButton.textContent = phase === "weapon-offer" ? "装備する" : "次へ";
   els.typingBox.hidden = dialogueOpen;
   els.storyText.textContent = phase === "encounter" ? "敵が現れた！" : phase === "weapon-offer" ? "これを使って！" : "";
 }
@@ -1354,18 +1358,18 @@ function getSelectedEnemy() {
 function getCurrentEnemy() {
   const selectedEnemy = getSelectedEnemy();
 
-  return selectedEnemy || state.activeEnemies.find((enemy) => enemy.hp > 0) || null;
+  return selectedEnemy || state.activeEnemies.find((enemy) => isEnemyAlive(enemy)) || null;
 }
 
 function getInputEnemy() {
   if (isStoryDialogueOpen()) return null;
   const selectedEnemy = getSelectedEnemy();
 
-  if (selectedEnemy && selectedEnemy.hp > 0 && !selectedEnemy.resolving) {
+  if (selectedEnemy && isEnemyAlive(selectedEnemy) && !selectedEnemy.resolving) {
     return selectedEnemy;
   }
 
-  return state.activeEnemies.find((enemy) => enemy.hp > 0 && !enemy.resolving) || null;
+  return state.activeEnemies.find((enemy) => isEnemyAlive(enemy) && !enemy.resolving) || null;
 }
 
 function normalizeAttackPower(attackPower = defaultEnemyAttackPower) {
@@ -1432,11 +1436,39 @@ function createEnemyElement(enemy) {
   return element;
 }
 
+function isEnemyAlive(enemy) {
+  return enemy.tutorial
+    ? enemy.tutorial.branchHits < enemy.tutorial.requiredBranchHits
+    : enemy.hp > 0;
+}
+
+function getTutorialGaugePercent(enemy) {
+  const tutorial = enemy.tutorial;
+  const afterPunches = 100 - tutorial.punches;
+  return Math.round(afterPunches * (1 - tutorial.branchHits / tutorial.requiredBranchHits) * 100) / 100;
+}
+
+function recordTutorialHit(enemy) {
+  const tutorial = enemy.tutorial;
+  if (state.storyPhase === "unarmed" && enemy.weaponId === "unarmed" && tutorial.punches < tutorial.requiredPunches) {
+    tutorial.punches += 1;
+    return true;
+  }
+  if (state.storyPhase === "armed" && enemy.weaponId === "branch"
+      && tutorial.punches === tutorial.requiredPunches && tutorial.branchHits < tutorial.requiredBranchHits) {
+    tutorial.branchHits += 1;
+    return true;
+  }
+  return false;
+}
+
 function updateEnemyHud(enemy) {
-  const enemyHp = Math.max(0, enemy.hp);
-  enemy.hpFill.style.width = `${(enemyHp / enemy.maxHp) * 100}%`;
-  enemy.hpTrack.setAttribute("aria-valuemax", String(enemy.maxHp));
-  enemy.hpTrack.setAttribute("aria-valuenow", String(enemyHp));
+  const value = enemy.tutorial ? getTutorialGaugePercent(enemy) : Math.max(0, enemy.hp);
+  const maximum = enemy.tutorial ? 100 : enemy.maxHp;
+  enemy.hpFill.style.width = `${(value / maximum) * 100}%`;
+  enemy.hpTrack.setAttribute("aria-label", enemy.tutorial ? "敵のゲージ" : "敵の体力");
+  enemy.hpTrack.setAttribute("aria-valuemax", String(maximum));
+  enemy.hpTrack.setAttribute("aria-valuenow", String(value));
 }
 
 function updateEnemyWordLabel(enemy) {
@@ -1488,8 +1520,6 @@ function createEnemy(wave, index) {
     id: `enemy-${state.nextEnemyId}`,
     type: getEnemyTypeForWave(wave, index),
     slot: 0,
-    maxHp: wave.hp,
-    hp: wave.hp,
     attackPower: normalizeAttackPower(wave.attackPower),
     boss: Boolean(wave.boss),
     experience: wave.experience ?? Math.max(1, Math.round(wave.hp * (wave.boss ? 10 : 5))),
@@ -1514,6 +1544,14 @@ function createEnemy(wave, index) {
     nextAttackAt: 0,
     lastTick: performance.now(),
   };
+
+  const intro = getStageDefinition(state.stageId).storyIntro;
+  if (intro && state.storyPhase === "unarmed" && state.currentWaveIndex === 0 && index === 0) {
+    enemy.tutorial = { punches: 0, branchHits: 0, requiredPunches: intro.punches, requiredBranchHits: intro.branchHits };
+  } else {
+    enemy.maxHp = wave.hp;
+    enemy.hp = wave.hp;
+  }
 
   state.nextEnemyId += 1;
   createEnemyElement(enemy);
@@ -1682,12 +1720,16 @@ function enemyAttack(enemy) {
 
 function damageEnemy(enemy) {
   if (!state.running || isStoryDialogueOpen() || enemy.resolving) return;
-  const damage = getPlayerAttackDamage(enemy);
+  if (enemy.tutorial) {
+    if (!recordTutorialHit(enemy)) return;
+  } else {
+    const damage = getPlayerAttackDamage(enemy);
+    enemy.hp = Math.max(0, Math.round((enemy.hp - damage) * 10) / 10);
+  }
   const isPerfectGreatsword = enemy.weaponId === "greatsword" && enemy.typingMisses === 0;
   playPlayerAttackAnimation(enemy, isPerfectGreatsword);
   enemy.resolving = true;
   enemy.atBase = false;
-  enemy.hp = Math.max(0, Math.round((enemy.hp - damage) * 10) / 10);
   state.combo += 1;
   state.score += 35 + state.combo * 10;
   enemy.element.classList.add("hit");
@@ -1698,13 +1740,12 @@ function damageEnemy(enemy) {
   updateHud();
 
   if (enemy.weaponId === "unarmed") {
-    state.storyPunches += 1;
     clearInputBuffer();
     scheduleBattleTimeout(() => {
       if (!state.running || state.storyPhase !== "unarmed") return;
       enemy.element.classList.remove("hit");
       playEnemyAnimation(enemy, "idle");
-      if (state.storyPunches >= getStageDefinition(state.stageId).storyIntro.punches) {
+      if (enemy.tutorial.punches >= enemy.tutorial.requiredPunches) {
         showStoryDialogue("weapon-offer");
       } else {
         enemy.resolving = false;
@@ -1717,7 +1758,7 @@ function damageEnemy(enemy) {
     return;
   }
 
-  if (enemy.hp <= 0) {
+  if (!isEnemyAlive(enemy)) {
     scheduleBattleTimeout(() => {
       if (state.running) {
         defeatEnemy(enemy);
@@ -1745,7 +1786,7 @@ function useSpecialMove() {
     return false;
   }
 
-  const targets = state.activeEnemies.filter((enemy) => enemy.hp > 0);
+  const targets = state.activeEnemies.filter((enemy) => isEnemyAlive(enemy));
   if (!targets.length || targets.some((enemy) => enemy.resolving)) {
     updateHud();
     return false;
@@ -1770,7 +1811,7 @@ function useSpecialMove() {
   });
   updateHud();
 
-  const remainingEnemies = targets.filter((enemy) => enemy.hp > 0);
+  const remainingEnemies = targets.filter((enemy) => isEnemyAlive(enemy));
   if (!remainingEnemies.length) {
     scheduleBattleTimeout(() => {
       if (state.running) {
@@ -1799,7 +1840,7 @@ function useSpecialMove() {
       setTargetEnemy(remainingEnemies[0]);
       updateHud();
       flushBufferedInput();
-      targets.filter((enemy) => enemy.hp <= 0).forEach((enemy) => {
+      targets.filter((enemy) => !isEnemyAlive(enemy)).forEach((enemy) => {
         enemy.element.classList.remove("special");
         defeatEnemy(enemy);
       });
@@ -1810,7 +1851,7 @@ function useSpecialMove() {
 }
 
 function defeatEnemy(enemy) {
-  if (!state.running || !state.activeEnemies.includes(enemy) || enemy.hp > 0 || enemy.experienceCounted) {
+  if (!state.running || !state.activeEnemies.includes(enemy) || isEnemyAlive(enemy) || enemy.experienceCounted) {
     return;
   }
 
@@ -1819,6 +1860,11 @@ function defeatEnemy(enemy) {
     setTargetEnemy(null);
   }
   enemy.experienceCounted = true;
+  if (enemy.tutorial) {
+    state.equipmentTutorialCompleted = true;
+    setStoryPhase("none");
+    savePlayerProgress();
+  }
   state.pendingExperience += enemy.experience;
   state.cleared += 1;
   state.score += 120 + state.combo * 20;
@@ -1896,7 +1942,6 @@ function finishGame(cleared) {
 }
 
 function resetGame() {
-  state.storyPunches = 0;
   setStoryPhase("none");
   invalidateBattleGeneration();
   state.running = false;
@@ -1945,8 +1990,7 @@ function startGame(stageId = state.stageId) {
   }
 
   invalidateBattleGeneration();
-  const needsIntroduction = Boolean(stage.storyIntro && !state.introCompleted);
-  state.storyPunches = 0;
+  const needsIntroduction = Boolean(stage.storyIntro && !state.equipmentTutorialCompleted);
   setStoryPhase(needsIntroduction ? "encounter" : "none");
   state.language = "ja";
   state.stageId = resolvedStageId;
