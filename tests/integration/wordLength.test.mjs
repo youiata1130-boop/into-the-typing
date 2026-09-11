@@ -9,7 +9,7 @@ test("bosses use the normal word pool for every weapon, stage, and agility setti
       weaponId: "sword", introCompleted: true, equipmentTutorialCompleted: true,
     }),
   });
-  game.run("startGame()");
+  game.run('startGame("mist_road")');
   game.advance(850);
   game.run(`
     const originalChooseWord = chooseWord;
@@ -23,7 +23,7 @@ test("bosses use the normal word pool for every weapon, stage, and agility setti
   for (const stage of ["forest_path", "mist_road", "sky_castle"]) {
     for (const [weapon, baseMin, baseMax] of [
       ["branch", 2, 3],
-      ["sword", stage === "mist_road" ? 9 : 2, stage === "mist_road" ? 17 : 8],
+      ["sword", 2, 8],
       ["greatsword", 12, 20],
     ]) {
       for (const agility of [1, 4, 9]) {

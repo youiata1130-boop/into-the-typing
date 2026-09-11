@@ -15,7 +15,7 @@ function punch(game, times = 1) {
   }
 }
 
-test("only stage 1 starts and its enemy waits for Next", () => {
+test("stage 2 stays locked until the tutorial is completed and stage 1 waits for Next", () => {
   const game = createGame();
   game.run('startGame("mist_road"); startGame("sky_castle")');
   assert.equal(game.run("state.running"), false);
@@ -80,7 +80,7 @@ test("the branch picture and dialogue pause battle before Next equips the same e
 
 test("branch prompts stay at two or three letters for normal enemies and bosses", () => {
   const game = createGame(equippedSave());
-  game.run("startGame()");
+  game.run('startGame("mist_road")');
   game.advance(850);
   assert(game.run("wordSets.branch.every(word => getWordInputs(word).every(input => input.length >= 2 && input.length <= 3))"));
   for (const boss of [false, true]) {
@@ -99,7 +99,7 @@ test("branch prompts stay at two or three letters for normal enemies and bosses"
 
 test("three branch hits finish 0.6 HP exactly and only stage clear awards EXP", () => {
   const game = createGame(equippedSave());
-  game.run("startGame()");
+  game.run('startGame("mist_road")');
   game.advance(850);
   game.run("const target = getCurrentEnemy(); target.hp = 0.6");
   for (const hp of [0.4, 0.2, 0]) {
@@ -128,7 +128,7 @@ test("restarting during the third punch cancels the old weapon handoff", () => {
   assert.equal(game.run("getCurrentEnemy().hpFill.style.width"), "99%");
 });
 
-test("completing the equipment lesson persists and subsequent adventures skip the introduction", () => {
+test("completing the equipment lesson persists and stage 2 starts with the equipped weapon", () => {
   const first = createGame();
   first.run("startGame(); advanceStory()");
   punch(first, 3);
@@ -140,7 +140,7 @@ test("completing the equipment lesson persists and subsequent adventures skip th
   first.run("resetGame()");
   const game = createGame(first.saved());
   assert.equal(game.run("state.introCompleted"), true);
-  game.run("startGame()");
+  game.run('startGame("mist_road")');
   game.advance(850);
   assert.equal(game.run("state.storyPhase"), "none");
   assert.equal(game.run("getCurrentEnemy().weaponId"), "branch");
@@ -153,7 +153,7 @@ test("completing the equipment lesson persists and subsequent adventures skip th
 
 test("new progress is retained through return, retry, and reload", () => {
   const game = createGame(equippedSave());
-  game.run("progression.gainExperience(state, 110); savePlayerProgress(); startGame()");
+  game.run("progression.gainExperience(state, 110); savePlayerProgress(); startGame(\"mist_road\")");
   game.advance(850);
   game.run("resetGame(); showStageSelect()");
   const reloaded = createGame(game.saved());
@@ -190,6 +190,12 @@ test("the tutorial has no HP and requires exactly four branch hits regardless of
     assert.equal(game.run("Object.hasOwn(tutorialEnemy, 'hp') || Object.hasOwn(tutorialEnemy, 'maxHp')"), false);
     assert.equal(JSON.parse(game.saved()[saveKey]).equipmentTutorialCompleted, true);
     game.advance(880);
+    assert.equal(game.run("state.running"), false);
+    assert.equal(game.run("state.totalExperience"), 10);
+    assert.equal(game.run("els.noticeTitle.textContent"), "チュートリアル完了");
+    assert.equal(game.run("els.noticeButton.textContent"), "ステージ2へ");
+    game.run("continueAfterResult()");
+    assert.equal(game.run("state.stageId"), "mist_road");
     assert.equal(game.run("getCurrentEnemy().tutorial"), undefined);
     assert.equal(game.run("getCurrentEnemy().hp"), 2);
   }
@@ -217,7 +223,7 @@ test("an interrupted branch lesson restarts, and its old defeat callback cannot 
   assert.equal(game.run("getCurrentEnemy().tutorial.branchHits"), 0);
 });
 
-test("existing progress is preserved while the updated equipment lesson is offered once", () => {
+test("existing progress is preserved and the completed lesson unlocks stage 2", () => {
   const oldSave = { version: 2, totalExperience: 350, stats: { attack: 3, agility: 2 }, weaponId: "greatsword", introCompleted: true };
   const game = createGame({ [saveKey]: JSON.stringify(oldSave) });
   const growth = game.snapshot("({ xp: state.totalExperience, level: state.level, stats: state.stats, points: state.skillPoints })");
@@ -232,12 +238,12 @@ test("existing progress is preserved while the updated equipment lesson is offer
   }
   const reloaded = createGame(game.saved());
   assert.deepEqual(reloaded.snapshot("({ xp: state.totalExperience, level: state.level, stats: state.stats, points: state.skillPoints })"), growth);
-  reloaded.run("startGame()");
+  reloaded.run('startGame("mist_road")');
   assert.equal(reloaded.run("state.storyPhase"), "none");
   assert.equal(reloaded.run("getCurrentEnemy().tutorial"), undefined);
 });
 
-test("every first-stage enemy, including the boss, is an egg and clear rewards stay unchanged", () => {
+test("stage 1 ends after its single tutorial egg and seven successful attacks", () => {
   const game = createGame();
   game.run("startGame(); advanceStory()");
   const seen = new Map();
@@ -253,10 +259,89 @@ test("every first-stage enemy, including the boss, is an egg and clear rewards s
     game.advance(100);
   }
   assert.equal(game.run("state.running"), false);
-  assert.equal(seen.size, 7);
+  assert.equal(seen.size, 1);
   assert.ok([...seen.values()].every(enemy => enemy.type === "egg_level_1"));
-  assert.equal([...seen.values()].filter(enemy => enemy.boss).length, 1);
-  assert.equal(attacks, 92);
+  assert.equal([...seen.values()].filter(enemy => enemy.boss).length, 0);
+  assert.equal(attacks, 7);
   assert.deepEqual(game.snapshot("({ cleared: state.cleared, xp: state.totalExperience, level: state.level, points: state.skillPoints })"),
-    { cleared: 7, xp: 110, level: 3, points: 2 });
+    { cleared: 1, xp: 10, level: 1, points: 0 });
+});
+
+test("equipping the branch or failing the lesson does not unlock stage 2", () => {
+  const game = createGame();
+  game.run('showStageConfirm("mist_road")');
+  assert.equal(game.run("state.pendingStageId"), "");
+  game.run('state.pendingStageId = "mist_road"; startConfirmedStage()');
+  assert.equal(game.run("state.running"), false);
+  game.run("startGame(); advanceStory()");
+  punch(game, 3);
+  game.run("advanceStory()");
+  for (let hit = 0; hit < 3; hit++) {
+    game.run("applyTypedValue(getCurrentEnemy(), getCurrentEnemy().matchedWord)");
+    game.advance(220);
+  }
+  game.run("finishGame(false)");
+  assert.equal(game.run("els.noticeButton.textContent"), "ステージ選択へ");
+  game.run('continueAfterResult(); startGame("mist_road")');
+  assert.equal(game.run("state.running"), false);
+  const reloaded = createGame(game.saved());
+  assert.equal(reloaded.run('isStageAvailable("mist_road")'), false);
+  assert.equal(reloaded.run("state.totalExperience"), 0);
+});
+
+test("stage 1 remains a replayable tutorial after completion", () => {
+  const game = createGame(equippedSave({ totalExperience: 350, stats: { attack: 3, agility: 2 } }));
+  game.run('startGame("forest_path"); advanceStory()');
+  assert.equal(game.run("state.roundLimit"), 1);
+  assert.equal(game.run("getCurrentEnemy().weaponId"), "unarmed");
+  assert.equal(game.run("getCurrentEnemy().tutorial.punches"), 0);
+  assert.equal(game.run('isStageAvailable("mist_road")'), true);
+  punch(game, 3);
+  game.run("advanceStory()");
+  for (let hit = 0; hit < 4; hit++) {
+    game.run("applyTypedValue(getCurrentEnemy(), getCurrentEnemy().matchedWord)");
+    game.advance(220);
+  }
+  game.advance(620);
+  assert.equal(game.run("state.running"), false);
+  assert.equal(game.run("state.cleared"), 1);
+  assert.equal(game.run("state.totalExperience"), 360);
+});
+
+test("stage 2 uses normal HP for seven encounters and awards EXP only on clear", () => {
+  const game = createGame(equippedSave({ totalExperience: 10 }));
+  game.run('showStageConfirm("mist_road"); startConfirmedStage()');
+  assert.equal(game.run("state.stageId"), "mist_road");
+  assert.equal(game.run("state.storyPhase"), "none");
+  const seen = new Map();
+  let attacks = 0;
+  for (let tick = 0; tick < 2000 && game.run("state.running"); tick++) {
+    const target = game.snapshot("getCurrentEnemy() ? { id: getCurrentEnemy().id, type: getCurrentEnemy().type, boss: getCurrentEnemy().boss, hp: getCurrentEnemy().maxHp } : null");
+    if (target) {
+      seen.set(target.id, target);
+      assert.equal(game.run("getCurrentEnemy().tutorial"), undefined);
+    }
+    if (game.run("Boolean(getInputEnemy())")) {
+      assert.equal(game.run("state.totalExperience"), 10);
+      game.run("applyTypedValue(getInputEnemy(), getInputEnemy().matchedWord)");
+      attacks++;
+    }
+    game.advance(100);
+  }
+  assert.equal(game.run("state.running"), false);
+  assert.equal(seen.size, 7);
+  assert.equal(attacks, 95);
+  assert.equal([...seen.values()].filter(enemy => enemy.boss).length, 1);
+  assert.equal([...seen.values()].filter(enemy => enemy.type === "chick_level_1").length, 4);
+  assert.deepEqual(game.snapshot("({ cleared: state.cleared, xp: state.totalExperience, level: state.level, points: state.skillPoints })"),
+    { cleared: 7, xp: 120, level: 3, points: 2 });
+  assert.match(game.run("els.noticeText.textContent"), /獲得経験値 110 EXP/);
+  assert.match(game.run("els.noticeText.textContent"), /レベルアップ！/);
+  assert.equal(game.run("els.noticeButton.textContent"), "ステージ選択へ");
+  game.run("continueAfterResult()");
+  assert.equal(game.run("els.stageScreen.hidden"), false);
+  assert.equal(game.run('isStageAvailable("sky_castle")'), false);
+  const reloaded = createGame(game.saved());
+  assert.equal(reloaded.run("state.totalExperience"), 120);
+  assert.equal(reloaded.run('isStageAvailable("mist_road")'), true);
 });

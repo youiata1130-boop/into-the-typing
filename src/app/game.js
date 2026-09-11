@@ -738,6 +738,7 @@ function showGameNotice(kind, kicker, title, text, options = {}) {
   els.noticeKicker.textContent = kicker;
   els.noticeTitle.textContent = title;
   els.noticeText.textContent = text;
+  els.noticeButton.textContent = labels().stageSelect;
   els.gameNotice.classList.toggle("is-actionable", persistent);
   els.gameNotice.classList.add("is-visible");
   els.gameNotice.setAttribute("aria-hidden", "false");
@@ -810,11 +811,26 @@ function advanceStory() {
   focusGameSurface({ userGesture: true });
 }
 
+function isStageAvailable(stageId) {
+  const stage = stageDefinitions[stageId];
+  return Boolean(stage?.enabled && (!stage.requiresTutorial || state.equipmentTutorialCompleted));
+}
+
+function continueAfterResult() {
+  if (state.running) return;
+  const nextStageId = getStageDefinition(state.stageId).nextStageId;
+  if (els.gameNotice.dataset.kind === "clear" && isStageAvailable(nextStageId)) {
+    startGame(nextStageId);
+  } else {
+    showStageSelect();
+  }
+}
+
 function syncStageButtons() {
   els.stageChoices.querySelectorAll("[data-stage]").forEach((button) => {
     const stageId = button.dataset.stage;
     const stage = stageDefinitions[stageId];
-    const isEnabled = Boolean(stage?.enabled);
+    const isEnabled = isStageAvailable(stageId);
     const isSelected = isEnabled && stageId === state.pendingStageId;
     const code = button.querySelector(".stage-code");
     const name = button.querySelector(".stage-name");
@@ -831,7 +847,7 @@ function syncStageButtons() {
       return;
     }
 
-    button.setAttribute("aria-label", [stage.code, stage.name, isEnabled ? "" : stage.meta].filter(Boolean).join(" "));
+    button.setAttribute("aria-label", [stage.code, stage.name, isEnabled ? "" : stage.requiresTutorial ? "チュートリアル未クリア" : stage.meta].filter(Boolean).join(" "));
 
     if (code) {
       code.textContent = stage.code;
@@ -868,13 +884,14 @@ function cancelPendingStageSelection() {
 function showStageConfirm(stageId) {
   const stage = stageDefinitions[stageId];
 
-  if (!stage?.enabled) {
+  if (!isStageAvailable(stageId)) {
     return;
   }
 
   state.pendingStageId = stageId;
   els.stageConfirmName.textContent = stage.name;
   els.stageConfirmMeta.textContent = stage.meta;
+  els.stageConfirmMeta.hidden = !stage.meta;
   els.stageConfirm.hidden = false;
   syncStageButtons();
   els.stageConfirmStart.focus({ preventScroll: true });
@@ -882,9 +899,7 @@ function showStageConfirm(stageId) {
 
 function startConfirmedStage() {
   const stageId = state.pendingStageId;
-  const stage = stageDefinitions[stageId];
-
-  if (!stage?.enabled) {
+  if (!isStageAvailable(stageId)) {
     return;
   }
 
@@ -1934,10 +1949,14 @@ function finishGame(cleared) {
     showGameNotice(
       "clear",
       noDamageClear ? "PERFECT" : "CLEAR",
-      noDamageClear ? t.perfectTitle : t.clearTitle,
+      getStageDefinition(state.stageId).tutorial ? "チュートリアル完了" : noDamageClear ? t.perfectTitle : t.clearTitle,
       resultText,
       { persistent: true },
     );
+    const nextStageId = getStageDefinition(state.stageId).nextStageId;
+    if (isStageAvailable(nextStageId)) {
+      els.noticeButton.textContent = `ステージ${stageDefinitions[nextStageId].code}へ`;
+    }
   }
 }
 
@@ -1985,12 +2004,12 @@ function startGame(stageId = state.stageId) {
   const resolvedStageId = stageDefinitions[stageId] ? stageId : defaultStageId;
   const stage = getStageDefinition(resolvedStageId);
 
-  if (!stage.enabled) {
+  if (!isStageAvailable(resolvedStageId)) {
     return;
   }
 
   invalidateBattleGeneration();
-  const needsIntroduction = Boolean(stage.storyIntro && !state.equipmentTutorialCompleted);
+  const needsIntroduction = Boolean(stage.storyIntro && (stage.tutorial || !state.equipmentTutorialCompleted));
   setStoryPhase(needsIntroduction ? "encounter" : "none");
   state.language = "ja";
   state.stageId = resolvedStageId;
@@ -2242,16 +2261,14 @@ els.resetButton.addEventListener("click", () => {
   resetGame();
   showStageSelect();
 });
-els.noticeButton.addEventListener("click", showStageSelect);
+els.noticeButton.addEventListener("click", continueAfterResult);
 els.stageChoices.addEventListener("click", (event) => {
   if (event.target.closest("#stageConfirm")) {
     return;
   }
 
   const button = event.target.closest(".stage-choice[data-stage]");
-  const stage = stageDefinitions[button?.dataset.stage];
-
-  if (!button || button.disabled || !stage?.enabled) {
+  if (!button || button.disabled || !isStageAvailable(button.dataset.stage)) {
     return;
   }
 

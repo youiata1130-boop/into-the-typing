@@ -33,22 +33,22 @@
             <img src="src/assets/images/backgrounds/stage_map/desk_landscape.jpg" alt="">
           </picture>
           <div class="stage-choices" id="stageChoices" role="group" aria-label="クエスト地点">
-            <button class="stage-choice" id="stageChoiceForest" type="button" data-stage="forest_path" aria-label="1-1 はじまりの森" aria-controls="stageConfirm" aria-expanded="false">
-              <span class="stage-circle"><strong class="stage-code">1-1</strong></span>
+            <button class="stage-choice" id="stageChoiceForest" type="button" data-stage="forest_path" aria-label="1 チュートリアル" aria-controls="stageConfirm" aria-expanded="false">
+              <span class="stage-circle"><strong class="stage-code">1</strong></span>
               <span class="stage-node-copy" aria-hidden="true">
-                <span class="stage-name">はじまりの森</span>
-                <em class="stage-meta">推奨Lv.1</em>
+                <span class="stage-name">チュートリアル</span>
+                <em class="stage-meta"></em>
               </span>
             </button>
-            <button class="stage-choice" id="stageChoiceMist" type="button" data-stage="mist_road" aria-label="1-2 霧の古道（準備中）" aria-controls="stageConfirm" aria-expanded="false" disabled aria-disabled="true">
-              <span class="stage-circle"><strong class="stage-code">1-2</strong></span>
+            <button class="stage-choice" id="stageChoiceMist" type="button" data-stage="mist_road" aria-label="2 霧の古道（チュートリアル未クリア）" aria-controls="stageConfirm" aria-expanded="false" disabled aria-disabled="true">
+              <span class="stage-circle"><strong class="stage-code">2</strong></span>
               <span class="stage-node-copy" aria-hidden="true">
                 <span class="stage-name">霧の古道</span>
-                <em class="stage-meta">準備中</em>
+                <em class="stage-meta"></em>
               </span>
             </button>
-            <button class="stage-choice" id="stageChoiceCastle" type="button" data-stage="sky_castle" aria-label="1-3 天空城（封印中）" aria-controls="stageConfirm" aria-expanded="false" disabled aria-disabled="true">
-              <span class="stage-circle"><strong class="stage-code">1-3</strong></span>
+            <button class="stage-choice" id="stageChoiceCastle" type="button" data-stage="sky_castle" aria-label="3 天空城（封印中）" aria-controls="stageConfirm" aria-expanded="false" disabled aria-disabled="true">
+              <span class="stage-circle"><strong class="stage-code">3</strong></span>
               <span class="stage-node-copy" aria-hidden="true">
                 <span class="stage-name">天空城</span>
                 <em class="stage-meta">封印中</em>
@@ -57,8 +57,8 @@
           </div>
           <div class="stage-confirm" id="stageConfirm" role="dialog" aria-labelledby="stageConfirmName" aria-describedby="stageConfirmMeta" hidden>
             <div class="stage-confirm-copy">
-              <strong id="stageConfirmName">はじまりの森</strong>
-              <em id="stageConfirmMeta">推奨Lv.1</em>
+              <strong id="stageConfirmName">チュートリアル</strong>
+              <em id="stageConfirmMeta" hidden></em>
             </div>
             <div class="stage-confirm-actions">
               <button id="stageConfirmStart" type="button">はじめる</button>
@@ -283,12 +283,12 @@
     <script src="src/data/words.js?v=flick-input-v1"></script>
     <script src="src/data/labels.js?v=folder-layout-v2"></script>
     <script src="src/config/weapons.js?v=shared-word-length-v1"></script>
-    <script src="src/config/stages.js?v=equipment-tutorial-v2"></script>
+    <script src="src/config/stages.js?v=stage-two-v1"></script>
     <script src="src/config/enemyAnimations.js?v=greatsword-charge-v1"></script>
     <script src="src/config/playerProgression.js?v=player-progression-v1"></script>
     <script src="src/input/japanese.js?v=flick-input-v1"></script>
     <script src="src/ui/battleLayout.js?v=mobile-layout-v2"></script>
     <script src="src/input/mobile.js?v=mobile-layout-v2"></script>
-    <script src="src/app/game.js?v=equipment-tutorial-v2"></script>
+    <script src="src/app/game.js?v=stage-two-v1"></script>
   </body>
 </html>

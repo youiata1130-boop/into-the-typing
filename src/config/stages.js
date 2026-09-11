@@ -12,12 +12,23 @@ const defaultSpecialGaugeSettings = {
 const defaultStageId = "forest_path";
 const stageDefinitions = {
   forest_path: {
-    code: "1-1",
-    name: "はじまりの森",
-    description: "短い単語でテンポよく進むステージ",
-    meta: "推奨Lv.1",
+    code: "1",
+    name: "チュートリアル",
+    meta: "",
     enabled: true,
+    tutorial: true,
+    nextStageId: "mist_road",
     storyIntro: { punches: 3, branchHits: 4, weaponId: "branch" },
+    waves: [
+      { types: ["egg_level_1"], hp: 2, attackPower: { min: 6, max: 10 }, count: 1, experience: 10 },
+    ],
+  },
+  mist_road: {
+    code: "2",
+    name: "霧の古道",
+    meta: "",
+    enabled: true,
+    requiresTutorial: true,
     wordLength: {
       normalMin: 0,
     },
@@ -29,30 +40,12 @@ const stageDefinitions = {
     },
     waves: [
       { types: ["egg_level_1"], hp: 2, attackPower: { min: 6, max: 10 }, count: 3, experience: 10 },
-      { types: ["egg_level_1"], hp: 3, attackPower: { min: 8, max: 12 }, count: 3, experience: 15 },
-      { types: ["egg_level_1"], hp: 4, attackPower: { min: 12, max: 18 }, count: 1, experience: 35, boss: true },
-    ],
-  },
-  mist_road: {
-    code: "1-2",
-    name: "霧の古道",
-    description: "長めの単語でじっくり戦うステージ",
-    meta: "準備中",
-    enabled: false,
-    wordLength: {
-      normalMin: 9,
-    },
-    specialGauge: {
-      streakCap: 50,
-    },
-    waves: [
-      { types: ["chicken_level_1"], hp: 4, attackPower: { min: 10, max: 16 }, count: 2, experience: 25 },
-      { types: ["chicken_level_2"], hp: 5, attackPower: { min: 12, max: 18 }, count: 1, experience: 35 },
-      { types: ["chicken_level_2"], hp: 8, attackPower: { min: 18, max: 26 }, count: 1, experience: 70, boss: true },
+      { types: ["chick_level_1"], hp: 3, attackPower: { min: 8, max: 12 }, count: 3, experience: 15 },
+      { types: ["chick_level_1"], hp: 4, attackPower: { min: 12, max: 18 }, count: 1, experience: 35, boss: true },
     ],
   },
   sky_castle: {
-    code: "1-3",
+    code: "3",
     name: "天空城",
     description: "まだ門が開いていない高難度ステージ",
     meta: "封印中",

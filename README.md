@@ -92,12 +92,12 @@ Scripts load in the order listed in `index.html`. They remain classic browser sc
 
 ## Current Gameplay
 
-- The start screen opens an old map on a desk. Only circular quest markers are shown at first; selecting one reveals its name, recommended level, and start controls. A portrait map is used on portrait screens.
-- Only `1-1 はじまりの森` is selectable. All seven encounters, including the boss, use egg enemies.
+- The start screen opens an old map on a desk. Only circular quest markers are shown at first; selecting one reveals its name and start controls. A portrait map is used on portrait screens.
+- Stage `1 チュートリアル` contains only the equipment lesson against a single egg. Its three punches and four branch attacks finish the stage and award 10 EXP. The result shows `チュートリアル完了` with a `ステージ2へ` button.
 - The equipment tutorial opens with `敵が現れた！`; `次へ` reveals the first egg. This enemy has no HP fields: it is defeated by three successful unarmed prompts followed by four successful wooden-branch prompts, independently of attack stats. Mistakes and duplicate input events do not advance the lesson.
 - Three punches reduce the displayed enemy gauge to 99%, 98%, and 97%. The branch illustration and `これを使って！` then appear; `装備する` equips the branch against the same egg. The four branch attacks reduce the gauge to 72.75%, 48.5%, 24.25%, and 0%. Dialogue pauses combat, and special moves are blocked throughout this first encounter.
-- Tutorial completion is saved as `equipmentTutorialCompleted` only after defeating the first egg. An unfinished lesson restarts on retry or reload. Existing v2 saves retain their EXP, level, and allocated stats and receive this updated lesson once; completed lessons are skipped on later attempts. `introCompleted` continues to record receipt of the branch. Later enemies use normal HP and damage.
-- `1-2 霧の古道` and `1-3 天空城` are reserved for later story stages.
+- Defeating the tutorial egg saves `equipmentTutorialCompleted` and unlocks stage 2; receiving the branch alone does not unlock it. An unfinished lesson restarts on retry or reload, and stage 1 can always be replayed as the full lesson. Existing completed saves immediately unlock stage 2 without resetting EXP, level, stats, or equipment. `introCompleted` continues to record receipt of the branch.
+- Stage `2 霧の古道` starts the main game with the saved weapon, normal HP and damage, and seven encounters: three eggs, three chicks, and a chick boss. It awards 110 EXP on clear. Stage 3 remains locked.
 - Egg and chick idle frames loop to create walking animation. Attack, damage, and defeat states use their registered enemy frames.
 - Typing a target correctly plays the swordsman's attack sequence: idle, sword raised, then sword lowered.
 - Typing text is displayed in the bottom input panel; labels above the player and enemies are hidden.
@@ -110,7 +110,7 @@ Scripts load in the order listed in `index.html`. They remain classic browser sc
 
 ## Player Progression
 
-- Defeated enemies add EXP once to the current stage reward, including kills from the special move. EXP, levels, HP growth, and skill points are awarded and saved together only after a successful stage clear. Failed, interrupted, or restarted attempts discard the pending reward. The forest rewards 10 / 15 / 35 EXP by wave; the mist road rewards 25 / 35 / 70 EXP.
+- Defeated enemies add EXP once to the current stage reward, including kills from the special move. EXP, levels, HP growth, and skill points are awarded and saved together only after a successful stage clear. Failed, interrupted, or restarted attempts discard the pending reward. The tutorial rewards 10 EXP; stage 2 rewards 10 / 15 / 35 EXP by wave.
 - EXP needed for the next level is `40 + 20 × (level − 1) + 5 × (level − 1)²`: 40, 65, 100, 145, and so on. Excess EXP carries over, including when multiple levels are gained at once. The maximum level is 99.
 - Each level adds 10 maximum HP and 1 skill point. Current HP also rises by 10, preserving any damage already taken. Returning to the map or starting a quest restores full HP.
 - Spend 1 SP in the status screen for +1 attack (maximum 99) or +1 agility (maximum 9). Attack increases equipped weapon damage (the branch deals 0.2 per attack stat). Each agility upgrade reduces the prompt selection range by one character: the branch has a minimum of 2 characters; swords have minimum bounds of 2 for the lower end and 4 for the upper end. Words remain complete; alternate romanizations can vary in length.
@@ -130,6 +130,6 @@ On a phone or tablet, the battle and dialogue Next buttons focus the Japanese in
 - The battle fits the visual viewport above the keyboard. The page requests text input; the keyboard language and flick layout are selected on the device.
 - Desktop hardware romaji input remains available.
 - Input files: `src/input/japanese.js` handles readings and matching; `src/input/mobile.js` handles native input and viewport sizing.
-- Validation: integration tests cover composition, dakuten, kana variants, correction, stale events, story handoff, and greatsword charge. Chromium mobile emulation with IME events clears the forest; physical iOS/Android keyboard layouts require device verification.
+- Validation: integration tests cover composition, dakuten, kana variants, correction, stale events, story handoff, and greatsword charge. Chromium mobile emulation with IME events completes the tutorial and stage 2; physical iOS/Android keyboard layouts require device verification.
 
 Browser API references: [compositionend](https://developer.mozilla.org/en-US/docs/Web/API/Element/compositionend_event), [InputEvent.isComposing](https://developer.mozilla.org/en-US/docs/Web/API/InputEvent/isComposing), [VisualViewport](https://developer.mozilla.org/en-US/docs/Web/API/VisualViewport), [enterkeyhint](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Global_attributes/enterkeyhint).

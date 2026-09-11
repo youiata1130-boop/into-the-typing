@@ -9,7 +9,7 @@ function startGreatswordBattle() {
       weaponId: "greatsword", introCompleted: true, equipmentTutorialCompleted: true,
     }),
   });
-  game.run("startGame()");
+  game.run('startGame("mist_road")');
   game.advance(850);
   game.run(`
     const chargeEnemy = getCurrentEnemy();

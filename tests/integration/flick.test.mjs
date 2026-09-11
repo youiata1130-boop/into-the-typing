@@ -9,7 +9,7 @@ function battle(weapon = "branch") {
       weaponId: weapon, introCompleted: true, equipmentTutorialCompleted: true,
     }),
   }, { touch: true });
-  game.run("startGame()");
+  game.run('startGame("mist_road")');
   game.advance(850);
   return game;
 }
