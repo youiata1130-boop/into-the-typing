@@ -1,10 +1,14 @@
-// Native text input keeps Japanese IME composition separate from battle key events.
+// Judge native text updates immediately while keeping IME events out of battle key handling.
 const flickState = {
   enabled: false,
   composing: false,
   compositionKey: "",
+  compositionConsumed: false,
+  ignoreCommit: false,
+  commitTimerId: 0,
   promptKey: "",
   lastValue: null,
+  lastPending: false,
   timerId: 0,
 };
 
@@ -19,7 +23,8 @@ function clearFlickInput() {
   window.clearTimeout(flickState.timerId);
   flickState.timerId = 0;
   flickState.lastValue = null;
-  els.flickInput.value = "";
+  flickState.lastPending = false;
+  if (els.flickInput.value !== "") els.flickInput.value = "";
   els.flickInput.setAttribute("aria-invalid", "false");
 }
 
@@ -47,30 +52,47 @@ function renderFlickPrompt(enemy) {
   const parsed = getFlickReading(enemy);
   if (!parsed) return;
   const typedReading = window.JAPANESE_INPUT.parse(enemy.typed, enemy.readingOverride)?.reading || "";
-  const confirmed = parsed.reading.startsWith(typedReading) ? typedReading.length : 0;
+  const nativeReading = window.JAPANESE_INPUT.normalize(els.flickInput.value);
+  const pending = flickState.lastPending ? window.JAPANESE_INPUT.pendingPrefix(nativeReading, parsed) : null;
+  const visibleReading = nativeReading && parsed.reading.startsWith(nativeReading) ? nativeReading : pending ?? typedReading;
+  const confirmed = parsed.reading.startsWith(visibleReading) ? visibleReading.length : 0;
   els.typedWord.textContent = parsed.reading.slice(0, confirmed);
   els.remainingWord.textContent = parsed.reading.slice(confirmed);
   scheduleBattleLayout();
 }
 
-function applyFlickValue(value, key = flickPromptKey()) {
+function applyFlickValue(value, key = flickPromptKey(), { composing = false, inputType = "" } = {}) {
   const enemy = getCurrentEnemy();
-  if (!key || key !== flickPromptKey() || !enemy || enemy.resolving || state.specialInProgress) {
+  if (!key || key !== flickPromptKey()) return;
+  if (!enemy || enemy.resolving || state.specialInProgress) {
+    if (flickState.composing) flickState.compositionConsumed = true;
     clearFlickInput();
     return;
   }
-  if (flickState.lastValue === value) return;
+  if (flickState.lastValue === value && !(flickState.lastPending && !composing)) return;
+  const previousValue = flickState.lastValue;
   flickState.lastValue = value;
   const normalized = window.JAPANESE_INPUT.normalize(value);
-  const roman = /^[a-z-]*$/.test(normalized)
+  const parsed = getFlickReading(enemy);
+  let roman = /^[a-z-]*$/.test(normalized)
     ? normalized
-    : window.JAPANESE_INPUT.match(value, enemy.word, enemy.translation, getFlickReading(enemy));
+    : window.JAPANESE_INPUT.match(value, enemy.word, enemy.translation, parsed);
+  const pendingPrefix = composing && roman === null ? window.JAPANESE_INPUT.pendingPrefix(value, parsed) : null;
+  flickState.lastPending = pendingPrefix !== null;
+  if (flickState.lastPending) {
+    roman = window.JAPANESE_INPUT.match(pendingPrefix, enemy.word, enemy.translation, parsed);
+  }
   const valid = roman !== null && enemy.inputs.some(input => input.startsWith(roman));
   els.flickInput.setAttribute("aria-invalid", String(!valid));
   if (!valid) {
-    recordTypingMiss(enemy);
+    const previous = previousValue === null ? "" : window.JAPANESE_INPUT.normalize(previousValue);
+    const deleting = inputType.startsWith("delete") || (normalized.length < previous.length && previous.startsWith(normalized));
+    // Erasing an error never removes its penalty or counts the same error again.
+    if (!deleting) recordTypingMiss(enemy);
     return;
   }
+  // Clear the native composition only after a full answer, without blurring the editor.
+  if (flickState.composing && enemy.inputs.includes(roman)) flickState.compositionConsumed = true;
   applyTypedValue(enemy, roman);
   if (enemy.resolving) clearFlickInput();
 }
@@ -78,7 +100,6 @@ function applyFlickValue(value, key = flickPromptKey()) {
 function queueFlickInput(key = flickPromptKey()) {
   window.clearTimeout(flickState.timerId);
   const value = els.flickInput.value;
-  // Browsers may send a final input event after compositionend. Coalesce both.
   flickState.timerId = window.setTimeout(() => {
     flickState.timerId = 0;
     if (!flickState.composing) applyFlickValue(value, key);
@@ -87,19 +108,34 @@ function queueFlickInput(key = flickPromptKey()) {
 
 function handleFlickCompositionStart() {
   window.clearTimeout(flickState.timerId);
+  window.clearTimeout(flickState.commitTimerId);
   flickState.timerId = 0;
+  flickState.commitTimerId = 0;
+  flickState.ignoreCommit = false;
   flickState.composing = true;
+  flickState.compositionConsumed = false;
   flickState.compositionKey = flickPromptKey();
 }
 
 function handleFlickCompositionEnd() {
+  const key = flickState.compositionKey;
+  const consumed = flickState.compositionConsumed;
   flickState.composing = false;
-  if (!flickState.compositionKey || flickState.compositionKey !== flickPromptKey()) {
+  flickState.compositionKey = "";
+  flickState.compositionConsumed = false;
+  if (!key || key !== flickPromptKey() || consumed) {
     clearFlickInput();
+    // Some keyboards send one more input event for the already answered composition.
+    flickState.ignoreCommit = true;
+    window.clearTimeout(flickState.commitTimerId);
+    flickState.commitTimerId = window.setTimeout(() => {
+      flickState.commitTimerId = 0;
+      flickState.ignoreCommit = false;
+    }, 0);
     return;
   }
   stripFlickLineBreaks();
-  queueFlickInput(flickState.compositionKey);
+  queueFlickInput(key);
 }
 
 function stripFlickLineBreaks() {
@@ -107,23 +143,37 @@ function stripFlickLineBreaks() {
   if (value !== els.flickInput.value) els.flickInput.value = value;
 }
 
-function handleFlickInput(event) {
-  if (event.isComposing || flickState.composing) return;
+function readFlickInput({ commit = false, inputType = "" } = {}) {
+  window.clearTimeout(flickState.timerId);
+  flickState.timerId = 0;
+  if (flickState.ignoreCommit || (flickState.composing
+      && (flickState.compositionConsumed || flickState.compositionKey !== flickPromptKey()))) {
+    clearFlickInput();
+    return;
+  }
   stripFlickLineBreaks();
-  queueFlickInput();
+  applyFlickValue(els.flickInput.value,
+    flickState.composing ? flickState.compositionKey : flickPromptKey(),
+    { composing: flickState.composing && !commit, inputType });
+}
+
+function handleFlickInput(event) {
+  if (event.isComposing && !flickState.composing) handleFlickCompositionStart();
+  readFlickInput({ inputType: event.inputType || "" });
 }
 
 function handleFlickKeydown(event) {
-  if (event.key !== "Enter" || event.isComposing || flickState.composing || event.keyCode === 229) return;
+  if (event.key !== "Enter") return;
+  // Prevent the keyboard action even during composition; input already drives combat.
   event.preventDefault();
-  queueFlickInput();
+  event.stopPropagation?.();
+  readFlickInput({ commit: true });
 }
 
 function handleFlickBeforeInput(event) {
-  if (!["insertLineBreak", "insertParagraph"].includes(event.inputType)
-      || event.isComposing || flickState.composing) return;
+  if (!["insertLineBreak", "insertParagraph"].includes(event.inputType)) return;
   if (event.cancelable) event.preventDefault();
-  queueFlickInput();
+  readFlickInput({ commit: true, inputType: event.inputType });
 }
 
 function initializeFlickInput() {

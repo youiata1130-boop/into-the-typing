@@ -74,5 +74,26 @@ window.JAPANESE_INPUT = (() => {
     return roman.slice(0, last?.romanEnd || 0);
   }
 
-  return { normalize, parse, match };
+  // A flick keyboard modifies the last kana with dakuten, handakuten, or small kana.
+  // Only that unfinished character may wait; an unrelated wrong kana is a miss now.
+  const kanaModifiers = {
+    あ: "ぁ", い: "ぃ", う: "ぅゔ", え: "ぇ", お: "ぉ",
+    か: "がゕ", き: "ぎ", く: "ぐ", け: "げゖ", こ: "ご",
+    さ: "ざ", し: "じ", す: "ず", せ: "ぜ", そ: "ぞ",
+    た: "だ", ち: "ぢ", つ: "づっ", て: "で", と: "ど",
+    は: "ばぱ", ひ: "びぴ", ふ: "ぶぷ", へ: "べぺ", ほ: "ぼぽ",
+    ば: "ぱ", び: "ぴ", ぶ: "ぷ", べ: "ぺ", ぼ: "ぽ",
+    や: "ゃ", ゆ: "ゅ", よ: "ょ", わ: "ゎ",
+  };
+
+  function pendingPrefix(value, parsed) {
+    const normalized = normalize(value);
+    if (!parsed || !normalized) return null;
+    const prefix = normalized.slice(0, -1);
+    const next = parsed.reading[prefix.length];
+    return parsed.reading.startsWith(prefix) && next
+      && kanaModifiers[normalized.at(-1)]?.includes(next) ? prefix : null;
+  }
+
+  return { normalize, parse, match, pendingPrefix };
 })();
