@@ -10,6 +10,10 @@ const flickState = {
   lastValue: null,
   lastPending: false,
   timerId: 0,
+  resetTimerId: 0,
+  inputVersion: 0,
+  completedInput: null,
+  carriedText: "",
 };
 
 function flickPromptKey() {
@@ -25,11 +29,56 @@ function clearFlickInput() {
   flickState.lastValue = null;
   flickState.lastPending = false;
   if (els.flickInput.value !== "") els.flickInput.value = "";
+  els.flickInput.setSelectionRange?.(0, 0);
   els.flickInput.setAttribute("aria-invalid", "false");
+}
+
+function finishFlickInput(value, key) {
+  const completed = {
+    key,
+    generation: state.battleGeneration,
+    values: [...new Set([flickState.carriedText + value, value])],
+  };
+  flickState.completedInput = completed;
+  flickState.carriedText = "";
+  clearFlickInput();
+  scheduleFlickReset(completed);
+}
+
+function scheduleFlickReset(completed = flickState.completedInput) {
+  if (!completed || completed.generation !== state.battleGeneration) return;
+  const version = flickState.inputVersion;
+  window.clearTimeout(flickState.resetTimerId);
+  // The IME may restore its marked text after our input handler has returned.
+  flickState.resetTimerId = window.setTimeout(() => {
+    flickState.resetTimerId = 0;
+    if (flickState.inputVersion !== version || flickState.completedInput !== completed
+        || completed.generation !== state.battleGeneration) return;
+    clearFlickInput();
+    flickState.composing = false;
+    flickState.compositionKey = "";
+    flickState.compositionConsumed = false;
+  }, 0);
+}
+
+function removeRestoredFlickText() {
+  const completed = flickState.completedInput;
+  if (!completed || completed.generation !== state.battleGeneration
+      || completed.key === flickPromptKey() || flickState.lastValue !== null) return;
+  const restored = completed.values.find(value => value && value === els.flickInput.value);
+  if (!restored) return;
+  flickState.carriedText = restored;
+  clearFlickInput();
 }
 
 function syncFlickInput() {
   const key = flickPromptKey();
+  if (flickState.completedInput?.generation !== state.battleGeneration) {
+    flickState.completedInput = null;
+    flickState.carriedText = "";
+    window.clearTimeout(flickState.resetTimerId);
+    flickState.resetTimerId = 0;
+  }
   if (flickState.promptKey !== key) {
     flickState.promptKey = key;
     clearFlickInput();
@@ -94,7 +143,7 @@ function applyFlickValue(value, key = flickPromptKey(), { composing = false, inp
   // Clear the native composition only after a full answer, without blurring the editor.
   if (flickState.composing && enemy.inputs.includes(roman)) flickState.compositionConsumed = true;
   applyTypedValue(enemy, roman);
-  if (enemy.resolving) clearFlickInput();
+  if (enemy.resolving) finishFlickInput(value, key);
 }
 
 function queueFlickInput(key = flickPromptKey()) {
@@ -107,6 +156,8 @@ function queueFlickInput(key = flickPromptKey()) {
 }
 
 function handleFlickCompositionStart() {
+  flickState.inputVersion += 1;
+  removeRestoredFlickText();
   window.clearTimeout(flickState.timerId);
   window.clearTimeout(flickState.commitTimerId);
   flickState.timerId = 0;
@@ -125,6 +176,7 @@ function handleFlickCompositionEnd() {
   flickState.compositionConsumed = false;
   if (!key || key !== flickPromptKey() || consumed) {
     clearFlickInput();
+    scheduleFlickReset();
     // Some keyboards send one more input event for the already answered composition.
     flickState.ignoreCommit = true;
     window.clearTimeout(flickState.commitTimerId);
@@ -144,20 +196,41 @@ function stripFlickLineBreaks() {
 }
 
 function readFlickInput({ commit = false, inputType = "" } = {}) {
+  flickState.inputVersion += 1;
   window.clearTimeout(flickState.timerId);
   flickState.timerId = 0;
   if (flickState.ignoreCommit || (flickState.composing
       && (flickState.compositionConsumed || flickState.compositionKey !== flickPromptKey()))) {
     clearFlickInput();
+    scheduleFlickReset();
     return;
   }
   stripFlickLineBreaks();
+  if (flickState.carriedText) {
+    const value = els.flickInput.value;
+    if (value.startsWith(flickState.carriedText)) {
+      els.flickInput.value = value.slice(flickState.carriedText.length);
+      els.flickInput.setSelectionRange?.(els.flickInput.value.length, els.flickInput.value.length);
+    } else {
+      flickState.carriedText = "";
+    }
+  }
   applyFlickValue(els.flickInput.value,
     flickState.composing ? flickState.compositionKey : flickPromptKey(),
     { composing: flickState.composing && !commit, inputType });
 }
 
 function handleFlickInput(event) {
+  const completed = flickState.completedInput;
+  if (event.inputType === "insertFromComposition" && completed?.generation === state.battleGeneration
+      && completed.values.includes(els.flickInput.value)
+      && (!flickState.composing || flickState.compositionConsumed || flickState.compositionKey === completed.key)) {
+    // A late commit belongs to the completed word, even after the next prompt opened.
+    const currentValue = flickState.lastValue || "";
+    els.flickInput.value = currentValue;
+    els.flickInput.setSelectionRange?.(currentValue.length, currentValue.length);
+    return;
+  }
   if (event.isComposing && !flickState.composing) handleFlickCompositionStart();
   readFlickInput({ inputType: event.inputType || "" });
 }
@@ -171,6 +244,7 @@ function handleFlickKeydown(event) {
 }
 
 function handleFlickBeforeInput(event) {
+  removeRestoredFlickText();
   if (!["insertLineBreak", "insertParagraph"].includes(event.inputType)) return;
   if (event.cancelable) event.preventDefault();
   readFlickInput({ commit: true, inputType: event.inputType });

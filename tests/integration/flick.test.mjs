@@ -328,3 +328,82 @@ test("Enter and line breaks are prevented even during composition without changi
   assert.equal(game.run("getCurrentEnemy().typingMisses"), 0);
   assert.equal(game.run("editor === els.flickInput && document.activeElement === editor && !editor.readOnly"), true);
 });
+
+test("a completed word restored by the IME after its input event is cleared before the next prompt", () => {
+  const game = battle("greatsword");
+  prompt(game, "gakkou", "学校");
+  game.run('handleFlickCompositionStart(); els.flickInput.value = "がっこう"; handleFlickInput({ isComposing: true }); els.flickInput.value = "がっこう"');
+  game.advance(0);
+  assert.equal(game.run("els.flickInput.value"), "");
+  assert.equal(game.run("flickState.composing"), false);
+  game.advance(220);
+  game.run('handleFlickCompositionStart(); els.flickInput.value = getFlickReading(getCurrentEnemy()).reading; handleFlickInput({ isComposing: true })');
+  assert.equal(game.run("state.combo"), 2);
+  assert.equal(game.run("getCurrentEnemy().typingMisses"), 0);
+  assert.equal(game.run("els.flickInput.value"), "");
+});
+
+test("a delayed insertFromComposition never restores or judges the previous answer", () => {
+  const game = battle("greatsword");
+  prompt(game, "gakkou", "学校");
+  game.run('handleFlickCompositionStart(); els.flickInput.value = "がっこう"; handleFlickInput({ isComposing: true }); handleFlickCompositionEnd()');
+  game.advance(220);
+  game.run('els.flickInput.value = "がっこう"; handleFlickInput({ isComposing: false, inputType: "insertFromComposition", data: "がっこう" })');
+  assert.equal(game.run("els.flickInput.value"), "");
+  assert.equal(game.run("getCurrentEnemy().typingMisses"), 0);
+  assert.equal(game.run("state.combo"), 1);
+});
+
+test("an old answer reinserted before the next edit is removed without eating the new kana", () => {
+  const game = battle("greatsword");
+  prompt(game, "gakkou", "学校");
+  game.run('handleFlickCompositionStart(); els.flickInput.value = "がっこう"; handleFlickInput({ isComposing: true })');
+  game.advance(220);
+  game.run('target.word = target.matchedWord = "kibounohikari"; target.inputs = ["kibounohikari"]; target.translation = "希望の光"; target.inputRevision++; renderWord()');
+  game.run('els.flickInput.value = "がっこう"; handleFlickCompositionStart(); handleFlickBeforeInput({ inputType: "insertCompositionText", isComposing: true, data: "がっこうき" }); els.flickInput.value = "がっこうき"; handleFlickInput({ isComposing: true, inputType: "insertCompositionText", data: "がっこうき" })');
+  assert.equal(game.run("els.flickInput.value"), "き");
+  assert.equal(game.run("target.typed"), "ki");
+  assert.equal(game.run("target.typingMisses"), 0);
+});
+
+test("repeated answers still count after a complete input reset", () => {
+  const game = createGame({}, { touch: true });
+  game.run('startGame(); advanceStory(); handleFlickCompositionStart(); els.flickInput.value = "あ"; handleFlickInput({ isComposing: true })');
+  game.advance(480);
+  game.run('handleFlickCompositionStart(); els.flickInput.value = "あ"; handleFlickInput({ isComposing: true })');
+  game.advance(0);
+  assert.equal(game.run("getCurrentEnemy().tutorial.punches"), 2);
+  assert.equal(game.run("els.flickInput.value"), "");
+  assert.equal(game.run("document.activeElement === els.flickInput"), true);
+});
+
+test("a new composition cancels old deferred cleanup without losing its prefix", () => {
+  const game = battle("greatsword");
+  prompt(game, "gakkou", "学校");
+  game.run('handleFlickCompositionStart(); els.flickInput.value = "がっこう"; handleFlickInput({ isComposing: true }); target.resolving = false; target.word = target.matchedWord = "kibounohikari"; target.inputs = ["kibounohikari"]; target.translation = "希望の光"; target.typed = ""; target.inputRevision++; renderWord(); handleFlickCompositionStart(); els.flickInput.value = "き"; handleFlickInput({ isComposing: true })');
+  game.advance(0);
+  assert.equal(game.run("els.flickInput.value"), "き");
+  assert.equal(game.run("target.typed"), "ki");
+  assert.equal(game.run("flickState.composing"), true);
+});
+
+test("a late old commit preserves the prefix already entered for the new prompt", () => {
+  const game = battle("greatsword");
+  prompt(game, "gakkou", "学校");
+  game.run('handleFlickCompositionStart(); els.flickInput.value = "がっこう"; handleFlickInput({ isComposing: true })');
+  game.advance(220);
+  game.run('target.word = target.matchedWord = "kibounohikari"; target.inputs = ["kibounohikari"]; target.translation = "希望の光"; target.inputRevision++; renderWord(); els.flickInput.value = "き"; handleFlickInput({ isComposing: false }); els.flickInput.value = "がっこう"; handleFlickInput({ inputType: "insertFromComposition", isComposing: false })');
+  assert.equal(game.run("els.flickInput.value"), "き");
+  assert.equal(game.run("target.typed"), "ki");
+  assert.equal(game.run("target.typingMisses"), 0);
+});
+
+test("duplicate input after an answer still resets the composition session", () => {
+  const game = battle("greatsword");
+  prompt(game, "gakkou", "学校");
+  game.run('handleFlickCompositionStart(); els.flickInput.value = "がっこう"; handleFlickInput({ isComposing: true }); els.flickInput.value = "がっこう"; handleFlickInput({ isComposing: true }); els.flickInput.value = "がっこう"');
+  game.advance(0);
+  assert.equal(game.run("els.flickInput.value"), "");
+  assert.equal(game.run("flickState.composing"), false);
+  assert.equal(game.run("state.combo"), 1);
+});
