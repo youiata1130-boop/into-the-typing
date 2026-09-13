@@ -37,7 +37,7 @@ For Netlify, Vercel, Cloudflare Pages, Firebase Hosting, or similar services:
 into-the-typing/
 ├── index.html              # App entry point and script loading order
 ├── src/
-│   ├── app/game.js         # Game state, typing, story, and battle flow
+│   ├── app/                # Asset loading, game state, story, and battle flow
 │   ├── config/             # Stage, weapon, animation, and progression settings
 │   ├── data/               # Typing words and interface text
 │   ├── input/              # Japanese reading matching and mobile keyboard
@@ -59,6 +59,7 @@ into-the-typing/
 
 | Change | File |
 | --- | --- |
+| Startup image loading | `src/app/loading.js` |
 | Game behavior | `src/app/game.js` |
 | Typing words | `src/data/words.js` |
 | Interface text | `src/data/labels.js` |
@@ -79,6 +80,9 @@ Scripts load in the order listed in `index.html`. They remain classic browser sc
 `npm run check` checks every JavaScript file under `src`, `scripts`, and `tests`. `npm test` runs the unit and integration tests.
 
 ## Asset Notes
+
+- Startup waits for all playable enemy frames, weapon frames, page images, and map variants to download and decode. A progress screen blocks play until everything is ready; failed or timed-out loads offer a retry. Successfully loaded assets are retained for retry.
+- CSS-only backgrounds are declared as image preload links in `index.html`; keep those links in sync when adding backgrounds. Images already referenced by the page or responsive map are collected automatically.
 
 - Add enemy frames under `src/assets/images/enemies/{enemy}/level_{n}`.
 - Register new enemy frames in `src/config/enemyAnimations.js`.

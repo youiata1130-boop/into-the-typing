@@ -908,6 +908,7 @@ function startConfirmedStage() {
 }
 
 function showStartScreen() {
+  if (!assetLoadingState.ready) return;
   setStoryPhase("none");
   invalidateBattleGeneration();
   state.running = false;
@@ -930,6 +931,7 @@ function showStartScreen() {
 }
 
 function showStageSelect() {
+  if (!assetLoadingState.ready) return;
   setStoryPhase("none");
   state.pendingExperience = 0;
   invalidateBattleGeneration();
@@ -1222,26 +1224,6 @@ function clearBossIntro() {
   els.bossIntro.classList.remove("is-active");
   state.activeEnemies.forEach((enemy) => {
     enemy.element.classList.remove("boss-entry");
-  });
-}
-
-function preloadEnemyFrames() {
-  Object.values(enemyAnimations.enemies).forEach((enemy) => {
-    Object.values(enemy).forEach((frames) => {
-      frames.forEach((src) => {
-        const image = new Image();
-        image.src = src;
-      });
-    });
-  });
-}
-
-function preloadPlayerFrames() {
-  Object.values(playerWeaponAssets).forEach((weapon) => {
-    Object.values(weapon).flat().forEach((src) => {
-      const image = new Image();
-      image.src = src;
-    });
   });
 }
 
@@ -2001,6 +1983,7 @@ function resetGame() {
 }
 
 function startGame(stageId = state.stageId) {
+  if (!assetLoadingState.ready) return;
   const resolvedStageId = stageDefinitions[stageId] ? stageId : defaultStageId;
   const stage = getStageDefinition(resolvedStageId);
 
@@ -2143,6 +2126,7 @@ function isStartScreenVisible() {
 }
 
 function handleTypingKeydown(event) {
+  if (!assetLoadingState.ready) return;
   if (event.target === els.flickInput || event.isComposing || event.keyCode === 229 || flickState.composing) return;
   if (event.code === "Escape") {
     if (!els.stageScreen.hidden && !els.stageConfirm.hidden) {
@@ -2277,7 +2261,5 @@ els.stageChoices.addEventListener("click", (event) => {
 document.addEventListener("keydown", handleTypingKeydown);
 
 initializeFlickInput();
-preloadEnemyFrames();
-preloadPlayerFrames();
 resetGame();
-showStartScreen();
+loadGameAssets();

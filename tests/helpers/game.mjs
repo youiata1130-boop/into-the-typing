@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import vm from "node:vm";
 
 // A small DOM and clock let the real battle flow run without browser dependencies.
-export function createGame(savedItems = {}, { touch = false } = {}) {
+export function createGame(savedItems = {}, { touch = false, loadImages = true } = {}) {
   let now = 0;
   let nextTimerId = 1;
   const timers = new Map();
@@ -41,6 +41,7 @@ export function createGame(savedItems = {}, { touch = false } = {}) {
   const document = element();
   document.documentElement = element();
   document.body = element();
+  document.baseURI = "https://typing.test/";
   document.createElement = element;
   const window = {
     localStorage: {
@@ -60,14 +61,39 @@ export function createGame(savedItems = {}, { touch = false } = {}) {
   };
   const context = vm.createContext({
     document, window, performance: { now: () => now },
-    Image: class {},
+    URL,
     requestAnimationFrame(callback) {
       const id = nextTimerId++;
       frames.set(id, callback);
       return id;
     },
     cancelAnimationFrame: id => frames.delete(id),
-  });
+  }, { microtaskMode: "afterEvaluate" });
+  vm.runInContext(`
+    window.testImages = [];
+    class Image {
+      constructor() { this.complete = false; this.naturalWidth = 0; this.naturalHeight = 0; }
+      set src(value) {
+        this.url = value;
+        window.testImages.push(this);
+        if (${loadImages}) this.succeed();
+      }
+      get src() { return this.url; }
+      succeed() {
+        this.complete = true;
+        this.naturalWidth = this.naturalHeight = 64;
+        this.onload?.();
+      }
+      fail() { this.onerror?.(); }
+      deferDecode() {
+        this.decodePromise = new Promise((resolve, reject) => {
+          this.resolveDecode = resolve;
+          this.rejectDecode = reject;
+        });
+      }
+      decode() { return this.decodePromise || Promise.resolve(); }
+    }
+  `, context);
   const entryUrl = new URL("../../index.html", import.meta.url);
   const html = readFileSync(entryUrl, "utf8");
   for (const [, src] of html.matchAll(/<script\b[^>]*\bsrc="([^"]+)"[^>]*><\/script>/g)) {
@@ -86,6 +112,7 @@ export function createGame(savedItems = {}, { touch = false } = {}) {
       timers.delete(id);
       now = timer.at;
       timer.callback();
+      vm.runInContext("", context);
     }
     now = end;
   }
