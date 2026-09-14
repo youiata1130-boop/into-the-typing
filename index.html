@@ -7,7 +7,7 @@
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='52'%3E%E2%9A%94%EF%B8%8F%3C/text%3E%3C/svg%3E">
     <link rel="preload" as="image" href="src/assets/images/backgrounds/shared/typing_rpg_background.png">
     <link rel="preload" as="image" href="src/assets/images/backgrounds/status/base_interior.png">
-    <link rel="stylesheet" href="src/styles/main.css?v=asset-loading-v1">
+    <link rel="stylesheet" href="src/styles/main.css?v=treasure-reward-v1">
   </head>
   <body>
     <section class="loading-screen" id="loadingScreen" aria-labelledby="loadingText" aria-busy="true">
@@ -102,7 +102,7 @@
             </label>
             <label class="weapon-option" for="weaponSword">
               <input id="weaponSword" type="radio" name="weapon" value="sword" aria-labelledby="weaponSwordName">
-              <span class="weapon-option-body"><strong id="weaponSwordName">片手剣</strong></span>
+              <span class="weapon-option-body"><strong id="weaponSwordName">鉄の剣</strong></span>
             </label>
             <label class="weapon-option" for="weaponGreatsword">
               <input id="weaponGreatsword" type="radio" name="weapon" value="greatsword" aria-labelledby="weaponGreatswordName">
@@ -230,6 +230,56 @@
           <div class="notice-card">
             <span class="notice-kicker" id="noticeKicker">START</span>
             <strong id="noticeTitle">開始</strong>
+            <div class="treasure-reward" id="treasureReward" hidden>
+              <svg class="treasure-art" viewBox="0 0 280 220" role="img" aria-label="宝箱から現れた鉄の剣">
+                <defs>
+                  <linearGradient id="chestWood" x2="0" y2="1">
+                    <stop stop-color="#c98c47"/><stop offset="1" stop-color="#784120"/>
+                  </linearGradient>
+                  <linearGradient id="chestGold" x2="0.8" y2="1">
+                    <stop stop-color="#fff0ae"/><stop offset=".45" stop-color="#e6b64d"/><stop offset="1" stop-color="#ac7625"/>
+                  </linearGradient>
+                  <linearGradient id="ironBlade">
+                    <stop stop-color="#728c9a"/><stop offset=".46" stop-color="#eaf6fa"/><stop offset=".5" stop-color="#fff"/><stop offset=".54" stop-color="#b4cbd4"/><stop offset="1" stop-color="#738895"/>
+                  </linearGradient>
+                  <radialGradient id="treasureGlow">
+                    <stop stop-color="#fff8c3" stop-opacity=".95"/><stop offset="1" stop-color="#ffe697" stop-opacity="0"/>
+                  </radialGradient>
+                </defs>
+                <ellipse cx="140" cy="201" rx="105" ry="12" fill="#543419" opacity=".18"/>
+                <ellipse class="treasure-glow" cx="140" cy="104" rx="117" ry="97" fill="url(#treasureGlow)"/>
+                <g class="treasure-lid" stroke="#61401f" stroke-width="3" stroke-linejoin="round">
+                  <path d="M49 115V84Q49 66 68 66H212Q231 66 231 84V115Z" fill="url(#chestWood)"/>
+                  <path d="M53 96H227M54 82H226" fill="none" stroke="#885326" stroke-width="2"/>
+                  <path d="M70 67H87V115H70ZM193 67H210V115H193Z" fill="url(#chestGold)"/>
+                  <path d="M48 107H232V119H48Z" fill="url(#chestGold)"/>
+                </g>
+                <path d="M45 137L64 113H216L235 137L221 150H59Z" fill="#39271e" stroke="#61401f" stroke-width="3"/>
+                <g class="treasure-sword" stroke="#536b78" stroke-width="2.5" stroke-linejoin="round">
+                  <path d="M140 10L151 31V110L140 122L129 110V31Z" fill="url(#ironBlade)"/>
+                  <path d="M140 30V109" stroke="#f5fcff" stroke-width="2"/>
+                  <path d="M108 116Q140 106 172 116L168 125Q140 118 112 125Z" fill="url(#chestGold)" stroke="#896226"/>
+                  <path d="M134 122H146V151H134Z" fill="#704a37" stroke="#533c2e"/>
+                  <path d="M135 130L145 135M135 139L145 144" stroke="#c49767" stroke-width="2"/>
+                  <path d="M133 151H147L150 158L140 165L130 158Z" fill="url(#chestGold)" stroke="#896226"/>
+                </g>
+                <g stroke="#61401f" stroke-width="3" stroke-linejoin="round">
+                  <path d="M46 137H234L227 190Q226 198 215 198H65Q54 198 53 190Z" fill="url(#chestWood)"/>
+                  <path d="M56 163H225M59 182H222" fill="none" stroke="#885326" stroke-width="2"/>
+                  <path d="M70 138H87V198H72ZM193 138H210L208 198H193Z" fill="url(#chestGold)"/>
+                  <path d="M45 135H235V146H45Z" fill="url(#chestGold)"/>
+                  <path d="M129 142H151V167Q140 174 129 167Z" fill="url(#chestGold)"/>
+                  <circle cx="140" cy="155" r="3" fill="#61401f" stroke="none"/>
+                  <path d="M140 157V162" stroke-width="3"/>
+                </g>
+                <g class="treasure-sparkles" fill="#f7d66b" stroke="#fff5c9" stroke-width="1">
+                  <path d="M93 30L96 40L106 43L96 46L93 56L90 46L80 43L90 40Z"/>
+                  <path d="M190 52L193 59L201 62L193 65L190 73L187 65L179 62L187 59Z"/>
+                  <path d="M177 16L179 21L184 23L179 25L177 30L175 25L170 23L175 21Z"/>
+                </g>
+              </svg>
+            </div>
+            <p class="treasure-text" id="treasureText" hidden>鉄の剣を手に入れた！</p>
             <span id="noticeText">はじまりの森へ向かいます。</span>
             <button id="noticeButton" type="button">ステージへ</button>
           </div>
@@ -248,7 +298,7 @@
         <div class="typing-box" aria-label="入力状況">
           <div class="typing-box-head">
             <span class="typing-label" id="typingLabel">入力</span>
-            <span class="battle-weapon-badge" id="battleWeaponName">片手剣</span>
+            <span class="battle-weapon-badge" id="battleWeaponName">鉄の剣</span>
           </div>
           <div class="weapon-charge" id="weaponCharge" hidden>
             <div class="weapon-charge-head">
@@ -292,14 +342,14 @@
 
     <script src="src/data/words.js?v=flick-input-v1"></script>
     <script src="src/data/labels.js?v=folder-layout-v2"></script>
-    <script src="src/config/weapons.js?v=shared-word-length-v1"></script>
-    <script src="src/config/stages.js?v=stage-two-v1"></script>
+    <script src="src/config/weapons.js?v=treasure-reward-v1"></script>
+    <script src="src/config/stages.js?v=treasure-reward-v1"></script>
     <script src="src/config/enemyAnimations.js?v=greatsword-charge-v1"></script>
     <script src="src/config/playerProgression.js?v=player-progression-v1"></script>
     <script src="src/input/japanese.js?v=live-flick-v1"></script>
     <script src="src/ui/battleLayout.js?v=mobile-layout-v2"></script>
     <script src="src/input/mobile.js?v=word-reset-v1"></script>
-    <script src="src/app/loading.js?v=asset-loading-v1"></script>
-    <script src="src/app/game.js?v=asset-loading-v1"></script>
+    <script src="src/app/loading.js?v=treasure-reward-v1"></script>
+    <script src="src/app/game.js?v=treasure-reward-v1"></script>
   </body>
 </html>

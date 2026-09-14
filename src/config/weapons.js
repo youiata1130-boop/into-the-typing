@@ -9,7 +9,7 @@ const weaponDefinitions = {
   },
   sword: {
     id: "sword",
-    name: "片手剣",
+    name: "鉄の剣",
     damageMultiplier: 1,
   },
   greatsword: {

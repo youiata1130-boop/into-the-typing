@@ -94,6 +94,12 @@ function getWeaponDefinition(weaponId = defaultWeaponId) {
   return weaponDefinitions[weaponId] || weaponDefinitions[defaultWeaponId];
 }
 
+function isWeaponAvailable(weaponId) {
+  if (!Object.hasOwn(weaponDefinitions, weaponId)) return false;
+  if (weaponId === "sword") return state.introCompleted && state.ironSwordObtained;
+  return weaponId === defaultWeaponId || state.introCompleted;
+}
+
 function getBattleWeaponId() {
   return isUnarmedStory() ? unarmedWeapon.id : state.weaponId;
 }
@@ -131,9 +137,14 @@ function loadPlayerProgress() {
   try {
     const saved = JSON.parse(window.localStorage.getItem(progressionStorageKey) || "null");
     if (saved?.version === 2) {
+      // Older saves already allowed every sword after receiving the branch.
+      const ironSwordObtained = saved.introCompleted === true
+        && (saved.ironSwordObtained === true || !Object.hasOwn(saved, "ironSwordObtained"));
       return {
         ...progression.restore(saved),
-        weaponId: saved.introCompleted === true && Object.hasOwn(weaponDefinitions, saved.weaponId) ? saved.weaponId : defaultWeaponId,
+        weaponId: saved.introCompleted === true && Object.hasOwn(weaponDefinitions, saved.weaponId)
+          && (saved.weaponId !== "sword" || ironSwordObtained) ? saved.weaponId : defaultWeaponId,
+        ironSwordObtained,
         introCompleted: saved.introCompleted === true,
         equipmentTutorialCompleted: saved.introCompleted === true && saved.equipmentTutorialCompleted === true,
       };
@@ -141,7 +152,7 @@ function loadPlayerProgress() {
   } catch {
     progressionSaveAvailable = false;
   }
-  return { ...progression.restore(), weaponId: defaultWeaponId, introCompleted: false, equipmentTutorialCompleted: false };
+  return { ...progression.restore(), weaponId: defaultWeaponId, introCompleted: false, equipmentTutorialCompleted: false, ironSwordObtained: false };
 }
 
 function savePlayerProgress() {
@@ -153,6 +164,7 @@ function savePlayerProgress() {
       weaponId: state.weaponId,
       introCompleted: state.introCompleted,
       equipmentTutorialCompleted: state.equipmentTutorialCompleted,
+      ironSwordObtained: state.ironSwordObtained,
     }));
     progressionSaveAvailable = true;
   } catch {
@@ -302,6 +314,8 @@ const els = {
   noticeTitle: document.querySelector("#noticeTitle"),
   noticeText: document.querySelector("#noticeText"),
   noticeButton: document.querySelector("#noticeButton"),
+  treasureReward: document.querySelector("#treasureReward"),
+  treasureText: document.querySelector("#treasureText"),
   stageChoices: document.querySelector("#stageChoices"),
   stageConfirm: document.querySelector("#stageConfirm"),
   stageConfirmName: document.querySelector("#stageConfirmName"),
@@ -469,7 +483,7 @@ function updateStatusPanel() {
 
   els.weaponPanel.querySelectorAll("input[name='weapon']").forEach((input) => {
     input.checked = input.value === activeWeapon.id;
-    input.disabled = state.running || (!state.introCompleted && input.value !== defaultWeaponId);
+    input.disabled = state.running || !isWeaponAvailable(input.value);
   });
 
   els.statusPanel.querySelectorAll("[data-stat][data-stat-delta]").forEach((button) => {
@@ -623,7 +637,9 @@ function focusStageSurface() {
 }
 
 function hideGameNotice() {
-  els.gameNotice.classList.remove("is-visible", "is-actionable");
+  els.gameNotice.classList.remove("is-visible", "is-actionable", "has-treasure");
+  els.treasureReward.hidden = true;
+  els.treasureText.hidden = true;
   els.gameNotice.setAttribute("aria-hidden", "true");
 }
 
@@ -731,10 +747,13 @@ function flushBufferedInput() {
 }
 
 function showGameNotice(kind, kicker, title, text, options = {}) {
-  const { persistent = false, duration = 900 } = options;
+  const { persistent = false, duration = 900, treasure = false } = options;
 
   clearNoticeTimer();
   els.gameNotice.dataset.kind = kind;
+  els.treasureReward.hidden = !treasure;
+  els.treasureText.hidden = !treasure;
+  els.gameNotice.classList.toggle("has-treasure", treasure);
   els.noticeKicker.textContent = kicker;
   els.noticeTitle.textContent = title;
   els.noticeText.textContent = text;
@@ -1001,7 +1020,7 @@ function changePlayerStat(stat, delta) {
 }
 
 function selectWeapon(weaponId) {
-  if (state.running || (!state.introCompleted && weaponId !== defaultWeaponId) || !Object.hasOwn(weaponDefinitions, weaponId) || state.weaponId === weaponId) {
+  if (state.running || !isWeaponAvailable(weaponId) || state.weaponId === weaponId) {
     updateStatusPanel();
     return;
   }
@@ -1908,8 +1927,13 @@ function finishGame(cleared) {
   clearBossIntro();
   els.startButton.textContent = t.start;
 
+  const treasure = cleared && getStageDefinition(state.stageId).rewardWeaponId === "sword";
   let resultText = "獲得経験値 0 EXP";
   if (cleared) {
+    if (treasure) {
+      state.ironSwordObtained = true;
+      state.weaponId = "sword";
+    }
     const previousLevel = state.level;
     const reward = progression.gainExperience(state, state.pendingExperience);
     state.battleExperience = reward.gained;
@@ -1933,12 +1957,13 @@ function finishGame(cleared) {
       noDamageClear ? "PERFECT" : "CLEAR",
       getStageDefinition(state.stageId).tutorial ? "チュートリアル完了" : noDamageClear ? t.perfectTitle : t.clearTitle,
       resultText,
-      { persistent: true },
+      { persistent: true, treasure },
     );
     const nextStageId = getStageDefinition(state.stageId).nextStageId;
     if (isStageAvailable(nextStageId)) {
       els.noticeButton.textContent = `ステージ${stageDefinitions[nextStageId].code}へ`;
     }
+    if (treasure) els.noticeButton.focus({ preventScroll: true });
   }
 }
 

@@ -18,6 +18,7 @@ const stageDefinitions = {
     enabled: true,
     tutorial: true,
     nextStageId: "mist_road",
+    rewardWeaponId: "sword",
     storyIntro: { punches: 3, branchHits: 4, weaponId: "branch" },
     waves: [
       { types: ["egg_level_1"], hp: 2, attackPower: { min: 6, max: 10 }, count: 1, experience: 10 },
