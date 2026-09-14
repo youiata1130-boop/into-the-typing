@@ -74,8 +74,8 @@ test("the branch picture and dialogue pause battle before Next equips the same e
   assert.equal(game.run("state.inputBuffer.length"), 0);
   assert.equal(game.run("els.storyItem.hidden"), true);
   assert.equal(game.run("els.storyDialog.hidden"), true);
-  assert.equal(JSON.parse(game.saved()[saveKey]).introCompleted, true);
-  assert.equal(JSON.parse(game.saved()[saveKey]).weaponId, "branch");
+  assert.equal(game.savedProgress().introCompleted, true);
+  assert.equal(game.savedProgress().weaponId, "branch");
 });
 
 test("branch prompts stay at two or three letters for normal enemies and bosses", () => {
@@ -188,7 +188,7 @@ test("the tutorial has no HP and requires exactly four branch hits regardless of
     assert.equal(game.run("state.pendingExperience"), 10);
     assert.equal(game.run("state.totalExperience"), 0);
     assert.equal(game.run("Object.hasOwn(tutorialEnemy, 'hp') || Object.hasOwn(tutorialEnemy, 'maxHp')"), false);
-    assert.equal(JSON.parse(game.saved()[saveKey]).equipmentTutorialCompleted, true);
+    assert.equal(game.savedProgress().equipmentTutorialCompleted, true);
     game.advance(880);
     assert.equal(game.run("state.running"), false);
     assert.equal(game.run("state.totalExperience"), 10);
@@ -211,7 +211,7 @@ test("an interrupted branch lesson restarts, and its old defeat callback cannot 
     game.advance(220);
   }
   const saved = game.saved();
-  assert.equal(JSON.parse(saved[saveKey]).equipmentTutorialCompleted, false);
+  assert.equal(game.savedProgress().equipmentTutorialCompleted, false);
   const reloaded = createGame(saved);
   reloaded.run("startGame(); advanceStory()");
   assert.equal(reloaded.run("getCurrentEnemy().tutorial.punches"), 0);

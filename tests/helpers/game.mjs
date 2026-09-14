@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import vm from "node:vm";
 
 // A small DOM and clock let the real battle flow run without browser dependencies.
-export function createGame(savedItems = {}, { touch = false, loadImages = true } = {}) {
+export function createGame(savedItems = {}, { touch = false, loadImages = true, chooseSave = true } = {}) {
   let now = 0;
   let nextTimerId = 1;
   const timers = new Map();
@@ -103,6 +103,9 @@ export function createGame(savedItems = {}, { touch = false, loadImages = true }
   }
   const run = source => vm.runInContext(source, context);
   const snapshot = source => JSON.parse(JSON.stringify(run(source)));
+  if (chooseSave) {
+    run('const initialSave = getSaveEntry(0); activatePlayerSave(0, initialSave.data ? initialSave : saveSlots.write(0, "テスト", playerProgressSnapshot(loadPlayerProgress()), initialSave.raw))');
+  }
   function advance(ms) {
     const end = now + ms;
     while (true) {
@@ -116,5 +119,5 @@ export function createGame(savedItems = {}, { touch = false, loadImages = true }
     }
     now = end;
   }
-  return { run, snapshot, advance, saved: () => Object.fromEntries(storage) };
+  return { run, snapshot, advance, saved: () => Object.fromEntries(storage), savedProgress: () => snapshot("saveSlots.read(activeSaveSlot).data.progress") };
 }

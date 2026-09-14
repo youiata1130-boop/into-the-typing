@@ -1,6 +1,7 @@
 // Judge native text updates immediately while keeping IME events out of battle key handling.
 const flickState = {
   enabled: false,
+  battleGeneration: -1,
   composing: false,
   compositionKey: "",
   compositionConsumed: false,
@@ -14,6 +15,8 @@ const flickState = {
   inputVersion: 0,
   completedInput: null,
   carriedText: "",
+  freshComposition: false,
+  beforeInput: null,
 };
 
 function flickPromptKey() {
@@ -37,9 +40,11 @@ function finishFlickInput(value, key) {
   const completed = {
     key,
     generation: state.battleGeneration,
-    values: [...new Set([flickState.carriedText + value, value])],
+    values: [...new Set([flickState.carriedText + value, value, getCurrentEnemy()?.translation, getFlickReading(getCurrentEnemy())?.reading].filter(Boolean))],
+    composing: flickState.composing,
   };
   flickState.completedInput = completed;
+  flickState.freshComposition = false;
   flickState.carriedText = "";
   clearFlickInput();
   scheduleFlickReset(completed);
@@ -73,9 +78,18 @@ function removeRestoredFlickText() {
 
 function syncFlickInput() {
   const key = flickPromptKey();
-  if (flickState.completedInput?.generation !== state.battleGeneration) {
+  if (flickState.battleGeneration !== state.battleGeneration) {
+    flickState.battleGeneration = state.battleGeneration;
+    flickState.composing = false;
+    flickState.compositionKey = "";
+    flickState.compositionConsumed = false;
+    flickState.ignoreCommit = false;
+    window.clearTimeout(flickState.commitTimerId);
+    flickState.commitTimerId = 0;
     flickState.completedInput = null;
     flickState.carriedText = "";
+    flickState.freshComposition = false;
+    flickState.beforeInput = null;
     window.clearTimeout(flickState.resetTimerId);
     flickState.resetTimerId = 0;
   }
@@ -155,9 +169,10 @@ function queueFlickInput(key = flickPromptKey()) {
   }, 0);
 }
 
-function handleFlickCompositionStart() {
+function handleFlickCompositionStart({ fromInput = false } = {}) {
+  flickState.freshComposition = !fromInput;
   flickState.inputVersion += 1;
-  removeRestoredFlickText();
+  if (!fromInput) removeRestoredFlickText();
   window.clearTimeout(flickState.timerId);
   window.clearTimeout(flickState.commitTimerId);
   flickState.timerId = 0;
@@ -168,7 +183,14 @@ function handleFlickCompositionStart() {
   flickState.compositionKey = flickPromptKey();
 }
 
-function handleFlickCompositionEnd() {
+function handleFlickCompositionEnd(event = {}) {
+  const completed = flickState.completedInput;
+  if (completed?.generation === state.battleGeneration && completed.key !== flickPromptKey()
+      && completed.values.includes(event.data) && flickState.lastValue !== null) {
+    restoreCurrentFlickText();
+    return;
+  }
+  flickState.freshComposition = false;
   const key = flickState.compositionKey;
   const consumed = flickState.compositionConsumed;
   flickState.composing = false;
@@ -206,32 +228,71 @@ function readFlickInput({ commit = false, inputType = "" } = {}) {
     return;
   }
   stripFlickLineBreaks();
-  if (flickState.carriedText) {
-    const value = els.flickInput.value;
-    if (value.startsWith(flickState.carriedText)) {
-      els.flickInput.value = value.slice(flickState.carriedText.length);
-      els.flickInput.setSelectionRange?.(els.flickInput.value.length, els.flickInput.value.length);
-    } else {
-      flickState.carriedText = "";
-    }
-  }
   applyFlickValue(els.flickInput.value,
     flickState.composing ? flickState.compositionKey : flickPromptKey(),
     { composing: flickState.composing && !commit, inputType });
 }
 
-function handleFlickInput(event) {
+
+function isCurrentFlickPrefix(value, composing = false) {
+  const enemy = getCurrentEnemy();
+  if (!enemy) return false;
+  const normalized = window.JAPANESE_INPUT.normalize(value);
+  const parsed = getFlickReading(enemy);
+  const roman = /^[a-z-]*$/.test(normalized) ? normalized
+    : window.JAPANESE_INPUT.match(value, enemy.word, enemy.translation, parsed);
+  return (roman !== null && enemy.inputs.some(input => input.startsWith(roman)))
+    || (composing && window.JAPANESE_INPUT.pendingPrefix(value, parsed) !== null);
+}
+
+function restoreCurrentFlickText() {
+  const value = flickState.lastValue || "";
+  els.flickInput.value = value;
+  els.flickInput.setSelectionRange?.(value.length, value.length);
+}
+
+// An IME can send completed text again, including the next word's first letters.
+function reconcileFlickInput(event, before) {
   const completed = flickState.completedInput;
-  if (event.inputType === "insertFromComposition" && completed?.generation === state.battleGeneration
-      && completed.values.includes(els.flickInput.value)
-      && (!flickState.composing || flickState.compositionConsumed || flickState.compositionKey === completed.key)) {
-    // A late commit belongs to the completed word, even after the next prompt opened.
-    const currentValue = flickState.lastValue || "";
-    els.flickInput.value = currentValue;
-    els.flickInput.setSelectionRange?.(currentValue.length, currentValue.length);
+  if (!completed || completed.generation !== state.battleGeneration) return false;
+  const value = els.flickInput.value;
+  const differentPrompt = completed.key !== flickPromptKey();
+  const freshPlainInput = before && event.inputType === "insertText"
+    && typeof event.data === "string" && before.value + event.data === value;
+  const fresh = flickState.freshComposition || freshPlainInput || event.inputType === "insertFromPaste";
+  const matchesCurrent = differentPrompt && isCurrentFlickPrefix(value, event.isComposing);
+  const continuedComposition = completed.composing && !fresh && event.isComposing;
+  const restartedWithOldText = event.isComposing && flickState.lastValue === null && !matchesCurrent;
+  const staleCommit = ["insertText", "insertReplacementText", "insertFromComposition"].includes(event.inputType)
+    && !freshPlainInput && !matchesCurrent;
+  if (!event.inputType?.startsWith("delete") && completed.values.includes(value) && (!differentPrompt || staleCommit || event.inputType === "insertFromComposition"
+      || (!fresh && (!matchesCurrent || continuedComposition)))) {
+    restoreCurrentFlickText();
+    return true;
+  }
+  const prefix = [flickState.carriedText, ...completed.values].filter(Boolean)
+    .sort((a, b) => b.length - a.length)
+    .find(text => value.startsWith(text) && (text === flickState.carriedText
+      || (differentPrompt && (!fresh || restartedWithOldText) && (!matchesCurrent || continuedComposition))));
+  if (prefix) {
+    flickState.carriedText = prefix;
+    els.flickInput.value = value.slice(prefix.length);
+    els.flickInput.setSelectionRange?.(els.flickInput.value.length, els.flickInput.value.length);
+  } else if (flickState.carriedText) {
+    flickState.carriedText = "";
+  }
+  return false;
+}
+
+function handleFlickInput(event) {
+  const before = flickState.beforeInput;
+  flickState.beforeInput = null;
+  flickState.inputVersion += 1;
+  if (reconcileFlickInput(event, before)) {
+    if (flickState.composing && flickState.compositionConsumed) scheduleFlickReset();
     return;
   }
-  if (event.isComposing && !flickState.composing) handleFlickCompositionStart();
+  if (event.isComposing && !flickState.composing) handleFlickCompositionStart({ fromInput: true });
   readFlickInput({ inputType: event.inputType || "" });
 }
 
@@ -244,6 +305,7 @@ function handleFlickKeydown(event) {
 }
 
 function handleFlickBeforeInput(event) {
+  flickState.beforeInput = { value: els.flickInput.value };
   removeRestoredFlickText();
   if (!["insertLineBreak", "insertParagraph"].includes(event.inputType)) return;
   if (event.cancelable) event.preventDefault();

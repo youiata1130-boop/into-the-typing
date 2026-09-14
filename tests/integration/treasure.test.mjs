@@ -26,7 +26,7 @@ test("stage 1 grants, equips, and saves the iron sword with the chest and EXP", 
     assert.equal(game.run("state.weaponId"), "branch");
     completeLesson(game, { waitForReward: false });
     assert.equal(game.run("state.ironSwordObtained"), false);
-    assert.equal(JSON.parse(game.saved()[saveKey]).ironSwordObtained, false);
+    assert.equal(game.savedProgress().ironSwordObtained, false);
     game.advance(620);
     assert.deepEqual(game.snapshot("({ running: state.running, weapon: state.weaponId, sword: state.ironSwordObtained, xp: state.totalExperience })"),
       { running: false, weapon: "sword", sword: true, xp: 10 });
@@ -35,7 +35,7 @@ test("stage 1 grants, equips, and saves the iron sword with the chest and EXP", 
     assert.equal(game.run("els.noticeButton.textContent"), "ステージ2へ");
     assert.equal(game.run("document.activeElement === els.noticeButton"), true);
     assert.equal(game.run("els.battleWeaponName.textContent"), "鉄の剣");
-    const saved = JSON.parse(game.saved()[saveKey]);
+    const saved = game.savedProgress();
     assert.equal(saved.ironSwordObtained, true);
     assert.equal(saved.weaponId, "sword");
     assert.equal(saved.totalExperience, 10);

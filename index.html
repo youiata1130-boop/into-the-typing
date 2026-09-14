@@ -7,7 +7,7 @@
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='52'%3E%E2%9A%94%EF%B8%8F%3C/text%3E%3C/svg%3E">
     <link rel="preload" as="image" href="src/assets/images/backgrounds/shared/typing_rpg_background.png">
     <link rel="preload" as="image" href="src/assets/images/backgrounds/status/base_interior.png">
-    <link rel="stylesheet" href="src/styles/main.css?v=treasure-reward-v1">
+    <link rel="stylesheet" href="src/styles/main.css?v=player-saves-v1">
   </head>
   <body>
     <section class="loading-screen" id="loadingScreen" aria-labelledby="loadingText" aria-busy="true">
@@ -21,20 +21,58 @@
     <main class="game-shell" hidden inert>
       <section class="start-screen" id="startScreen" aria-label="スタート画面">
         <div class="start-hero">
-          <span class="start-kicker">TYPING RPG</span>
           <h1>Into the Typing</h1>
-          <p class="start-copy">言葉の力で敵を迎え撃つタイピングRPG</p>
-          <button class="intro-start-button" id="introStartButton" type="button">スタート</button>
+          <div class="start-actions">
+            <button class="intro-start-button" id="introStartButton" type="button">初めから</button>
+            <button class="intro-start-button" id="continueButton" type="button" disabled>続きから</button>
+          </div>
+        </div>
+      </section>
+
+
+      <section class="menu-screen save-screen" id="saveScreen" aria-labelledby="saveTitle" hidden>
+        <header class="menu-screen-head">
+          <h1 id="saveTitle">初めから</h1>
+          <button class="menu-back-button" id="saveBackButton" type="button">戻る</button>
+        </header>
+        <div class="save-panel">
+          <div class="save-choices" id="saveChoices" aria-label="セーブデータ">
+            <button class="save-slot" id="saveSlot1" type="button">
+              <span class="save-number">1</span>
+              <span class="save-copy"><strong data-save-name>空き</strong><span data-save-detail></span></span>
+            </button>
+            <button class="save-slot" id="saveSlot2" type="button">
+              <span class="save-number">2</span>
+              <span class="save-copy"><strong data-save-name>空き</strong><span data-save-detail></span></span>
+            </button>
+            <button class="save-slot" id="saveSlot3" type="button">
+              <span class="save-number">3</span>
+              <span class="save-copy"><strong data-save-name>空き</strong><span data-save-detail></span></span>
+            </button>
+          </div>
+          <form id="newPlayerForm" hidden>
+            <label for="playerNameInput">プレイヤーの名前</label>
+            <input id="playerNameInput" type="text" maxlength="20" autocomplete="off" enterkeyhint="done" required>
+            <p id="overwriteNotice" hidden></p>
+            <div class="save-form-actions">
+              <button id="createPlayerButton" type="submit">はじめる</button>
+              <button id="cancelPlayerButton" type="button">戻る</button>
+            </div>
+          </form>
+          <p id="saveError" role="alert"></p>
         </div>
       </section>
 
       <section class="stage-screen" id="stageScreen" aria-label="ステージ選択" hidden>
         <header class="stage-screen-head">
           <div>
-            <span class="stage-kicker">WORLD 1</span>
+            <p id="currentPlayerName"></p>
             <h1>ステージ選択</h1>
           </div>
-          <button class="status-button" id="homeButton" type="button">ホーム</button>
+          <div class="stage-menu-actions">
+            <button class="status-button" id="homeButton" type="button">ホーム</button>
+            <button class="status-button" id="titleButton" type="button">タイトル</button>
+          </div>
         </header>
 
         <div class="stage-map-panel">
@@ -315,7 +353,7 @@
               <span class="word-target"><span id="typedWord"></span><span id="remainingWord">hajime</span></span>
             </span>
           </div>
-          <textarea class="flick-input" id="flickInput" rows="1" lang="ja" inputmode="text" enterkeyhint="enter" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="ひらがな入力" aria-describedby="wordTranslation remainingWord" placeholder="ひらがなで入力" maxlength="80"></textarea>
+          <textarea class="flick-input" id="flickInput" rows="1" lang="ja" inputmode="text" enterkeyhint="enter" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="ひらがな入力" aria-describedby="wordTranslation remainingWord" placeholder="ひらがなで入力"></textarea>
         </div>
         <div class="control-side">
           <div class="stats action-stats">
@@ -346,10 +384,12 @@
     <script src="src/config/stages.js?v=treasure-reward-v1"></script>
     <script src="src/config/enemyAnimations.js?v=greatsword-charge-v1"></script>
     <script src="src/config/playerProgression.js?v=player-progression-v1"></script>
+    <script src="src/config/saveSlots.js?v=player-saves-v1"></script>
+    <script src="src/ui/saveMenu.js?v=player-saves-v1"></script>
     <script src="src/input/japanese.js?v=live-flick-v1"></script>
     <script src="src/ui/battleLayout.js?v=mobile-layout-v2"></script>
-    <script src="src/input/mobile.js?v=word-reset-v1"></script>
+    <script src="src/input/mobile.js?v=safari-reset-v2"></script>
     <script src="src/app/loading.js?v=treasure-reward-v1"></script>
-    <script src="src/app/game.js?v=treasure-reward-v1"></script>
+    <script src="src/app/game.js?v=player-saves-v1"></script>
   </body>
 </html>

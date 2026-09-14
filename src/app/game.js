@@ -1,7 +1,6 @@
 // Game data and settings are loaded by index.html before this script.
 const progression = window.PLAYER_PROGRESSION;
 const defaultPlayerStats = progression.defaultStats;
-const progressionStorageKey = "into-the-typing.player.v2";
 let progressionSaveAvailable = true;
 const attackMs = 8200;
 const repeatAttackMs = 2200;
@@ -133,39 +132,36 @@ function updateEnemyTypeDataset(waves) {
 const initialPlayableEnemyWaves = buildPlayableEnemyWaves(getStageDefinition(defaultStageId).waves);
 updateEnemyTypeDataset(initialPlayableEnemyWaves);
 
-function loadPlayerProgress() {
-  try {
-    const saved = JSON.parse(window.localStorage.getItem(progressionStorageKey) || "null");
-    if (saved?.version === 2) {
-      // Older saves already allowed every sword after receiving the branch.
-      const ironSwordObtained = saved.introCompleted === true
-        && (saved.ironSwordObtained === true || !Object.hasOwn(saved, "ironSwordObtained"));
-      return {
-        ...progression.restore(saved),
-        weaponId: saved.introCompleted === true && Object.hasOwn(weaponDefinitions, saved.weaponId)
-          && (saved.weaponId !== "sword" || ironSwordObtained) ? saved.weaponId : defaultWeaponId,
-        ironSwordObtained,
-        introCompleted: saved.introCompleted === true,
-        equipmentTutorialCompleted: saved.introCompleted === true && saved.equipmentTutorialCompleted === true,
-      };
-    }
-  } catch {
-    progressionSaveAvailable = false;
+function loadPlayerProgress(saved = null) {
+  if (saved?.version === 2) {
+    // Older saves already allowed every sword after receiving the branch.
+    const ironSwordObtained = saved.introCompleted === true
+      && (saved.ironSwordObtained === true || !Object.hasOwn(saved, "ironSwordObtained"));
+    return {
+      ...progression.restore(saved),
+      weaponId: saved.introCompleted === true && Object.hasOwn(weaponDefinitions, saved.weaponId)
+        && (saved.weaponId !== "sword" || ironSwordObtained) ? saved.weaponId : defaultWeaponId,
+      ironSwordObtained,
+      introCompleted: saved.introCompleted === true,
+      equipmentTutorialCompleted: saved.introCompleted === true && saved.equipmentTutorialCompleted === true,
+    };
   }
   return { ...progression.restore(), weaponId: defaultWeaponId, introCompleted: false, equipmentTutorialCompleted: false, ironSwordObtained: false };
 }
 
+function playerProgressSnapshot(player = state) {
+  return {
+    version: 2, totalExperience: player.totalExperience, stats: player.stats,
+    weaponId: player.weaponId, introCompleted: player.introCompleted,
+    equipmentTutorialCompleted: player.equipmentTutorialCompleted, ironSwordObtained: player.ironSwordObtained,
+  };
+}
+
 function savePlayerProgress() {
+  if (activeSaveSlot === null) return;
   try {
-    window.localStorage.setItem(progressionStorageKey, JSON.stringify({
-      version: 2,
-      totalExperience: state.totalExperience,
-      stats: state.stats,
-      weaponId: state.weaponId,
-      introCompleted: state.introCompleted,
-      equipmentTutorialCompleted: state.equipmentTutorialCompleted,
-      ironSwordObtained: state.ironSwordObtained,
-    }));
+    const saved = saveSlots.write(activeSaveSlot, state.playerName, playerProgressSnapshot(), activeSaveToken);
+    activeSaveToken = saved.raw;
     progressionSaveAvailable = true;
   } catch {
     progressionSaveAvailable = false;
@@ -180,6 +176,7 @@ const state = {
   language: "ja",
   stageId: defaultStageId,
   pendingStageId: "",
+  playerName: "",
   ...loadPlayerProgress(),
   running: false,
   storyPhase: "none",
@@ -340,7 +337,7 @@ function updateLanguageText() {
   els.scoreLabel.textContent = t.score;
   els.comboLabel.textContent = t.combo;
   els.typingLabel.textContent = t.input;
-  els.introStartButton.textContent = t.start;
+  els.introStartButton.textContent = "初めから";
   els.startButton.textContent = state.running ? t.restart : t.start;
   els.specialButton.textContent = t.special;
   els.noticeButton.textContent = t.stageSelect;
@@ -604,6 +601,7 @@ function updateHud() {
 }
 
 function showScreen(screen) {
+  saveEls.screen.hidden = screen !== "saves";
   els.startScreen.hidden = screen !== "start";
   els.stageScreen.hidden = screen !== "stage";
   els.homeScreen.hidden = screen !== "home";
@@ -928,6 +926,9 @@ function startConfirmedStage() {
 
 function showStartScreen() {
   if (!assetLoadingState.ready) return;
+  activeSaveSlot = null;
+  activeSaveToken = null;
+  refreshSaveMenu();
   setStoryPhase("none");
   invalidateBattleGeneration();
   state.running = false;
@@ -950,7 +951,7 @@ function showStartScreen() {
 }
 
 function showStageSelect() {
-  if (!assetLoadingState.ready) return;
+  if (!assetLoadingState.ready || activeSaveSlot === null) return;
   setStoryPhase("none");
   state.pendingExperience = 0;
   invalidateBattleGeneration();
@@ -2008,7 +2009,7 @@ function resetGame() {
 }
 
 function startGame(stageId = state.stageId) {
-  if (!assetLoadingState.ready) return;
+  if (!assetLoadingState.ready || activeSaveSlot === null) return;
   const resolvedStageId = stageDefinitions[stageId] ? stageId : defaultStageId;
   const stage = getStageDefinition(resolvedStageId);
 
@@ -2152,9 +2153,13 @@ function isStartScreenVisible() {
 
 function handleTypingKeydown(event) {
   if (!assetLoadingState.ready) return;
-  if (event.target === els.flickInput || event.isComposing || event.keyCode === 229 || flickState.composing) return;
+  if (event.target === els.flickInput || event.target?.closest?.("input, textarea, [contenteditable='true']")
+      || event.isComposing || event.keyCode === 229 || flickState.composing) return;
   if (event.code === "Escape") {
-    if (!els.stageScreen.hidden && !els.stageConfirm.hidden) {
+    if (!saveEls.screen.hidden) {
+      event.preventDefault();
+      if (!saveEls.form.hidden) showSaveMenu("new"); else showStartScreen();
+    } else if (!els.stageScreen.hidden && !els.stageConfirm.hidden) {
       event.preventDefault();
       cancelPendingStageSelection();
     } else if (!els.weaponScreen.hidden || !els.statusScreen.hidden) {
@@ -2177,8 +2182,9 @@ function handleTypingKeydown(event) {
 
   if (isSpaceStartKey(event)) {
     if (isStartScreenVisible()) {
+      if (event.target?.closest?.("button")) return;
       event.preventDefault();
-      showStageSelect();
+      showSaveMenu(saveEls.continueButton.disabled ? "new" : "continue");
       return;
     }
 
@@ -2231,7 +2237,6 @@ function handleTypingKeydown(event) {
 
 els.storyNextButton.addEventListener("click", advanceStory);
 els.specialButton.addEventListener("click", useSpecialMove);
-els.introStartButton.addEventListener("click", showStageSelect);
 els.homeButton.addEventListener("click", showHomeScreen);
 els.homeWeaponsButton.addEventListener("click", showWeaponScreen);
 els.homeStatusButton.addEventListener("click", showStatusScreen);
@@ -2286,5 +2291,6 @@ els.stageChoices.addEventListener("click", (event) => {
 document.addEventListener("keydown", handleTypingKeydown);
 
 initializeFlickInput();
+initializeSaveMenu();
 resetGame();
 loadGameAssets();

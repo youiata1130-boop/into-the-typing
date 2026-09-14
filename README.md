@@ -38,7 +38,7 @@ into-the-typing/
 ├── index.html              # App entry point and script loading order
 ├── src/
 │   ├── app/                # Asset loading, game state, story, and battle flow
-│   ├── config/             # Stage, weapon, animation, and progression settings
+│   ├── config/             # Stage, weapon, animation, progression, and save-slot storage
 │   ├── data/               # Typing words and interface text
 │   ├── input/              # Japanese reading matching and mobile keyboard
 │   ├── styles/main.css     # Layout and visual effects
@@ -61,6 +61,8 @@ into-the-typing/
 | --- | --- |
 | Startup image loading | `src/app/loading.js` |
 | Game behavior | `src/app/game.js` |
+| Three save slots and legacy migration | `src/config/saveSlots.js` |
+| New / Continue and player names | `src/ui/saveMenu.js` |
 | Typing words | `src/data/words.js` |
 | Interface text | `src/data/labels.js` |
 | Stages, enemy waves, and rewards | `src/config/stages.js` |
@@ -96,6 +98,9 @@ Scripts load in the order listed in `index.html`. They remain classic browser sc
 
 ## Current Gameplay
 
+- The title screen offers `初めから` and `続きから`. Choose one of three slots and enter a player name (1–20 characters) for a new adventure. Slot cards show the name, level, and highest available stage. Creating a save writes it before opening the map; overwriting an occupied slot requires the explicitly labeled confirmation button. Canceling leaves the existing data untouched.
+- `続きから` opens the map with the selected player's saved growth and equipment. Battles restart when entered. The map's `タイトル` button returns to player selection.
+
 - The start screen opens an old map on a desk. Only circular quest markers are shown at first; selecting one reveals its name and start controls. A portrait map is used on portrait screens.
 - Stage `1 チュートリアル` contains only the equipment lesson against a single egg. Its three punches and four branch attacks finish the stage and award 10 EXP. The result shows a treasure chest and `鉄の剣を手に入れた！`, automatically equips the iron sword, and offers a `ステージ2へ` button. The sword is saved with the clear reward and stays available after returning or reloading; failed or interrupted attempts do not grant it.
 - The equipment tutorial opens with `敵が現れた！`; `次へ` reveals the first egg. This enemy has no HP fields: it is defeated by three successful unarmed prompts followed by four successful wooden-branch prompts, independently of attack stats. Mistakes and duplicate input events do not advance the lesson.
@@ -119,7 +124,8 @@ Scripts load in the order listed in `index.html`. They remain classic browser sc
 - Each level adds 10 maximum HP and 1 skill point. Current HP also rises by 10, preserving any damage already taken. Returning to the map or starting a quest restores full HP.
 - Spend 1 SP in the status screen for +1 attack (maximum 99) or +1 agility (maximum 9). Attack increases equipped weapon damage (the branch deals 0.2 per attack stat). Each agility upgrade reduces the prompt selection range by one character: the branch has a minimum of 2 characters; swords have minimum bounds of 2 for the lower end and 4 for the upper end. Words remain complete; alternate romanizations can vary in length.
 - Attack upgrades do not increase prompt length. The status screen shows the actual selection range for the current stage and weapon.
-- This version begins a fresh adventure using `into-the-typing.player.v2`; the previous `into-the-typing.player.v1` save remains untouched as a backup. Level, EXP, allocated stats, remaining points, selected weapon, and receipt of the branch persist across retries and browser reloads in the new save. Different browsers or site origins have separate saves. If storage is unavailable, play continues in memory and the status screen explains this.
+- Player saves use independent `into-the-typing.slot.1.v1`, `.slot.2.v1`, and `.slot.3.v1` keys. Each holds the player's name, update time, and version-2 progression. Level, EXP, stats, equipment, tutorial completion, and the iron sword unlock are isolated by slot. The existing `into-the-typing.player.v2` save is imported into an empty slot 1 as `プレイヤー1`; original version-1/version-2 keys remain untouched as backups. Subsequent saves never rewrite those backups or another player's slot. A stale selection cannot overwrite a slot updated in another tab.
+- Different browsers and site origins keep separate saves. A new or replacement adventure does not begin if its initial save fails. If an active game's autosave fails, play continues in memory and the status screen shows the failure.
 - The battle EXP bar shows previously earned progress during combat and updates at stage clear. Clear results show the awarded EXP and, when a level is gained, the previous and new levels plus HP and skill-point gains.
 
 Run `npm run check` and `npm test` to validate the game scripts and progression behavior.
@@ -129,11 +135,11 @@ Run `npm run check` and `npm test` to validate the game scripts and progression 
 On a phone or tablet, the battle and dialogue Next buttons focus the Japanese input field. Use the device's Japanese flick keyboard. The prompt includes its hiragana reading. Input is judged on each text update, including during composition; completing the reading attacks without a confirmation or Enter press. Hiragana, katakana (including halfwidth kana), the exact displayed kanji, and romaji are accepted.
 
 - Wrong kana immediately record a miss, and deleting them does not restore the combo or perfect greatsword damage. The last composing kana may wait for a valid dakuten, handakuten, or small-kana edit; unrelated wrong characters are judged immediately.
-- Correct prefixes immediately update the reading and existing attack/charge logic. Completing a word clears the entire native field and resets the caret and composition state after the IME event finishes. Restored text and delayed old commits are removed without erasing a newly typed prefix or counting a miss; the same focused editor is retained.
+- Correct prefixes immediately update the reading and existing attack/charge logic. Completing a word clears the field and caret, and remembers the completed native text separately. Reinserted previous words, converted commits, and values containing a completed word followed by new characters are reconciled before judging the current prompt. A fresh composition may share the previous word's prefix; genuine wrong new kana still count as misses. Repeated resets never replace or blur the focused editor.
 - The native editor uses a single-row textarea and a Return key hint so confirming a word keeps the keyboard available. Return and cancelable line-break events are prevented even during composition, without blurring the editor or adding blank lines; new prompts keep the same focused editor. An intentional keyboard dismissal never triggers automatic refocusing. Editability changes only when entering or leaving dialogue/battle. Leaving or restarting discards old pending composition.
 - The battle fits the visual viewport above the keyboard. The page requests text input; the keyboard language and flick layout are selected on the device.
 - Desktop hardware romaji input remains available.
 - Input files: `src/input/japanese.js` handles readings and matching; `src/input/mobile.js` handles native input and viewport sizing.
 - Validation: integration tests cover composition, dakuten, kana variants, correction, stale events, story handoff, and greatsword charge. Chromium mobile emulation completes the tutorial and stage 2 without Enter or confirmation, verifies immediate miss retention after deletion, observes no battle blur on composing Enter, and checks an empty field with its caret at zero after every answer. Injected IME restoration and late-commit cases also pass; physical iOS/Android keyboard layouts require device verification.
 
-Browser API references: [compositionend](https://developer.mozilla.org/en-US/docs/Web/API/Element/compositionend_event), [InputEvent.isComposing](https://developer.mozilla.org/en-US/docs/Web/API/InputEvent/isComposing), [VisualViewport](https://developer.mozilla.org/en-US/docs/Web/API/VisualViewport), [enterkeyhint](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Global_attributes/enterkeyhint).
+Browser API references: [compositionend](https://developer.mozilla.org/en-US/docs/Web/API/Element/compositionend_event), [InputEvent.isComposing](https://developer.mozilla.org/en-US/docs/Web/API/InputEvent/isComposing), [VisualViewport](https://developer.mozilla.org/en-US/docs/Web/API/VisualViewport), [enterkeyhint](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Global_attributes/enterkeyhint), [Input Events](https://www.w3.org/TR/input-events-2/), [WebKit retained keyboard state](https://bugs.webkit.org/show_bug.cgi?id=236937).

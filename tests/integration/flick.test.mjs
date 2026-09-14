@@ -407,3 +407,128 @@ test("duplicate input after an answer still resets the composition session", () 
   assert.equal(game.run("flickState.composing"), false);
   assert.equal(game.run("state.combo"), 1);
 });
+
+function nextFlickPrompt(game, roman, translation) {
+  game.advance(220);
+  game.run("target.word = target.matchedWord = " + JSON.stringify(roman)
+    + "; target.inputs = [" + JSON.stringify(roman) + "]; target.translation = " + JSON.stringify(translation)
+    + "; target.readingOverride = ''; target.inputRevision++; renderWord()");
+}
+
+test("Safari can restore the previous composition together with the first new kana", () => {
+  const game = battle("greatsword");
+  prompt(game, "gakkou", "学校");
+  game.run('handleFlickCompositionStart(); els.flickInput.value = "がっこう"; handleFlickInput({ isComposing: true, inputType: "insertCompositionText", data: "がっこう" })');
+  nextFlickPrompt(game, "kibounohikari", "希望の光");
+  game.run('handleFlickBeforeInput({ inputType: "insertCompositionText", isComposing: true, data: "がっこうき" }); els.flickInput.value = "がっこうき"; handleFlickInput({ isComposing: true, inputType: "insertCompositionText", data: "がっこうき" })');
+  assert.equal(game.run("els.flickInput.value"), "き");
+  assert.equal(game.run("target.typed"), "ki");
+  assert.equal(game.run("target.typingMisses"), 0);
+  assert.equal(game.run("document.activeElement === els.flickInput"), true);
+  game.run('els.flickInput.value = "がっこうきぼうのひかり"; handleFlickInput({ isComposing: true, inputType: "insertCompositionText", data: "がっこうきぼうのひかり" })');
+  assert.equal(game.run("state.combo"), 2);
+  assert.equal(game.run("els.flickInput.value"), "");
+  nextFlickPrompt(game, "neko", "猫");
+  game.run('els.flickInput.value = "がっこうきぼうのひかりね"; handleFlickInput({ isComposing: true, inputType: "insertCompositionText", data: "がっこうきぼうのひかりね" })');
+  assert.equal(game.run("els.flickInput.value"), "ね");
+  assert.equal(game.run("target.typed"), "ne");
+  assert.equal(game.run("target.typingMisses"), 0);
+});
+
+test("a retained prefix in a plain input event is removed while its new character is kept", () => {
+  const game = battle("greatsword");
+  prompt(game, "gakkou", "学校");
+  input(game, "がっこう");
+  nextFlickPrompt(game, "kibounohikari", "希望の光");
+  game.run('handleFlickBeforeInput({inputType:"insertText", data:"き"}); els.flickInput.value="がっこうき"; handleFlickInput({inputType:"insertText", data:"き"})');
+  assert.equal(game.run("els.flickInput.value"), "き");
+  assert.equal(game.run("target.typed"), "ki");
+  assert.equal(game.run("target.typingMisses"), 0);
+});
+
+test("late plain and converted commits restore neither the old word nor a typing penalty", () => {
+  for (const [inputType, value] of [["insertText", "がっこう"], ["insertReplacementText", "学校"], ["insertCompositionText", "がっこう"]]) {
+    const game = battle("greatsword");
+    prompt(game, "gakkou", "学校");
+    input(game, "がっこう");
+    nextFlickPrompt(game, "kibounohikari", "希望の光");
+    input(game, "き");
+    game.run("els.flickInput.value = " + JSON.stringify(value) + "; handleFlickInput({ inputType:" + JSON.stringify(inputType) + ", data:" + JSON.stringify(value) + " })");
+    assert.equal(game.run("els.flickInput.value"), "き");
+    assert.equal(game.run("target.typed"), "ki");
+    assert.equal(game.run("target.typingMisses"), 0);
+  }
+});
+
+test("a late old compositionend does not erase letters already entered for the next word", () => {
+  const game = battle("greatsword");
+  prompt(game, "gakkou", "学校");
+  game.run('handleFlickCompositionStart(); els.flickInput.value="がっこう"; handleFlickInput({isComposing:true})');
+  nextFlickPrompt(game, "kibounohikari", "希望の光");
+  input(game, "き");
+  game.run('els.flickInput.value="がっこう"; handleFlickCompositionEnd({data:"がっこう"})');
+  game.advance(0);
+  assert.equal(game.run("els.flickInput.value"), "き");
+  assert.equal(game.run("target.typingMisses"), 0);
+});
+
+test("new compositions sharing the previous answer's prefix keep every new character", () => {
+  const game = battle("greatsword");
+  prompt(game, "ka", "蚊");
+  game.run('handleFlickCompositionStart(); els.flickInput.value="か"; handleFlickInput({isComposing:true})');
+  nextFlickPrompt(game, "kani", "蟹");
+  game.run('handleFlickCompositionStart(); handleFlickBeforeInput({inputType:"insertCompositionText", isComposing:true, data:"か"}); els.flickInput.value="か"; handleFlickInput({inputType:"insertCompositionText", isComposing:true, data:"か"})');
+  assert.equal(game.run("els.flickInput.value"), "か");
+  assert.equal(game.run("target.typed"), "ka");
+  game.run('els.flickInput.value="かに"; handleFlickInput({inputType:"insertCompositionText", isComposing:true, data:"かに"})');
+  assert.equal(game.run("state.combo"), 2);
+});
+
+test("a genuinely wrong kana after a restored prefix is still counted and deletion cannot undo it", () => {
+  const game = battle("greatsword");
+  prompt(game, "gakkou", "学校");
+  game.run('handleFlickCompositionStart(); els.flickInput.value="がっこう"; handleFlickInput({isComposing:true})');
+  nextFlickPrompt(game, "kibounohikari", "希望の光");
+  game.run('els.flickInput.value="がっこうぬ"; handleFlickInput({inputType:"insertCompositionText", isComposing:true, data:"がっこうぬ"})');
+  assert.equal(game.run("els.flickInput.value"), "ぬ");
+  assert.equal(game.run("target.typingMisses"), 1);
+  game.run('let assertRemoved; els.flickInput.value="がっこう"; handleFlickInput({inputType:"deleteContentBackward", isComposing:true}); assertRemoved = els.flickInput.value; els.flickInput.value="がっこうき"; handleFlickInput({inputType:"insertCompositionText", isComposing:true})');
+  assert.equal(game.run("assertRemoved"), "");
+  assert.equal(game.run("target.typingMisses"), 1);
+  assert.equal(game.run("target.typed"), "ki");
+});
+
+test("a Safari composition restart can still carry the old text in its first update", () => {
+  const game=battle("greatsword");
+  prompt(game,"gakkou","学校");
+  input(game,"がっこう");
+  nextFlickPrompt(game,"kibounohikari","希望の光");
+  game.run('handleFlickCompositionStart(); handleFlickBeforeInput({inputType:"insertCompositionText",data:"がっこうき"}); els.flickInput.value="がっこうき"; handleFlickInput({isComposing:true,inputType:"insertCompositionText",data:"がっこうき"})');
+  assert.equal(game.run("els.flickInput.value"),"き");
+  assert.equal(game.run("target.typingMisses"),0);
+});
+
+test("late plain commits cannot erase an active new composition but real fresh mistakes are kept", () => {
+  const game=battle("greatsword");
+  prompt(game,"gakkou","学校");
+  input(game,"がっこう");
+  nextFlickPrompt(game,"kibounohikari","希望の光");
+  game.run('handleFlickCompositionStart(); els.flickInput.value="き"; handleFlickInput({isComposing:true,inputType:"insertCompositionText",data:"き"}); els.flickInput.value="がっこう"; handleFlickInput({isComposing:false,inputType:"insertText",data:"がっこう"})');
+  assert.equal(game.run("els.flickInput.value"),"き");
+  assert.equal(game.run("target.typingMisses"),0);
+  game.run('handleFlickBeforeInput({inputType:"insertText",data:"ぬ"}); els.flickInput.value="きぬ"; handleFlickInput({inputType:"insertText",data:"ぬ"})');
+  assert.equal(game.run("target.typingMisses"),1);
+});
+
+test("successive identical prompts accept new kana from a continuing native composition", () => {
+  const game=createGame({}, {touch:true});
+  game.run("startGame(); advanceStory()");
+  for(let hit=1;hit<=3;hit++) {
+    const raw="あ".repeat(hit);
+    game.run("handleFlickBeforeInput({inputType:'insertCompositionText',isComposing:true,data:"+JSON.stringify(raw)+"}); els.flickInput.value="+JSON.stringify(raw)+"; handleFlickInput({inputType:'insertCompositionText',isComposing:true,data:"+JSON.stringify(raw)+"})");
+    assert.equal(game.run("getCurrentEnemy().tutorial.punches"),hit);
+    assert.equal(game.run("els.flickInput.value"),"");
+    assert.equal(game.run("document.activeElement === els.flickInput"),true);
+    game.advance(480);
+  }
+});
