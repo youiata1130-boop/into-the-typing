@@ -7,7 +7,7 @@
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='52'%3E%E2%9A%94%EF%B8%8F%3C/text%3E%3C/svg%3E">
     <link rel="preload" as="image" href="src/assets/images/backgrounds/shared/typing_rpg_background.png">
     <link rel="preload" as="image" href="src/assets/images/backgrounds/status/base_interior.png">
-    <link rel="stylesheet" href="src/styles/main.css?v=sword-equip-guide-v1">
+    <link rel="stylesheet" href="src/styles/main.css?v=owned-weapons-v1">
   </head>
   <body>
     <section class="loading-screen" id="loadingScreen" aria-labelledby="loadingText" aria-busy="true">
@@ -139,12 +139,12 @@
               <input id="weaponBranch" type="radio" name="weapon" value="branch" checked aria-labelledby="weaponBranchName">
               <span class="weapon-option-body"><strong id="weaponBranchName">木の枝</strong></span>
             </label>
-            <label class="weapon-option" id="weaponSwordOption" for="weaponSword">
-              <input id="weaponSword" type="radio" name="weapon" value="sword" aria-labelledby="weaponSwordName">
+            <label class="weapon-option" id="weaponSwordOption" for="weaponSword" hidden>
+              <input id="weaponSword" type="radio" name="weapon" value="sword" aria-labelledby="weaponSwordName" disabled>
               <span class="weapon-option-body"><strong id="weaponSwordName">鉄の剣</strong></span>
             </label>
-            <label class="weapon-option" for="weaponGreatsword">
-              <input id="weaponGreatsword" type="radio" name="weapon" value="greatsword" aria-labelledby="weaponGreatswordName">
+            <label class="weapon-option" for="weaponGreatsword" hidden>
+              <input id="weaponGreatsword" type="radio" name="weapon" value="greatsword" aria-labelledby="weaponGreatswordName" disabled>
               <span class="weapon-option-body"><strong id="weaponGreatswordName">大剣</strong></span>
             </label>
           </div>
@@ -392,6 +392,6 @@
     <script src="src/ui/battleLayout.js?v=mobile-layout-v2"></script>
     <script src="src/input/mobile.js?v=safari-reset-v2"></script>
     <script src="src/app/loading.js?v=treasure-reward-v1"></script>
-    <script src="src/app/game.js?v=sword-equip-guide-v1"></script>
+    <script src="src/app/game.js?v=owned-weapons-v1"></script>
   </body>
 </html>

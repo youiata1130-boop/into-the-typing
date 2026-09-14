@@ -146,9 +146,10 @@ test("completing the equipment lesson persists and stage 2 starts with the equip
   assert.equal(game.run("getCurrentEnemy().weaponId"), "branch");
   assert.equal(game.run("getCurrentEnemy().hp"), 2);
   game.run('resetGame(); selectWeapon("greatsword")');
-  assert.equal(game.run("state.weaponId"), "greatsword");
+  assert.equal(game.run("state.weaponId"), "branch");
+  assert.equal(game.run('isWeaponAvailable("greatsword")'), false);
   const reloaded = createGame(game.saved());
-  assert.equal(reloaded.run("state.weaponId"), "greatsword");
+  assert.equal(reloaded.run("state.weaponId"), "branch");
 });
 
 test("new progress is retained through return, retry, and reload", () => {

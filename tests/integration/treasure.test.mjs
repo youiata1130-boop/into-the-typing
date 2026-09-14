@@ -48,6 +48,9 @@ test("stage 1 saves the sword reward and guides manual equipment before stage 2"
     game.run("continueAfterSwordEquip()");
     assert.equal(game.run("state.running"), false);
     game.run('selectWeapon("greatsword")');
+    assert.equal(game.run("state.weaponId"), "branch");
+    assert.equal(game.run('isWeaponAvailable("greatsword")'), false);
+    assert.equal(game.savedProgress().greatswordObtained, false);
     assert.equal(game.run("els.swordEquipNext.disabled"), true);
     assert.equal(game.savedProgress().swordEquipPending, true);
     game.run('selectWeapon("sword")');
@@ -81,12 +84,12 @@ test("unfinished sword equipment resumes per save and disappears after equipment
   game.run('showStartScreen(); showSaveMenu("continue"); selectSaveSlot(0)');
   assert.equal(game.run("document.documentElement.dataset.screen"), "weapons");
   assert.equal(game.run("els.swordEquipGuide.hidden"), false);
-  game.run('selectWeapon("sword"); selectWeapon("greatsword"); showHomeScreen(); showWeaponScreen()');
+  game.run('selectWeapon("sword"); selectWeapon("branch"); showHomeScreen(); showWeaponScreen()');
   assert.equal(game.run("els.swordEquipGuide.hidden"), true);
   const reloaded = createGame(game.saved(), { chooseSave: false });
   reloaded.run('showSaveMenu("continue"); selectSaveSlot(0)');
   assert.equal(reloaded.run("document.documentElement.dataset.screen"), "stage");
-  assert.equal(reloaded.run("state.weaponId"), "greatsword");
+  assert.equal(reloaded.run("state.weaponId"), "branch");
 });
 
 test("failure and an interrupted clear never grant the sword", () => {
@@ -126,9 +129,9 @@ test("returning home, changing weapons, and replaying preserve the sword unlock"
   completeLesson(game);
   game.run('showHomeScreen(); selectWeapon("branch"); selectWeapon("sword")');
   assert.equal(game.run("state.weaponId"), "sword");
-  game.run('selectWeapon("greatsword")');
+  game.run('selectWeapon("branch")');
   const reloaded = createGame(game.saved());
-  assert.equal(reloaded.run("state.weaponId"), "greatsword");
+  assert.equal(reloaded.run("state.weaponId"), "branch");
   assert.equal(reloaded.run('isWeaponAvailable("sword")'), true);
   completeLesson(reloaded);
   assert.equal(reloaded.run("state.weaponId"), "branch");
@@ -139,7 +142,7 @@ test("returning home, changing weapons, and replaying preserve the sword unlock"
 test("stage 2 awards EXP without showing another chest or switching weapons", () => {
   const game = createGame();
   completeLesson(game);
-  game.run('showHomeScreen(); selectWeapon("greatsword"); startGame("mist_road")');
+  game.run('state.greatswordObtained = true; showHomeScreen(); selectWeapon("greatsword"); startGame("mist_road")');
   for (let tick = 0; tick < 2000 && game.run("state.running"); tick++) {
     if (game.run("Boolean(getInputEnemy())")) {
       game.run("applyTypedValue(getInputEnemy(), getInputEnemy().matchedWord)");
@@ -180,4 +183,27 @@ test("the chest still grants a usable sword when saving is unavailable", () => {
   assert.equal(game.run("els.treasureReward.hidden"), false);
   game.run('continueAfterResult(); selectWeapon("sword"); continueAfterSwordEquip()');
   assert.equal(game.run("getCurrentEnemy().weaponId"), "sword");
+});
+
+test("greatsword ownership survives weapon changes without granting it to unowned saves", () => {
+  const base = { version: 2, totalExperience: 350, stats: { attack: 3, agility: 2 },
+    introCompleted: true, equipmentTutorialCompleted: true, ironSwordObtained: true };
+  for (const [extra, owned] of [
+    [{ weaponId: "branch" }, false],
+    [{ weaponId: "sword" }, false],
+    [{ weaponId: "greatsword" }, true],
+    [{ weaponId: "branch", greatswordObtained: true }, true],
+    [{ weaponId: "greatsword", greatswordObtained: false }, false],
+  ]) {
+    const game = createGame({ [saveKey]: JSON.stringify({ ...base, ...extra }) });
+    assert.equal(game.run('isWeaponAvailable("greatsword")'), owned);
+    assert.equal(game.run("state.weaponId"), extra.weaponId === "greatsword" && !owned ? "branch" : extra.weaponId);
+    game.run('selectWeapon("branch"); savePlayerProgress()');
+    const reloaded = createGame(game.saved());
+    assert.equal(reloaded.run('isWeaponAvailable("greatsword")'), owned);
+    assert.equal(reloaded.savedProgress().greatswordObtained, owned);
+    reloaded.run('selectWeapon("greatsword")');
+    assert.equal(reloaded.run("state.weaponId"), owned ? "greatsword" : "branch");
+    assert.equal(reloaded.run("state.totalExperience"), 350);
+  }
 });

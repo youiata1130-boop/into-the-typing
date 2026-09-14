@@ -391,6 +391,10 @@ button {
   cursor: pointer;
 }
 
+.weapon-option[hidden] {
+  display: none;
+}
+
 .weapon-option input {
   position: absolute;
   z-index: 2;

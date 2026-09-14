@@ -96,7 +96,8 @@ function getWeaponDefinition(weaponId = defaultWeaponId) {
 function isWeaponAvailable(weaponId) {
   if (!Object.hasOwn(weaponDefinitions, weaponId)) return false;
   if (weaponId === "sword") return state.introCompleted && state.ironSwordObtained;
-  return weaponId === defaultWeaponId || state.introCompleted;
+  if (weaponId === "greatsword") return state.introCompleted && state.greatswordObtained;
+  return weaponId === defaultWeaponId;
 }
 
 function getBattleWeaponId() {
@@ -134,20 +135,25 @@ updateEnemyTypeDataset(initialPlayableEnemyWaves);
 
 function loadPlayerProgress(saved = null) {
   if (saved?.version === 2) {
-    // Older saves already allowed every sword after receiving the branch.
+    // Preserve legacy iron-sword access and previously equipped greatswords.
     const ironSwordObtained = saved.introCompleted === true
       && (saved.ironSwordObtained === true || !Object.hasOwn(saved, "ironSwordObtained"));
+    const greatswordObtained = saved.introCompleted === true
+      && (saved.greatswordObtained === true
+        || (!Object.hasOwn(saved, "greatswordObtained") && saved.weaponId === "greatsword"));
     return {
       ...progression.restore(saved),
       weaponId: saved.introCompleted === true && Object.hasOwn(weaponDefinitions, saved.weaponId)
-        && (saved.weaponId !== "sword" || ironSwordObtained) ? saved.weaponId : defaultWeaponId,
+        && (saved.weaponId !== "sword" || ironSwordObtained)
+        && (saved.weaponId !== "greatsword" || greatswordObtained) ? saved.weaponId : defaultWeaponId,
       ironSwordObtained,
+      greatswordObtained,
       swordEquipPending: ironSwordObtained && saved.swordEquipPending === true && saved.weaponId !== "sword",
       introCompleted: saved.introCompleted === true,
       equipmentTutorialCompleted: saved.introCompleted === true && saved.equipmentTutorialCompleted === true,
     };
   }
-  return { ...progression.restore(), weaponId: defaultWeaponId, introCompleted: false, equipmentTutorialCompleted: false, ironSwordObtained: false, swordEquipPending: false };
+  return { ...progression.restore(), weaponId: defaultWeaponId, introCompleted: false, equipmentTutorialCompleted: false, ironSwordObtained: false, greatswordObtained: false, swordEquipPending: false };
 }
 
 function playerProgressSnapshot(player = state) {
@@ -155,7 +161,7 @@ function playerProgressSnapshot(player = state) {
     version: 2, totalExperience: player.totalExperience, stats: player.stats,
     weaponId: player.weaponId, introCompleted: player.introCompleted,
     equipmentTutorialCompleted: player.equipmentTutorialCompleted, ironSwordObtained: player.ironSwordObtained,
-    swordEquipPending: player.swordEquipPending,
+    swordEquipPending: player.swordEquipPending, greatswordObtained: player.greatswordObtained,
   };
 }
 
@@ -486,8 +492,10 @@ function updateStatusPanel() {
   document.documentElement.dataset.weapon = activeWeapon.id;
 
   els.weaponPanel.querySelectorAll("input[name='weapon']").forEach((input) => {
+    const available = isWeaponAvailable(input.value);
     input.checked = input.value === activeWeapon.id;
-    input.disabled = state.running || !isWeaponAvailable(input.value);
+    input.disabled = state.running || !available;
+    input.closest(".weapon-option").hidden = !available;
   });
 
   updateSwordEquipGuide();
