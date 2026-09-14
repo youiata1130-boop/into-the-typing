@@ -12,8 +12,10 @@ export function createGame(savedItems = {}, { touch = false, loadImages = true, 
     const attributes = new Map();
     const children = new Map();
     const classes = new Set();
+    const listeners = new Map();
     return {
       dataset: {}, hidden: false, textContent: "", offsetWidth: 100,
+      value: "", defaultValue: "", readOnly: false,
       style: { setProperty() {} },
       classList: {
         add: (...names) => names.forEach(name => classes.add(name)),
@@ -25,6 +27,7 @@ export function createGame(savedItems = {}, { touch = false, loadImages = true, 
       },
       setAttribute: (name, value) => attributes.set(name, value),
       getAttribute: name => attributes.get(name),
+      removeAttribute: name => attributes.delete(name),
       querySelector(selector) {
         if (!children.has(selector)) children.set(selector, element());
         return children.get(selector);
@@ -33,8 +36,34 @@ export function createGame(savedItems = {}, { touch = false, loadImages = true, 
       appendChild(child) { child.isConnected = true; },
       replaceChildren() { children.clear(); },
       remove() { this.isConnected = false; },
-      focus() { document.activeElement = this; },
-      addEventListener() {},
+      cloneNode() {
+        const clone = element();
+        for (const [name, value] of attributes) clone.setAttribute(name, value);
+        for (const key of ["value", "defaultValue", "readOnly", "id"]) clone[key] = this[key];
+        classes.forEach(name => clone.classList.add(name));
+        return clone;
+      },
+      insertAdjacentElement(position, child) {
+        if (position !== "afterend") throw new Error("Unsupported test insertion");
+        child.isConnected = true;
+      },
+      focus() {
+        const previous = document.activeElement;
+        document.activeElement = this;
+        if (previous !== this) {
+          previous?.dispatchEvent({ type: "blur" });
+          this.dispatchEvent({ type: "focus" });
+        }
+      },
+      addEventListener(type, listener) {
+        if (!listeners.has(type)) listeners.set(type, []);
+        listeners.get(type).push(listener);
+      },
+      dispatchEvent(event) {
+        event.target = this;
+        event.currentTarget = this;
+        for (const listener of listeners.get(event.type) || []) listener(event);
+      },
       getBoundingClientRect: () => ({ left: 0, top: 0, width: 100, height: 100 }),
     };
   };

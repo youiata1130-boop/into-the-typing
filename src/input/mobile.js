@@ -46,18 +46,47 @@ function finishFlickInput(value, key) {
   flickState.completedInput = completed;
   flickState.freshComposition = false;
   flickState.carriedText = "";
+  renewFlickEditor();
   clearFlickInput();
   scheduleFlickReset(completed);
+}
+
+function renewFlickEditor() {
+  const previous = els.flickInput;
+  const focused = document.activeElement === previous;
+  const next = previous.cloneNode(false);
+  next.value = "";
+  next.defaultValue = "";
+  previous.removeAttribute("id");
+  bindFlickEditor(next);
+  // Switch the event owner before focus ends the old native composition.
+  els.flickInput = next;
+  flickState.composing = false;
+  flickState.compositionKey = "";
+  flickState.compositionConsumed = false;
+  flickState.ignoreCommit = false;
+  flickState.beforeInput = null;
+  window.clearTimeout(flickState.commitTimerId);
+  flickState.commitTimerId = 0;
+  previous.insertAdjacentElement("afterend", next);
+  // iOS can retain marked text after value = "". Transfer focus while the
+  // old editor is still connected, then retire that native editing session.
+  if (focused && state.running && !isStoryDialogueOpen() && !next.readOnly) {
+    next.focus({ preventScroll: true });
+  }
+  previous.remove();
+  previous.value = "";
 }
 
 function scheduleFlickReset(completed = flickState.completedInput) {
   if (!completed || completed.generation !== state.battleGeneration) return;
   const version = flickState.inputVersion;
+  const editor = els.flickInput;
   window.clearTimeout(flickState.resetTimerId);
   // The IME may restore its marked text after our input handler has returned.
   flickState.resetTimerId = window.setTimeout(() => {
     flickState.resetTimerId = 0;
-    if (flickState.inputVersion !== version || flickState.completedInput !== completed
+    if (els.flickInput !== editor || flickState.inputVersion !== version || flickState.completedInput !== completed
         || completed.generation !== state.battleGeneration) return;
     clearFlickInput();
     flickState.composing = false;
@@ -154,7 +183,7 @@ function applyFlickValue(value, key = flickPromptKey(), { composing = false, inp
     if (!deleting) recordTypingMiss(enemy);
     return;
   }
-  // Clear the native composition only after a full answer, without blurring the editor.
+  // Keep partial kana in the same editor; only a full answer ends its session.
   if (flickState.composing && enemy.inputs.includes(roman)) flickState.compositionConsumed = true;
   applyTypedValue(enemy, roman);
   if (enemy.resolving) finishFlickInput(value, key);
@@ -162,10 +191,11 @@ function applyFlickValue(value, key = flickPromptKey(), { composing = false, inp
 
 function queueFlickInput(key = flickPromptKey()) {
   window.clearTimeout(flickState.timerId);
-  const value = els.flickInput.value;
+  const editor = els.flickInput;
+  const value = editor.value;
   flickState.timerId = window.setTimeout(() => {
     flickState.timerId = 0;
-    if (!flickState.composing) applyFlickValue(value, key);
+    if (els.flickInput === editor && !flickState.composing) applyFlickValue(value, key);
   }, 0);
 }
 
@@ -289,7 +319,7 @@ function handleFlickInput(event) {
   flickState.beforeInput = null;
   flickState.inputVersion += 1;
   if (reconcileFlickInput(event, before)) {
-    if (flickState.composing && flickState.compositionConsumed) scheduleFlickReset();
+    if (flickState.lastValue === null) scheduleFlickReset();
     return;
   }
   if (event.isComposing && !flickState.composing) handleFlickCompositionStart({ fromInput: true });
@@ -312,6 +342,22 @@ function handleFlickBeforeInput(event) {
   readFlickInput({ commit: true, inputType: event.inputType });
 }
 
+function bindFlickEditor(editor) {
+  for (const [type, handler] of [
+    ["compositionstart", handleFlickCompositionStart],
+    ["compositionend", handleFlickCompositionEnd],
+    ["input", handleFlickInput],
+    ["focus", updateBattleViewport],
+    ["keydown", handleFlickKeydown],
+    ["beforeinput", handleFlickBeforeInput],
+  ]) {
+    editor.addEventListener(type, event => {
+      // Blur/commit events from a retired editor must not touch the next word.
+      if (editor === els.flickInput) handler(event);
+    });
+  }
+}
+
 function initializeFlickInput() {
   const touchInput = window.matchMedia("(pointer: coarse)");
   const updateMode = () => {
@@ -323,14 +369,7 @@ function initializeFlickInput() {
   flickState.enabled = touchInput.matches;
   document.documentElement.dataset.flickInput = String(flickState.enabled);
   touchInput.addEventListener?.("change", updateMode);
-  els.flickInput.addEventListener("compositionstart", handleFlickCompositionStart);
-  els.flickInput.addEventListener("compositionend", handleFlickCompositionEnd);
-  els.flickInput.addEventListener("input", handleFlickInput);
-  els.flickInput.addEventListener("focus", () => {
-    updateBattleViewport();
-  });
-  els.flickInput.addEventListener("keydown", handleFlickKeydown);
-  els.flickInput.addEventListener("beforeinput", handleFlickBeforeInput);
+  bindFlickEditor(els.flickInput);
   els.typingStatus.addEventListener("click", () => {
     if (flickState.enabled && state.running && !isStoryDialogueOpen()) focusGameSurface({ userGesture: true });
   });

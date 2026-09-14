@@ -301,7 +301,7 @@ test("committing an unfinished modifier counts one miss", () => {
 
 test("consecutive composing answers need no Enter and old commits cannot hit the next prompt", () => {
   const game = createGame({}, { touch: true });
-  game.run("startGame(); advanceStory(); const editor = els.flickInput; let answer");
+  game.run("startGame(); advanceStory(); let answer");
   for (let hit = 1; hit <= 2; hit++) {
     game.run('answer = getFlickReading(getCurrentEnemy()).reading; handleFlickCompositionStart(); els.flickInput.value = answer; handleFlickInput({ isComposing: true })');
     assert.equal(game.run("getCurrentEnemy().tutorial.punches"), hit);
@@ -310,7 +310,7 @@ test("consecutive composing answers need no Enter and old commits cannot hit the
     game.advance(0);
     assert.equal(game.run("getCurrentEnemy().tutorial.punches"), hit);
     assert.equal(game.run("els.flickInput.value"), "");
-    assert.equal(game.run("document.activeElement === editor"), true);
+    assert.equal(game.run("document.activeElement === els.flickInput"), true);
   }
   game.run('handleFlickCompositionStart(); els.flickInput.value = getFlickReading(getCurrentEnemy()).reading; handleFlickInput({ isComposing: true })');
   assert.equal(game.run("getCurrentEnemy().tutorial.punches"), 3);
@@ -537,4 +537,105 @@ test("successive identical prompts accept new kana from a continuing native comp
     assert.equal(game.run("document.activeElement === els.flickInput"),true);
     game.advance(480);
   }
+});
+
+test("a completed native composition retires its editor before the keyboard can restore marked text", () => {
+  const game = battle("greatsword");
+  prompt(game, "gakkou", "学校");
+  game.run(`
+    const oldEditor = els.flickInput;
+    let connectedDuringFocus = false;
+    oldEditor.isConnected = true;
+    oldEditor.addEventListener("blur", () => {
+      connectedDuringFocus = oldEditor.isConnected;
+      oldEditor.value = "学校";
+      oldEditor.dispatchEvent({ type: "compositionend", data: "学校" });
+      oldEditor.dispatchEvent({ type: "input", inputType: "insertFromComposition", data: "学校" });
+    });
+    oldEditor.dispatchEvent({ type: "compositionstart" });
+    oldEditor.value = "か";
+    oldEditor.dispatchEvent({ type: "input", isComposing: true, inputType: "insertCompositionText" });
+  `);
+  assert.equal(game.run("els.flickInput === oldEditor"), true);
+  assert.equal(game.run("target.typingMisses"), 0);
+  game.run(`
+    oldEditor.value = "がっこう";
+    oldEditor.dispatchEvent({ type: "input", isComposing: true, inputType: "insertCompositionText" });
+    // Simulate a native keyboard restoring text after the input callback returns.
+    oldEditor.value = "がっこう";
+  `);
+  assert.equal(game.run("els.flickInput === oldEditor"), false);
+  assert.equal(game.run("connectedDuringFocus"), true);
+  assert.equal(game.run("oldEditor.isConnected"), false);
+  assert.equal(game.run("document.activeElement === els.flickInput"), true);
+  assert.equal(game.run("els.flickInput.value"), "");
+  assert.equal(game.run("flickState.composing"), false);
+  assert.equal(game.run("state.combo"), 1);
+  game.advance(220);
+  assert.equal(game.run("els.flickInput.value"), "");
+  assert.equal(game.run("target.typingMisses"), 0);
+});
+
+test("events from a retired editor cannot change the next word or erase a new prefix", () => {
+  const game = battle("greatsword");
+  prompt(game, "gakkou", "学校");
+  game.run("const oldEditor = els.flickInput");
+  input(game, "がっこう");
+  nextFlickPrompt(game, "kibounohikari", "希望の光");
+  game.run(`
+    els.flickInput.dispatchEvent({ type: "compositionstart" });
+    els.flickInput.value = "き";
+    els.flickInput.dispatchEvent({ type: "input", isComposing: true, inputType: "insertCompositionText" });
+    const version = flickState.inputVersion;
+    oldEditor.value = "無関係な古い変換候補";
+    for (const type of ["compositionstart", "beforeinput", "input", "compositionend", "keydown"]) {
+      oldEditor.dispatchEvent({ type, inputType: "insertText", data: oldEditor.value, key: "Enter",
+        preventDefault() { throw new Error("A retired editor handled Enter"); } });
+    }
+  `);
+  game.advance(0);
+  assert.equal(game.run("flickState.inputVersion === version"), true);
+  assert.equal(game.run("flickState.composing"), true);
+  assert.equal(game.run("els.flickInput.value"), "き");
+  assert.equal(game.run("target.typed"), "ki");
+  assert.equal(game.run("target.typingMisses"), 0);
+  game.run(`
+    els.flickInput.value = "きぼうのひかり";
+    els.flickInput.dispatchEvent({ type: "input", isComposing: true, inputType: "insertCompositionText" });
+  `);
+  assert.equal(game.run("state.combo"), 2);
+  assert.equal(game.run("els.flickInput.value"), "");
+});
+
+test("fresh editors accept identical consecutive answers through native event listeners", () => {
+  const game = createGame({}, { touch: true });
+  game.run("wordSets.unarmed.splice(1); startGame(); advanceStory(); const editors = new Set()");
+  for (let hit = 1; hit <= 3; hit++) {
+    game.run(`
+      editors.add(els.flickInput);
+      els.flickInput.dispatchEvent({ type: "compositionstart" });
+      els.flickInput.value = "あ";
+      els.flickInput.dispatchEvent({ type: "input", isComposing: true, inputType: "insertCompositionText" });
+    `);
+    assert.equal(game.run("getCurrentEnemy().tutorial.punches"), hit);
+    assert.equal(game.run("els.flickInput.value"), "");
+    assert.equal(game.run("document.activeElement === els.flickInput"), true);
+    game.advance(480);
+  }
+  assert.equal(game.run("editors.size"), 3);
+});
+
+test("finishing queued input does not take focus back after the player dismisses the keyboard", () => {
+  const game = battle("greatsword");
+  prompt(game, "gakkou", "学校");
+  game.run(`
+    els.flickInput.dispatchEvent({ type: "compositionstart" });
+    els.flickInput.value = "学校";
+    els.flickInput.dispatchEvent({ type: "compositionend", data: "学校" });
+    document.body.focus();
+  `);
+  game.advance(220);
+  assert.equal(game.run("state.combo"), 1);
+  assert.equal(game.run("els.flickInput.value"), "");
+  assert.equal(game.run("document.activeElement === document.body"), true);
 });
