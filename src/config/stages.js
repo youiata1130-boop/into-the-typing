@@ -13,7 +13,7 @@ const defaultStageId = "forest_path";
 const stageDefinitions = {
   forest_path: {
     code: "1",
-    name: "チュートリアル",
+    name: "旅の始まり",
     meta: "",
     enabled: true,
     tutorial: true,
