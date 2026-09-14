@@ -1,4 +1,9 @@
 const wordSets = {
+  unarmed: [
+    { text: "a", translation: "あ" },
+    { text: "ki", translation: "木" },
+    { text: "te", translation: "手" },
+  ],
   branch: [
     {
       "text": "ki",

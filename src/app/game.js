@@ -1511,7 +1511,7 @@ function setNextWord(enemy) {
   const weapon = getWeaponDefinition(enemy.weaponId);
   const wordLength = getAdjustedWordLengthSettings(weapon.id);
   const next = weapon.id === "unarmed"
-    ? { text: "a", translation: "あ" }
+    ? wordSets.unarmed[enemy.tutorial.punches % wordSets.unarmed.length]
     : chooseWord({
       minLength: wordLength.normalMin,
       maxLength: wordLength.normalMax,

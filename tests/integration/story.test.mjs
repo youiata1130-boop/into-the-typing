@@ -10,7 +10,7 @@ const equippedSave = (extra = {}) => ({
 
 function punch(game, times = 1) {
   for (let i = 0; i < times; i++) {
-    game.run('applyTypedValue(getCurrentEnemy(), "a")');
+    game.run('applyTypedValue(getCurrentEnemy(), getCurrentEnemy().matchedWord)');
     game.advance(480);
   }
 }
@@ -46,7 +46,7 @@ test("exactly three successful one-character punches trigger the offer, even wit
   game.run('applyTypedValue(getCurrentEnemy(), "x")');
   assert.equal(game.run("(getCurrentEnemy()?.tutorial?.punches || 0)"), 0);
   for (let count = 1; count <= 3; count++) {
-    game.run('applyTypedValue(getCurrentEnemy(), "a"); enqueueBufferedInput("letter", "a")');
+    game.run('applyTypedValue(getCurrentEnemy(), getCurrentEnemy().matchedWord); enqueueBufferedInput("letter", "a")');
     game.advance(480);
     assert.deepEqual(game.snapshot("({ gauge: Number(getCurrentEnemy().hpTrack.getAttribute('aria-valuenow')), phase: state.storyPhase, count: (getCurrentEnemy()?.tutorial?.punches || 0), buffer: state.inputBuffer.length, reward: state.pendingExperience })"),
       { gauge: 100 - count, phase: count === 3 ? "weapon-offer" : "unarmed", count, buffer: 0, reward: 0 });
@@ -62,7 +62,7 @@ test("the branch picture and dialogue pause battle before Next equips the same e
   assert.equal(game.run("els.storyText.textContent"), "これを使って！");
   const paused = game.snapshot("({ id: getCurrentEnemy().id, progress: getCurrentEnemy().progress, hp: state.hp })");
   game.advance(30000);
-  game.run('enemyLoop(performance.now()); enemyAttack(getCurrentEnemy()); applyTypedValue(getCurrentEnemy(), "a"); enqueueBufferedInput("letter", "n")');
+  game.run('enemyLoop(performance.now()); enemyAttack(getCurrentEnemy()); applyTypedValue(getCurrentEnemy(), getCurrentEnemy().matchedWord); enqueueBufferedInput("letter", "n")');
   assert.deepEqual(game.snapshot("({ id: getCurrentEnemy().id, progress: getCurrentEnemy().progress, hp: state.hp })"), paused);
   game.run("advanceStory(); advanceStory()");
   assert.equal(game.run("getCurrentEnemy().id"), paused.id);
@@ -115,7 +115,7 @@ test("restarting during the third punch cancels the old weapon handoff", () => {
   const game = createGame();
   game.run("startGame(); advanceStory()");
   punch(game, 2);
-  game.run('applyTypedValue(getCurrentEnemy(), "a")');
+  game.run('applyTypedValue(getCurrentEnemy(), getCurrentEnemy().matchedWord)');
   game.advance(100);
   game.run("startGame()");
   game.advance(1000);

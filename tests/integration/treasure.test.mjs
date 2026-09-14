@@ -7,7 +7,7 @@ const saveKey = "into-the-typing.player.v2";
 function completeLesson(game, { waitForReward = true } = {}) {
   game.run('startGame("forest_path"); advanceStory()');
   for (let hit = 0; hit < 3; hit++) {
-    game.run('applyTypedValue(getInputEnemy(), "a")');
+    game.run('applyTypedValue(getInputEnemy(), getInputEnemy().matchedWord)');
     game.advance(480);
   }
   game.run("advanceStory()");
@@ -72,7 +72,7 @@ test("receiving the branch alone and an early clear cannot grant the sword", () 
   const game = createGame();
   game.run("startGame(); advanceStory()");
   for (let hit = 0; hit < 3; hit++) {
-    game.run('applyTypedValue(getInputEnemy(), "a")');
+    game.run('applyTypedValue(getInputEnemy(), getInputEnemy().matchedWord)');
     game.advance(480);
   }
   game.run("advanceStory(); finishGame(true)");
