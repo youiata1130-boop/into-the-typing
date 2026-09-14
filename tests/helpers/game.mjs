@@ -28,6 +28,7 @@ export function createGame(savedItems = {}, { touch = false, loadImages = true, 
       setAttribute: (name, value) => attributes.set(name, value),
       getAttribute: name => attributes.get(name),
       removeAttribute: name => attributes.delete(name),
+      setSelectionRange(start, end) { this.selectionStart = start; this.selectionEnd = end; },
       querySelector(selector) {
         if (!children.has(selector)) children.set(selector, element());
         return children.get(selector);

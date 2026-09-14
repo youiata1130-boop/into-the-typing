@@ -9,6 +9,7 @@ const flickState = {
   commitTimerId: 0,
   promptKey: "",
   lastValue: null,
+  acceptedValue: "",
   lastPending: false,
   timerId: 0,
   resetTimerId: 0,
@@ -30,6 +31,7 @@ function clearFlickInput() {
   window.clearTimeout(flickState.timerId);
   flickState.timerId = 0;
   flickState.lastValue = null;
+  flickState.acceptedValue = "";
   flickState.lastPending = false;
   if (els.flickInput.value !== "") els.flickInput.value = "";
   els.flickInput.setSelectionRange?.(0, 0);
@@ -51,11 +53,11 @@ function finishFlickInput(value, key) {
   scheduleFlickReset(completed);
 }
 
-function renewFlickEditor() {
+function renewFlickEditor(value = "") {
   const previous = els.flickInput;
   const focused = document.activeElement === previous;
   const next = previous.cloneNode(false);
-  next.value = "";
+  next.value = value;
   next.defaultValue = "";
   previous.removeAttribute("id");
   bindFlickEditor(next);
@@ -76,6 +78,7 @@ function renewFlickEditor() {
   }
   previous.remove();
   previous.value = "";
+  next.setSelectionRange?.(value.length, value.length);
 }
 
 function scheduleFlickReset(completed = flickState.completedInput) {
@@ -153,6 +156,47 @@ function renderFlickPrompt(enemy) {
   scheduleBattleLayout();
 }
 
+function getFlickRoman(value, enemy, parsed = getFlickReading(enemy)) {
+  const normalized = window.JAPANESE_INPUT.normalize(value);
+  return /^[a-z-]*$/.test(normalized) ? normalized
+    : window.JAPANESE_INPUT.match(value, enemy.word, enemy.translation, parsed);
+}
+
+function rejectFlickValue(value, enemy, key, inputType) {
+  const parsed = getFlickReading(enemy);
+  const normalized = window.JAPANESE_INPUT.normalize(value);
+  const maximum = Math.max(parsed?.reading.length || 0, enemy.translation.length,
+    ...enemy.inputs.map(input => input.length));
+  let accepted = "";
+  // Keep correct letters delivered together, stopping at the first wrong one.
+  for (let length = Math.min(normalized.length, maximum); length > 0; length--) {
+    const prefix = normalized.slice(0, length);
+    const roman = getFlickRoman(prefix, enemy, parsed);
+    if (roman !== null && enemy.inputs.some(input => input.startsWith(roman))) {
+      accepted = prefix;
+      break;
+    }
+  }
+  // An invalid replacement must not erase letters already accepted.
+  if (!accepted.startsWith(flickState.acceptedValue)) accepted = flickState.acceptedValue;
+  const roman = getFlickRoman(accepted, enemy, parsed);
+  const complete = enemy.inputs.includes(roman);
+  const miss = !inputType.startsWith("delete");
+  flickState.lastValue = accepted;
+  flickState.acceptedValue = accepted;
+  flickState.lastPending = false;
+  flickState.freshComposition = false;
+  flickState.carriedText = "";
+  // End the rejected native composition as well as removing its visible text.
+  // Late events stay attached to the retired editor and cannot restore the typo.
+  renewFlickEditor(accepted);
+  if (complete && miss) recordTypingMiss(enemy);
+  applyTypedValue(enemy, roman);
+  if (!complete && miss) recordTypingMiss(enemy);
+  els.flickInput.setAttribute("aria-invalid", "true");
+  if (enemy.resolving) finishFlickInput(accepted, key);
+}
+
 function applyFlickValue(value, key = flickPromptKey(), { composing = false, inputType = "" } = {}) {
   const enemy = getCurrentEnemy();
   if (!key || key !== flickPromptKey()) return;
@@ -162,13 +206,9 @@ function applyFlickValue(value, key = flickPromptKey(), { composing = false, inp
     return;
   }
   if (flickState.lastValue === value && !(flickState.lastPending && !composing)) return;
-  const previousValue = flickState.lastValue;
   flickState.lastValue = value;
-  const normalized = window.JAPANESE_INPUT.normalize(value);
   const parsed = getFlickReading(enemy);
-  let roman = /^[a-z-]*$/.test(normalized)
-    ? normalized
-    : window.JAPANESE_INPUT.match(value, enemy.word, enemy.translation, parsed);
+  let roman = getFlickRoman(value, enemy, parsed);
   const pendingPrefix = composing && roman === null ? window.JAPANESE_INPUT.pendingPrefix(value, parsed) : null;
   flickState.lastPending = pendingPrefix !== null;
   if (flickState.lastPending) {
@@ -177,13 +217,11 @@ function applyFlickValue(value, key = flickPromptKey(), { composing = false, inp
   const valid = roman !== null && enemy.inputs.some(input => input.startsWith(roman));
   els.flickInput.setAttribute("aria-invalid", String(!valid));
   if (!valid) {
-    const previous = previousValue === null ? "" : window.JAPANESE_INPUT.normalize(previousValue);
-    const deleting = inputType.startsWith("delete") || (normalized.length < previous.length && previous.startsWith(normalized));
-    // Erasing an error never removes its penalty or counts the same error again.
-    if (!deleting) recordTypingMiss(enemy);
+    rejectFlickValue(value, enemy, key, inputType);
     return;
   }
-  // Keep partial kana in the same editor; only a full answer ends its session.
+  flickState.acceptedValue = pendingPrefix ?? window.JAPANESE_INPUT.normalize(value);
+  // Keep valid partial kana in the same editor; a full answer ends its session.
   if (flickState.composing && enemy.inputs.includes(roman)) flickState.compositionConsumed = true;
   applyTypedValue(enemy, roman);
   if (enemy.resolving) finishFlickInput(value, key);
@@ -267,10 +305,8 @@ function readFlickInput({ commit = false, inputType = "" } = {}) {
 function isCurrentFlickPrefix(value, composing = false) {
   const enemy = getCurrentEnemy();
   if (!enemy) return false;
-  const normalized = window.JAPANESE_INPUT.normalize(value);
   const parsed = getFlickReading(enemy);
-  const roman = /^[a-z-]*$/.test(normalized) ? normalized
-    : window.JAPANESE_INPUT.match(value, enemy.word, enemy.translation, parsed);
+  const roman = getFlickRoman(value, enemy, parsed);
   return (roman !== null && enemy.inputs.some(input => input.startsWith(roman)))
     || (composing && window.JAPANESE_INPUT.pendingPrefix(value, parsed) !== null);
 }

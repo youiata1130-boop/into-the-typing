@@ -91,8 +91,10 @@ test("committed prefixes charge the greatsword and a wrong kana resets its pose 
   input(game, "きぼう");
   assert.equal(game.run("getCurrentEnemy().typed"), "kibou");
   assert.equal(game.run("els.player.dataset.chargePose"), "1");
+  game.run("const rejectedEditor = els.flickInput");
   input(game, "きぼうぬ");
-  input(game, "きぼうぬ");
+  game.run('rejectedEditor.value = "きぼうぬ"; rejectedEditor.dispatchEvent({ type: "input", inputType: "insertText" })');
+  assert.equal(game.run("els.flickInput.value"), "きぼう");
   assert.equal(game.run("getCurrentEnemy().typingMisses"), 1);
   assert.equal(game.run("els.player.dataset.chargePose"), "0");
   assert.equal(game.run('els.flickInput.getAttribute("aria-invalid")'), "true");
@@ -244,7 +246,7 @@ test("modifier edits stay valid and finished readings attack before composition 
   }
 });
 
-test("wrong composing kana is penalized immediately and deleting it cannot restore a perfect attack", () => {
+test("wrong composing kana is removed immediately and automatic correction cannot restore a perfect attack", () => {
   const game = battle("greatsword");
   prompt(game, "kibounohikari", "希望の光");
   game.run('handleFlickCompositionStart(); els.flickInput.value = "きぼう"; handleFlickInput({ isComposing: true })');
@@ -253,7 +255,8 @@ test("wrong composing kana is penalized immediately and deleting it cannot resto
   assert.equal(game.run("getCurrentEnemy().typingMisses"), 1);
   assert.equal(game.run("els.player.dataset.chargePose"), "0");
   assert.equal(game.run('els.flickInput.getAttribute("aria-invalid")'), "true");
-  game.run('els.flickInput.value = "きぼう"; handleFlickInput({ isComposing: true, inputType: "deleteContentBackward" })');
+  assert.equal(game.run("els.flickInput.value"), "きぼう");
+  assert.equal(game.run("document.activeElement === els.flickInput"), true);
   assert.equal(game.run("getCurrentEnemy().typingMisses"), 1);
   game.run('els.flickInput.value = "きぼうのひかり"; handleFlickInput({ isComposing: true })');
   assert.equal(game.run("getCurrentEnemy().hp"), 17);
@@ -264,14 +267,18 @@ test("wrong composing kana is penalized immediately and deleting it cannot resto
   assert.equal(game.run("state.combo"), 1);
 });
 
-test("fast correction before timers run cannot hide a miss and backspacing an invalid suffix adds no penalty", () => {
+test("automatic correction keeps a valid prefix and each fresh wrong entry still counts", () => {
   const game = battle("greatsword");
   prompt(game, "kibounohikari", "希望の光");
   game.run('handleFlickCompositionStart(); els.flickInput.value = "きぬあ"; handleFlickInput({ isComposing: true })');
+  assert.equal(game.run("els.flickInput.value"), "き");
+  assert.equal(game.run("getCurrentEnemy().typed"), "ki");
   assert.equal(game.run("getCurrentEnemy().typingMisses"), 1);
-  game.run('els.flickInput.value = "きぬ"; handleFlickInput({ isComposing: true }); els.flickInput.value = "き"; handleFlickInput({ isComposing: true })');
-  assert.equal(game.run("getCurrentEnemy().typingMisses"), 1);
-  game.run('els.flickInput.value = "きぬ"; handleFlickInput({ isComposing: true })');
+  game.run('handleFlickCompositionStart(); els.flickInput.value += "ぬ"; handleFlickInput({ isComposing: true })');
+  assert.equal(game.run("els.flickInput.value"), "き");
+  assert.equal(game.run("getCurrentEnemy().typingMisses"), 2);
+  game.run('handleFlickCompositionStart(); els.flickInput.value += "ぼう"; handleFlickInput({ isComposing: true })');
+  assert.equal(game.run("getCurrentEnemy().typed"), "kibou");
   assert.equal(game.run("getCurrentEnemy().typingMisses"), 2);
 });
 
@@ -489,13 +496,13 @@ test("new compositions sharing the previous answer's prefix keep every new chara
   assert.equal(game.run("state.combo"), 2);
 });
 
-test("a genuinely wrong kana after a restored prefix is still counted and deletion cannot undo it", () => {
+test("a genuinely wrong kana after a restored prefix is removed while its penalty remains", () => {
   const game = battle("greatsword");
   prompt(game, "gakkou", "学校");
   game.run('handleFlickCompositionStart(); els.flickInput.value="がっこう"; handleFlickInput({isComposing:true})');
   nextFlickPrompt(game, "kibounohikari", "希望の光");
   game.run('els.flickInput.value="がっこうぬ"; handleFlickInput({inputType:"insertCompositionText", isComposing:true, data:"がっこうぬ"})');
-  assert.equal(game.run("els.flickInput.value"), "ぬ");
+  assert.equal(game.run("els.flickInput.value"), "");
   assert.equal(game.run("target.typingMisses"), 1);
   game.run('let assertRemoved; els.flickInput.value="がっこう"; handleFlickInput({inputType:"deleteContentBackward", isComposing:true}); assertRemoved = els.flickInput.value; els.flickInput.value="がっこうき"; handleFlickInput({inputType:"insertCompositionText", isComposing:true})');
   assert.equal(game.run("assertRemoved"), "");
@@ -638,4 +645,147 @@ test("finishing queued input does not take focus back after the player dismisses
   assert.equal(game.run("state.combo"), 1);
   assert.equal(game.run("els.flickInput.value"), "");
   assert.equal(game.run("document.activeElement === document.body"), true);
+});
+
+test("wrong first kana disappears and the correct answer works without Backspace", () => {
+  const game = createGame({}, { touch: true });
+  game.run(`
+    startGame(); advanceStory(); state.combo = 3;
+    const rejectedEditor = els.flickInput;
+    rejectedEditor.dispatchEvent({ type: "compositionstart" });
+    rejectedEditor.value = "ぬ";
+    rejectedEditor.dispatchEvent({ type: "input", inputType: "insertCompositionText", isComposing: true });
+  `);
+  assert.equal(game.run("getCurrentEnemy().tutorial.punches"), 0);
+  assert.equal(game.run("state.combo"), 0);
+  assert.equal(game.run("els.flickInput.value"), "");
+  assert.equal(game.run('els.flickInput.getAttribute("aria-invalid")'), "true");
+  assert.equal(game.run("document.activeElement === els.flickInput"), true);
+  game.run(`
+    rejectedEditor.value = "ぬ";
+    rejectedEditor.dispatchEvent({ type: "compositionend", data: "ぬ" });
+    els.flickInput.dispatchEvent({ type: "compositionstart" });
+    els.flickInput.value += "あ";
+    els.flickInput.dispatchEvent({ type: "input", inputType: "insertCompositionText", isComposing: true });
+  `);
+  assert.equal(game.run("getCurrentEnemy().tutorial.punches"), 1);
+  assert.equal(game.run("els.flickInput.value"), "");
+});
+
+test("rejecting an edit preserves accepted text and caret, including romaji and kana variants", () => {
+  for (const [prefix, expected, suffix] of [
+    ["きぼう", "きぼう", "のひかり"], ["キボウ", "きぼう", "のひかり"],
+    ["ｷﾎﾞｳ", "きぼう", "のひかり"], ["kibou", "kibou", "nohikari"],
+  ]) {
+    const game = battle("greatsword");
+    prompt(game, "kibounohikari", "希望の光");
+    input(game, prefix);
+    // Invalid replacement of existing letters must not destroy the accepted prefix.
+    input(game, "ぬ");
+    assert.equal(game.run("els.flickInput.value"), expected);
+    assert.deepEqual(game.snapshot("[els.flickInput.selectionStart, els.flickInput.selectionEnd]"), [expected.length, expected.length]);
+    assert.equal(game.run("target.typed"), "kibou");
+    assert.equal(game.run("target.typingMisses"), 1);
+    game.run("els.flickInput.value += " + JSON.stringify(suffix) + "; handleFlickInput({isComposing:false})");
+    assert.equal(game.run("target.hp"), 17);
+    assert.equal(game.run("els.flickInput.value"), "");
+  }
+});
+
+test("a rejected composition cannot restore its typo or interrupt the new composition", () => {
+  const game = battle("greatsword");
+  prompt(game, "kibounohikari", "希望の光");
+  input(game, "きぼう");
+  game.run(`
+    const rejectedEditor = els.flickInput;
+    rejectedEditor.addEventListener("blur", () => {
+      rejectedEditor.value = "きぼうぬ";
+      rejectedEditor.dispatchEvent({ type: "compositionend", data: "きぼうぬ" });
+      rejectedEditor.dispatchEvent({ type: "input", inputType: "insertFromComposition" });
+    });
+    rejectedEditor.dispatchEvent({ type: "compositionstart" });
+    rejectedEditor.value += "ぬ";
+    rejectedEditor.dispatchEvent({ type: "input", isComposing: true, inputType: "insertCompositionText" });
+    els.flickInput.dispatchEvent({ type: "compositionstart" });
+    els.flickInput.value += "の";
+    els.flickInput.dispatchEvent({ type: "input", isComposing: true, inputType: "insertCompositionText" });
+    rejectedEditor.value = "きぼうぬの";
+    rejectedEditor.dispatchEvent({ type: "input", isComposing: true, inputType: "insertCompositionText" });
+    rejectedEditor.dispatchEvent({ type: "compositionend", data: rejectedEditor.value });
+  `);
+  game.advance(0);
+  assert.equal(game.run("els.flickInput.value"), "きぼうの");
+  assert.equal(game.run("target.typed"), "kibouno");
+  assert.equal(game.run("target.typingMisses"), 1);
+  assert.equal(game.run("flickState.composing"), true);
+  assert.equal(game.run("document.activeElement === els.flickInput"), true);
+});
+
+test("dakuten, handakuten and small kana can still be formed after an automatic rejection", () => {
+  for (const [roman, translation, updates] of [
+    ["gakkou", "学校", ["か", "が", "がつ", "がっ", "がっこう"]],
+    ["pan", "パン", ["は", "ば", "ぱ", "ぱん"]],
+    ["gyuunyuu", "牛乳", ["き", "ぎ", "ぎゆ", "ぎゅ", "ぎゅうにゅう"]],
+  ]) {
+    const game = battle("greatsword");
+    prompt(game, roman, translation);
+    input(game, "ぬ");
+    game.run("const modifierEditor = els.flickInput; modifierEditor.dispatchEvent({type:'compositionstart'})");
+    for (const value of updates) {
+      game.run("els.flickInput.value = " + JSON.stringify(value) + "; els.flickInput.dispatchEvent({type:'input',isComposing:true,inputType:'insertCompositionText'})");
+      assert.equal(game.run("target.typingMisses"), 1);
+      if (value !== updates.at(-1)) assert.equal(game.run("els.flickInput === modifierEditor"), true);
+    }
+    assert.equal(game.run("target.hp"), 17);
+    assert.equal(game.run("els.flickInput.value"), "");
+  }
+});
+
+test("an invalid committed modifier is removed while correct small-kana prefixes remain", () => {
+  const game = battle("greatsword");
+  prompt(game, "gyuunyuu", "牛乳");
+  game.run(`
+    handleFlickCompositionStart();
+    els.flickInput.value = "ぎゆ"; handleFlickInput({isComposing:true});
+    handleFlickCompositionEnd();
+  `);
+  game.advance(0);
+  assert.equal(game.run("els.flickInput.value"), "ぎ");
+  assert.equal(game.run("els.typedWord.textContent"), "ぎ");
+  assert.equal(game.run("target.typingMisses"), 1);
+  game.run('handleFlickCompositionStart(); els.flickInput.value += "ゅうにゅう"; handleFlickInput({isComposing:true})');
+  assert.equal(game.run("target.hp"), 17);
+});
+
+test("deleting valid text after an automatic rejection does not add a penalty", () => {
+  const game = battle("greatsword");
+  prompt(game, "kibounohikari", "希望の光");
+  input(game, "きぼうぬ");
+  assert.equal(game.run("els.flickInput.value"), "きぼう");
+  assert.equal(game.run("target.typingMisses"), 1);
+  game.run('els.flickInput.value = "きぼ"; handleFlickInput({inputType:"deleteContentBackward",isComposing:false})');
+  assert.equal(game.run("target.typed"), "kibo");
+  assert.equal(game.run("target.typingMisses"), 1);
+});
+
+test("rejecting a queued wrong commit respects a dismissed keyboard", () => {
+  const game = battle("greatsword");
+  prompt(game, "kibounohikari", "希望の光");
+  game.run(`
+    handleFlickCompositionStart(); els.flickInput.value = "きぼうぬ";
+    handleFlickCompositionEnd(); document.body.focus();
+  `);
+  game.advance(220);
+  assert.equal(game.run("els.flickInput.value"), "きぼう");
+  assert.equal(game.run("target.typingMisses"), 1);
+  assert.equal(game.run("document.activeElement === document.body"), true);
+});
+
+test("an answer and a wrong trailing character in one update attack once with the miss penalty", () => {
+  const game = battle("greatsword");
+  prompt(game, "gakkou", "学校");
+  input(game, "がっこうぬ");
+  assert.equal(game.run("target.hp"), 17);
+  assert.equal(game.run("target.typingMisses"), 1);
+  assert.equal(game.run("els.flickInput.value"), "");
 });
