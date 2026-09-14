@@ -7,7 +7,7 @@
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='52'%3E%E2%9A%94%EF%B8%8F%3C/text%3E%3C/svg%3E">
     <link rel="preload" as="image" href="src/assets/images/backgrounds/shared/typing_rpg_background.png">
     <link rel="preload" as="image" href="src/assets/images/backgrounds/status/base_interior.png">
-    <link rel="stylesheet" href="src/styles/main.css?v=player-saves-v1">
+    <link rel="stylesheet" href="src/styles/main.css?v=sword-equip-guide-v1">
   </head>
   <body>
     <section class="loading-screen" id="loadingScreen" aria-labelledby="loadingText" aria-busy="true">
@@ -122,23 +122,24 @@
           <button class="stage-select-button" id="stageSelectButton" type="button">ステージ選択へ</button>
         </header>
         <nav class="home-actions" aria-label="ホーム">
-          <button id="homeWeaponsButton" type="button">武器</button>
+          <button id="homeWeaponsButton" type="button">装備</button>
           <button id="homeStatusButton" type="button">ステータス</button>
         </nav>
       </section>
 
-      <section class="menu-screen" id="weaponScreen" aria-label="武器" hidden>
+      <section class="menu-screen" id="weaponScreen" aria-label="装備" hidden>
         <header class="menu-screen-head">
-          <h1>武器</h1>
+          <h1>装備</h1>
           <button class="menu-back-button" id="weaponHomeButton" type="button">ホーム</button>
         </header>
         <fieldset class="weapon-picker" id="weaponPanel" aria-label="武器">
+          <p class="equipment-guide" id="swordEquipGuide" role="status" hidden></p>
           <div class="weapon-options">
             <label class="weapon-option" for="weaponBranch">
               <input id="weaponBranch" type="radio" name="weapon" value="branch" checked aria-labelledby="weaponBranchName">
               <span class="weapon-option-body"><strong id="weaponBranchName">木の枝</strong></span>
             </label>
-            <label class="weapon-option" for="weaponSword">
+            <label class="weapon-option" id="weaponSwordOption" for="weaponSword">
               <input id="weaponSword" type="radio" name="weapon" value="sword" aria-labelledby="weaponSwordName">
               <span class="weapon-option-body"><strong id="weaponSwordName">鉄の剣</strong></span>
             </label>
@@ -147,6 +148,7 @@
               <span class="weapon-option-body"><strong id="weaponGreatswordName">大剣</strong></span>
             </label>
           </div>
+          <button class="equipment-next" id="swordEquipNext" type="button" hidden disabled>ステージ2へ</button>
         </fieldset>
       </section>
 
@@ -385,11 +387,11 @@
     <script src="src/config/enemyAnimations.js?v=greatsword-charge-v1"></script>
     <script src="src/config/playerProgression.js?v=player-progression-v1"></script>
     <script src="src/config/saveSlots.js?v=player-saves-v1"></script>
-    <script src="src/ui/saveMenu.js?v=player-saves-v1"></script>
+    <script src="src/ui/saveMenu.js?v=sword-equip-guide-v1"></script>
     <script src="src/input/japanese.js?v=live-flick-v1"></script>
     <script src="src/ui/battleLayout.js?v=mobile-layout-v2"></script>
     <script src="src/input/mobile.js?v=safari-reset-v2"></script>
     <script src="src/app/loading.js?v=treasure-reward-v1"></script>
-    <script src="src/app/game.js?v=unarmed-words-v1"></script>
+    <script src="src/app/game.js?v=sword-equip-guide-v1"></script>
   </body>
 </html>

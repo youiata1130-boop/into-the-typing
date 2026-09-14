@@ -4530,6 +4530,30 @@ button:disabled:active {
   cursor: default;
 }
 
+.menu-screen .equipment-guide {
+  margin: 0 0 8px;
+  color: var(--ink);
+  font-size: 18px;
+  line-height: 1.5;
+}
+
+.menu-screen .equipment-next {
+  min-height: 48px;
+  margin-top: 8px;
+}
+
+.menu-screen .equipment-next:disabled {
+  color: #736b5e;
+  background: #e1ded5;
+  border-color: #c9c2b5;
+  box-shadow: none;
+}
+
+.menu-screen .weapon-option.is-recommended .weapon-option-body {
+  border-color: #b57717;
+  box-shadow: 0 0 0 2px rgba(181, 119, 23, 0.25);
+}
+
 .save-error {
   margin: 12px 0 0;
   padding: 12px;

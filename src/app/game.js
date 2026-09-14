@@ -142,11 +142,12 @@ function loadPlayerProgress(saved = null) {
       weaponId: saved.introCompleted === true && Object.hasOwn(weaponDefinitions, saved.weaponId)
         && (saved.weaponId !== "sword" || ironSwordObtained) ? saved.weaponId : defaultWeaponId,
       ironSwordObtained,
+      swordEquipPending: ironSwordObtained && saved.swordEquipPending === true && saved.weaponId !== "sword",
       introCompleted: saved.introCompleted === true,
       equipmentTutorialCompleted: saved.introCompleted === true && saved.equipmentTutorialCompleted === true,
     };
   }
-  return { ...progression.restore(), weaponId: defaultWeaponId, introCompleted: false, equipmentTutorialCompleted: false, ironSwordObtained: false };
+  return { ...progression.restore(), weaponId: defaultWeaponId, introCompleted: false, equipmentTutorialCompleted: false, ironSwordObtained: false, swordEquipPending: false };
 }
 
 function playerProgressSnapshot(player = state) {
@@ -154,6 +155,7 @@ function playerProgressSnapshot(player = state) {
     version: 2, totalExperience: player.totalExperience, stats: player.stats,
     weaponId: player.weaponId, introCompleted: player.introCompleted,
     equipmentTutorialCompleted: player.equipmentTutorialCompleted, ironSwordObtained: player.ironSwordObtained,
+    swordEquipPending: player.swordEquipPending,
   };
 }
 
@@ -177,6 +179,7 @@ const state = {
   stageId: defaultStageId,
   pendingStageId: "",
   playerName: "",
+  swordEquipGuideActive: false,
   ...loadPlayerProgress(),
   running: false,
   storyPhase: "none",
@@ -283,6 +286,10 @@ const els = {
   weaponHomeButton: document.querySelector("#weaponHomeButton"),
   statusHomeButton: document.querySelector("#statusHomeButton"),
   weaponPanel: document.querySelector("#weaponPanel"),
+  weaponSword: document.querySelector("#weaponSword"),
+  weaponSwordOption: document.querySelector("#weaponSwordOption"),
+  swordEquipGuide: document.querySelector("#swordEquipGuide"),
+  swordEquipNext: document.querySelector("#swordEquipNext"),
   battleScreen: document.querySelector("#battleScreen"),
   introStartButton: document.querySelector("#introStartButton"),
   homeButton: document.querySelector("#homeButton"),
@@ -483,6 +490,8 @@ function updateStatusPanel() {
     input.disabled = state.running || !isWeaponAvailable(input.value);
   });
 
+  updateSwordEquipGuide();
+
   els.statusPanel.querySelectorAll("[data-stat][data-stat-delta]").forEach((button) => {
     const stat = button.dataset.stat;
     const capped = getStatValue(stat) >= progression.rules.statMax[stat];
@@ -601,6 +610,8 @@ function updateHud() {
 }
 
 function showScreen(screen) {
+  if (screen !== "weapons") state.swordEquipGuideActive = false;
+  updateSwordEquipGuide();
   saveEls.screen.hidden = screen !== "saves";
   els.startScreen.hidden = screen !== "start";
   els.stageScreen.hidden = screen !== "stage";
@@ -836,7 +847,10 @@ function isStageAvailable(stageId) {
 function continueAfterResult() {
   if (state.running) return;
   const nextStageId = getStageDefinition(state.stageId).nextStageId;
-  if (els.gameNotice.dataset.kind === "clear" && isStageAvailable(nextStageId)) {
+  if (els.gameNotice.dataset.kind === "clear" && state.swordEquipPending
+      && getStageDefinition(state.stageId).rewardWeaponId === "sword") {
+    showWeaponScreen();
+  } else if (els.gameNotice.dataset.kind === "clear" && isStageAvailable(nextStageId)) {
     startGame(nextStageId);
   } else {
     showStageSelect();
@@ -1002,10 +1016,27 @@ function showHomeScreen() {
   (fromStatus ? els.homeStatusButton : els.homeWeaponsButton).focus({ preventScroll: true });
 }
 
+function updateSwordEquipGuide() {
+  const active = state.swordEquipGuideActive;
+  const equipped = state.weaponId === "sword";
+  els.swordEquipGuide.hidden = !active;
+  els.swordEquipGuide.textContent = equipped ? "鉄の剣を装備しました" : "鉄の剣を選んで装備しよう";
+  els.weaponSwordOption.classList.toggle("is-recommended", active && !equipped);
+  els.swordEquipNext.hidden = !active;
+  els.swordEquipNext.disabled = !active || !equipped;
+}
+
 function showWeaponScreen() {
+  state.swordEquipGuideActive = state.swordEquipPending;
   showMenuScreen("weapons");
   const selected = els.weaponPanel.querySelector("input[name='weapon']:checked:not(:disabled)");
-  (selected || els.weaponHomeButton).focus({ preventScroll: true });
+  const focusTarget = state.swordEquipGuideActive ? els.weaponSword : selected || els.weaponHomeButton;
+  focusTarget.focus({ preventScroll: true });
+}
+
+function continueAfterSwordEquip() {
+  if (state.running || !state.swordEquipGuideActive || state.weaponId !== "sword") return;
+  startGame(stageDefinitions[defaultStageId].nextStageId);
 }
 
 function showStatusScreen() {
@@ -1027,6 +1058,7 @@ function selectWeapon(weaponId) {
   }
 
   state.weaponId = weaponId;
+  if (weaponId === "sword") state.swordEquipPending = false;
   savePlayerProgress();
   updateHud();
   renderWord();
@@ -1932,8 +1964,8 @@ function finishGame(cleared) {
   let resultText = "獲得経験値 0 EXP";
   if (cleared) {
     if (treasure) {
+      if (!state.ironSwordObtained) state.swordEquipPending = true;
       state.ironSwordObtained = true;
-      state.weaponId = "sword";
     }
     const previousLevel = state.level;
     const reward = progression.gainExperience(state, state.pendingExperience);
@@ -1961,7 +1993,9 @@ function finishGame(cleared) {
       { persistent: true, treasure },
     );
     const nextStageId = getStageDefinition(state.stageId).nextStageId;
-    if (isStageAvailable(nextStageId)) {
+    if (state.swordEquipPending && treasure) {
+      els.noticeButton.textContent = "装備画面へ";
+    } else if (isStageAvailable(nextStageId)) {
       els.noticeButton.textContent = `ステージ${stageDefinitions[nextStageId].code}へ`;
     }
     if (treasure) els.noticeButton.focus({ preventScroll: true });
@@ -1969,6 +2003,7 @@ function finishGame(cleared) {
 }
 
 function resetGame() {
+  state.swordEquipGuideActive = false;
   setStoryPhase("none");
   invalidateBattleGeneration();
   state.running = false;
@@ -2241,6 +2276,7 @@ els.homeButton.addEventListener("click", showHomeScreen);
 els.homeWeaponsButton.addEventListener("click", showWeaponScreen);
 els.homeStatusButton.addEventListener("click", showStatusScreen);
 els.weaponHomeButton.addEventListener("click", showHomeScreen);
+els.swordEquipNext.addEventListener("click", continueAfterSwordEquip);
 els.statusHomeButton.addEventListener("click", showHomeScreen);
 els.stageSelectButton.addEventListener("click", showStageSelect);
 els.stageConfirmStart.addEventListener("click", startConfirmedStage);

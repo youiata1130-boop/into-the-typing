@@ -77,7 +77,9 @@ function selectSaveSlot(index) {
       saveEls.error.textContent = entry.error || "セーブデータがありません";
       return;
     }
-    if (activatePlayerSave(index, entry)) showStageSelect();
+    if (activatePlayerSave(index, entry)) {
+      if (state.swordEquipPending) showWeaponScreen(); else showStageSelect();
+    }
     return;
   }
   saveMenuState.selectedSlot = index;
