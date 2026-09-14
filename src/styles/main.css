@@ -4502,6 +4502,50 @@ button:disabled:active {
   box-shadow: none;
 }
 
+.menu-screen .status-panel {
+  max-height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.skill-tutorial {
+  padding: 12px;
+  color: var(--ink);
+  background: #fff4d5;
+  border: 1px solid #c99742;
+  border-radius: 8px;
+}
+
+.skill-tutorial p {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+#skillTutorialText {
+  font-weight: 800;
+}
+
+#skillTutorialDetails {
+  margin-top: 8px;
+}
+
+.status-panel[data-skill-tutorial="true"] .status-stepper button:not(:disabled) {
+  outline: 2px solid #c99742;
+  outline-offset: 2px;
+}
+
+.menu-screen .tutorial-next {
+  min-height: 48px;
+}
+
+.menu-screen .tutorial-next:disabled {
+  color: #736b5e;
+  background: #e1ded5;
+  border-color: #c9c2b5;
+  box-shadow: none;
+}
+
 .menu-screen .status-panel-row {
   min-height: 44px;
   padding: 6px 10px;

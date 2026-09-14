@@ -28,7 +28,7 @@ test("stage 1 saves the sword reward and guides manual equipment before stage 2"
     assert.equal(game.savedProgress().ironSwordObtained, false);
     game.advance(620);
     assert.deepEqual(game.snapshot("({ running: state.running, weapon: state.weaponId, sword: state.ironSwordObtained, xp: state.totalExperience })"),
-      { running: false, weapon: "branch", sword: true, xp: 10 });
+      { running: false, weapon: "branch", sword: true, xp: 0 });
     assert.equal(game.run("els.treasureReward.hidden || els.treasureText.hidden"), false);
     assert.equal(game.run('els.gameNotice.classList.contains("has-treasure")'), true);
     assert.equal(game.run("els.noticeButton.textContent"), "装備画面へ");
@@ -37,9 +37,9 @@ test("stage 1 saves the sword reward and guides manual equipment before stage 2"
     assert.equal(saved.ironSwordObtained, true);
     assert.equal(saved.weaponId, "branch");
     assert.equal(saved.swordEquipPending, true);
-    assert.equal(saved.totalExperience, 10);
+    assert.equal(saved.totalExperience, 0);
     game.run("finishGame(true); continueAfterResult()");
-    assert.equal(game.run("state.totalExperience"), 10);
+    assert.equal(game.run("state.totalExperience"), 0);
     assert.equal(game.run("document.documentElement.dataset.screen"), "weapons");
     assert.equal(game.run("els.swordEquipGuide.hidden"), false);
     assert.equal(game.run("els.swordEquipGuide.textContent"), "鉄の剣を選んで装備しよう");
@@ -136,7 +136,7 @@ test("returning home, changing weapons, and replaying preserve the sword unlock"
   completeLesson(reloaded);
   assert.equal(reloaded.run("state.weaponId"), "branch");
   assert.equal(reloaded.run("state.swordEquipPending"), false);
-  assert.equal(reloaded.run("state.totalExperience"), 20);
+  assert.equal(reloaded.run("state.totalExperience"), 0);
 });
 
 test("stage 2 awards EXP without showing another chest or switching weapons", () => {
@@ -150,7 +150,7 @@ test("stage 2 awards EXP without showing another chest or switching weapons", ()
     game.advance(100);
   }
   assert.equal(game.run("state.running"), false);
-  assert.equal(game.run("state.totalExperience"), 120);
+  assert.equal(game.run("state.totalExperience"), 40);
   assert.equal(game.run("state.weaponId"), "greatsword");
   assert.equal(game.run("state.ironSwordObtained"), true);
   assert.equal(game.run("els.treasureReward.hidden && els.treasureText.hidden"), true);

@@ -7,7 +7,7 @@
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='52'%3E%E2%9A%94%EF%B8%8F%3C/text%3E%3C/svg%3E">
     <link rel="preload" as="image" href="src/assets/images/backgrounds/shared/typing_rpg_background.png">
     <link rel="preload" as="image" href="src/assets/images/backgrounds/status/base_interior.png">
-    <link rel="stylesheet" href="src/styles/main.css?v=owned-weapons-v1">
+    <link rel="stylesheet" href="src/styles/main.css?v=skill-tutorial-v1">
   </head>
   <body>
     <section class="loading-screen" id="loadingScreen" aria-labelledby="loadingText" aria-busy="true">
@@ -158,6 +158,10 @@
           <button class="menu-back-button" id="statusHomeButton" type="button">ホーム</button>
         </header>
         <div class="status-panel" id="statusPanel" aria-label="ステータス" aria-live="polite">
+          <div class="skill-tutorial" id="skillTutorialGuide" hidden>
+            <p id="skillTutorialText" tabindex="-1"></p>
+            <p id="skillTutorialDetails">攻撃力：ダメージ増加<br>俊敏性：入力文字数が減少</p>
+          </div>
           <div class="status-panel-row">
             <span>レベル</span><strong id="levelText">1</strong>
           </div>
@@ -188,6 +192,7 @@
           <div class="status-panel-row">
             <span>文字数</span><strong id="statusWordLengthText">2〜3文字</strong>
           </div>
+          <button class="tutorial-next" id="skillTutorialNext" type="button" hidden disabled>ステージ選択へ</button>
         </div>
       </section>
 
@@ -383,15 +388,15 @@
     <script src="src/data/words.js?v=unarmed-words-v1"></script>
     <script src="src/data/labels.js?v=folder-layout-v2"></script>
     <script src="src/config/weapons.js?v=treasure-reward-v1"></script>
-    <script src="src/config/stages.js?v=journey-beginning-v1"></script>
+    <script src="src/config/stages.js?v=skill-tutorial-v1"></script>
     <script src="src/config/enemyAnimations.js?v=greatsword-charge-v1"></script>
     <script src="src/config/playerProgression.js?v=player-progression-v1"></script>
     <script src="src/config/saveSlots.js?v=player-saves-v1"></script>
-    <script src="src/ui/saveMenu.js?v=sword-equip-guide-v1"></script>
+    <script src="src/ui/saveMenu.js?v=skill-tutorial-v1"></script>
     <script src="src/input/japanese.js?v=live-flick-v1"></script>
     <script src="src/ui/battleLayout.js?v=mobile-layout-v2"></script>
     <script src="src/input/mobile.js?v=safari-reset-v2"></script>
     <script src="src/app/loading.js?v=treasure-reward-v1"></script>
-    <script src="src/app/game.js?v=owned-weapons-v1"></script>
+    <script src="src/app/game.js?v=skill-tutorial-v1"></script>
   </body>
 </html>

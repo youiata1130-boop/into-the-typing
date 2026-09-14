@@ -108,7 +108,7 @@ test("three branch hits finish 0.6 HP exactly and only stage clear awards EXP", 
     game.advance(220);
   }
   assert.deepEqual(game.snapshot("({ cleared: state.cleared, pending: state.pendingExperience, xp: state.totalExperience, level: state.level })"),
-    { cleared: 1, pending: 10, xp: 0, level: 1 });
+    { cleared: 1, pending: 5, xp: 0, level: 1 });
 });
 
 test("restarting during the third punch cancels the old weapon handoff", () => {
@@ -186,13 +186,13 @@ test("the tutorial has no HP and requires exactly four branch hits regardless of
     }
     game.run("defeatEnemy(tutorialEnemy)");
     assert.equal(game.run("state.cleared"), 1);
-    assert.equal(game.run("state.pendingExperience"), 10);
+    assert.equal(game.run("state.pendingExperience"), 0);
     assert.equal(game.run("state.totalExperience"), 0);
     assert.equal(game.run("Object.hasOwn(tutorialEnemy, 'hp') || Object.hasOwn(tutorialEnemy, 'maxHp')"), false);
     assert.equal(game.savedProgress().equipmentTutorialCompleted, true);
     game.advance(880);
     assert.equal(game.run("state.running"), false);
-    assert.equal(game.run("state.totalExperience"), 10);
+    assert.equal(game.run("state.totalExperience"), 0);
     assert.equal(game.run("els.noticeTitle.textContent"), "チュートリアル完了");
     assert.equal(game.run("els.noticeButton.textContent"), "装備画面へ");
     game.run('continueAfterResult(); selectWeapon("sword"); continueAfterSwordEquip()');
@@ -265,7 +265,7 @@ test("stage 1 ends after its single tutorial egg and seven successful attacks", 
   assert.equal([...seen.values()].filter(enemy => enemy.boss).length, 0);
   assert.equal(attacks, 7);
   assert.deepEqual(game.snapshot("({ cleared: state.cleared, xp: state.totalExperience, level: state.level, points: state.skillPoints })"),
-    { cleared: 1, xp: 10, level: 1, points: 0 });
+    { cleared: 1, xp: 0, level: 1, points: 0 });
 });
 
 test("equipping the branch or failing the lesson does not unlock stage 2", () => {
@@ -306,11 +306,11 @@ test("stage 1 remains a replayable tutorial after completion", () => {
   game.advance(620);
   assert.equal(game.run("state.running"), false);
   assert.equal(game.run("state.cleared"), 1);
-  assert.equal(game.run("state.totalExperience"), 360);
+  assert.equal(game.run("state.totalExperience"), 350);
 });
 
 test("stage 2 uses normal HP for seven encounters and awards EXP only on clear", () => {
-  const game = createGame(equippedSave({ totalExperience: 10 }));
+  const game = createGame(equippedSave({ totalExperience: 0 }));
   game.run('showStageConfirm("mist_road"); startConfirmedStage()');
   assert.equal(game.run("state.stageId"), "mist_road");
   assert.equal(game.run("state.storyPhase"), "none");
@@ -323,7 +323,7 @@ test("stage 2 uses normal HP for seven encounters and awards EXP only on clear",
       assert.equal(game.run("getCurrentEnemy().tutorial"), undefined);
     }
     if (game.run("Boolean(getInputEnemy())")) {
-      assert.equal(game.run("state.totalExperience"), 10);
+      assert.equal(game.run("state.totalExperience"), 0);
       game.run("applyTypedValue(getInputEnemy(), getInputEnemy().matchedWord)");
       attacks++;
     }
@@ -335,14 +335,14 @@ test("stage 2 uses normal HP for seven encounters and awards EXP only on clear",
   assert.equal([...seen.values()].filter(enemy => enemy.boss).length, 1);
   assert.equal([...seen.values()].filter(enemy => enemy.type === "chick_level_1").length, 4);
   assert.deepEqual(game.snapshot("({ cleared: state.cleared, xp: state.totalExperience, level: state.level, points: state.skillPoints })"),
-    { cleared: 7, xp: 120, level: 3, points: 2 });
-  assert.match(game.run("els.noticeText.textContent"), /獲得経験値 110 EXP/);
+    { cleared: 7, xp: 40, level: 2, points: 1 });
+  assert.match(game.run("els.noticeText.textContent"), /獲得経験値 40 EXP/);
   assert.match(game.run("els.noticeText.textContent"), /レベルアップ！/);
-  assert.equal(game.run("els.noticeButton.textContent"), "ステージ選択へ");
-  game.run("continueAfterResult()");
+  assert.equal(game.run("els.noticeButton.textContent"), "ステータスへ");
+  game.run('continueAfterResult(); changePlayerStat("attack", 1); continueAfterSkillTutorial()');
   assert.equal(game.run("els.stageScreen.hidden"), false);
   assert.equal(game.run('isStageAvailable("sky_castle")'), false);
   const reloaded = createGame(game.saved());
-  assert.equal(reloaded.run("state.totalExperience"), 120);
+  assert.equal(reloaded.run("state.totalExperience"), 40);
   assert.equal(reloaded.run('isStageAvailable("mist_road")'), true);
 });

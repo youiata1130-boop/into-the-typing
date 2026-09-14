@@ -21,7 +21,7 @@ const stageDefinitions = {
     rewardWeaponId: "sword",
     storyIntro: { punches: 3, branchHits: 4, weaponId: "branch" },
     waves: [
-      { types: ["egg_level_1"], hp: 2, attackPower: { min: 6, max: 10 }, count: 1, experience: 10 },
+      { types: ["egg_level_1"], hp: 2, attackPower: { min: 6, max: 10 }, count: 1, experience: 0 },
     ],
   },
   mist_road: {
@@ -30,6 +30,7 @@ const stageDefinitions = {
     meta: "",
     enabled: true,
     requiresTutorial: true,
+    skillPointTutorial: true,
     wordLength: {
       normalMin: 0,
     },
@@ -40,9 +41,9 @@ const stageDefinitions = {
       streakCap: 16,
     },
     waves: [
-      { types: ["egg_level_1"], hp: 2, attackPower: { min: 6, max: 10 }, count: 3, experience: 10 },
-      { types: ["chick_level_1"], hp: 3, attackPower: { min: 8, max: 12 }, count: 3, experience: 15 },
-      { types: ["chick_level_1"], hp: 4, attackPower: { min: 12, max: 18 }, count: 1, experience: 35, boss: true },
+      { types: ["egg_level_1"], hp: 2, attackPower: { min: 6, max: 10 }, count: 3, experience: 5 },
+      { types: ["chick_level_1"], hp: 3, attackPower: { min: 8, max: 12 }, count: 3, experience: 5 },
+      { types: ["chick_level_1"], hp: 4, attackPower: { min: 12, max: 18 }, count: 1, experience: 10, boss: true },
     ],
   },
   sky_castle: {
