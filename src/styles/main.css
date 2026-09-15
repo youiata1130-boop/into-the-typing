@@ -5047,7 +5047,7 @@ html[data-flick-input="true"] .game-flick-keyboard:not([hidden]) {
   display: grid;
   grid-template-columns: minmax(16px, 0.65fr) repeat(3, minmax(44px, 1fr)) minmax(44px, 0.65fr);
   grid-template-areas:
-    ". a ka sa delete"
+    ". a ka sa ."
     ". ta na ha ."
     ". ma ya ra ."
     ". modifier wa long .";
@@ -5077,7 +5077,6 @@ html[data-flick-input="true"] .game-flick-keyboard:not([hidden]) {
   -webkit-tap-highlight-color: transparent;
   transition: background-color 80ms;
 }
-.game-flick-key[data-flick-key="delete"],
 .game-flick-key[data-flick-key="modifier"] {
   background: #dce6ec;
 }

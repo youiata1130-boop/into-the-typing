@@ -3,7 +3,6 @@ const gameFlickKeys = [
   { id: "a", label: "あ", kana: ["あ", "い", "う", "え", "お"] },
   { id: "ka", label: "か", kana: ["か", "き", "く", "け", "こ"] },
   { id: "sa", label: "さ", kana: ["さ", "し", "す", "せ", "そ"] },
-  { id: "delete", label: "⌫", action: "delete", description: "1文字削除" },
   { id: "ta", label: "た", kana: ["た", "ち", "つ", "て", "と"] },
   { id: "na", label: "な", kana: ["な", "に", "ぬ", "ね", "の"] },
   { id: "ha", label: "は", kana: ["は", "ひ", "ふ", "へ", "ほ"] },
@@ -59,8 +58,8 @@ function syncGameFlickKeyboard() {
   if (gesture && (!available || gesture.key !== flickPromptKey())) cancelGameFlickGesture();
   const value = els.flickInput.value;
   for (const { button, definition } of gameFlickUi.buttons) {
-    const actionAvailable = definition.action === "delete" ? Boolean(value)
-      : definition.action ? Boolean(getGameFlickModified(value.at(-1), definition.action)) : true;
+    const actionAvailable = definition.action
+      ? Boolean(getGameFlickModified(value.at(-1), definition.action)) : true;
     button.disabled = !available || !actionAvailable;
   }
   refreshGameFlickText();
@@ -72,11 +71,7 @@ function applyGameFlickKey(id, direction = 0, key = flickPromptKey()) {
   if (!definition) return false;
   let value = els.flickInput.value;
   let inputType = "insertText";
-  if (definition.action === "delete") {
-    if (!value) return false;
-    value = value.slice(0, -1);
-    inputType = "deleteContentBackward";
-  } else if (definition.action) {
+  if (definition.action) {
     const changed = getGameFlickModified(value.at(-1), definition.action);
     if (!changed) return false;
     value = value.slice(0, -1) + changed;

@@ -70,22 +70,20 @@ test("wrong kana leaves accepted text intact and the next correct key needs no d
   assert.equal(game.run("gameFlickUi.output.textContent"), "");
 });
 
-test("pending modifiers are visible and delete removes the pending or accepted kana", () => {
+test("pending modifiers resolve and completed words clear without a delete key", () => {
   const game = battle({ text: "gakkou", translation: "学校" });
   key(game, "ka");
   assert.equal(game.run("gameFlickUi.output.textContent"), "か");
   assert.equal(game.run("gameFlickUi.entry.classList.contains('is-pending')"), true);
-  key(game, "delete");
-  assert.equal(game.run("gameFlickUi.output.textContent"), "");
-  typeKana(game, "が");
+  key(game, "modifier");
+  assert.equal(game.run("gameFlickUi.output.textContent"), "が");
   key(game, "ta", 2);
   assert.equal(game.run("gameFlickUi.output.textContent"), "がつ");
   key(game, "modifier");
   assert.equal(game.run("gameFlickUi.output.textContent"), "がっ");
-  key(game, "delete");
-  assert.equal(game.run("gameFlickUi.output.textContent"), "が");
   assert.equal(game.run("getCurrentEnemy().typingMisses"), 0);
-  typeKana(game, "っこう");
+  typeKana(game, "こう");
+  assert.equal(game.run("gameFlickUi.output.textContent"), "");
   assert.equal(game.run("state.combo"), 1);
 });
 
