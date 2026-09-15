@@ -1906,6 +1906,11 @@ button {
   transition: filter 0.18s ease;
 }
 
+/* Give the slender fish the full enemy width, including fitted mobile layouts. */
+.enemy[data-enemy-type="medaka_level_1"] .enemy-sprite {
+  width: 100%;
+}
+
 .enemy-sprite::before,
 .enemy-sprite::after {
   position: absolute;

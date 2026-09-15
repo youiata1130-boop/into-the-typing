@@ -9,6 +9,13 @@ window.ENEMY_ANIMATIONS = {
   defaultEnemy: "goblin_level_1",
   frameMs: 140,
   enemies: {
+    // The approved fish art uses the shared CSS animation for each battle state.
+    medaka_level_1: {
+      idle: [enemyFrame("medaka", "level_1", "idle", 1)],
+      attack: [enemyFrame("medaka", "level_1", "idle", 1)],
+      damage: [enemyFrame("medaka", "level_1", "idle", 1)],
+      defeat: [enemyFrame("medaka", "level_1", "idle", 1)],
+    },
     egg_level_1: {
       idle: [
         enemyFrame("egg", "level_1", "idle", 1),

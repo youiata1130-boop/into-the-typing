@@ -244,7 +244,7 @@ test("existing progress is preserved and the completed lesson unlocks stage 2", 
   assert.equal(reloaded.run("getCurrentEnemy().tutorial"), undefined);
 });
 
-test("stage 1 ends after its single tutorial egg and seven successful attacks", () => {
+test("stage 1 ends after its single tutorial medaka and seven successful attacks", () => {
   const game = createGame();
   game.run("startGame(); advanceStory()");
   const seen = new Map();
@@ -261,7 +261,7 @@ test("stage 1 ends after its single tutorial egg and seven successful attacks", 
   }
   assert.equal(game.run("state.running"), false);
   assert.equal(seen.size, 1);
-  assert.ok([...seen.values()].every(enemy => enemy.type === "egg_level_1"));
+  assert.ok([...seen.values()].every(enemy => enemy.type === "medaka_level_1"));
   assert.equal([...seen.values()].filter(enemy => enemy.boss).length, 0);
   assert.equal(attacks, 7);
   assert.deepEqual(game.snapshot("({ cleared: state.cleared, xp: state.totalExperience, level: state.level, points: state.skillPoints })"),

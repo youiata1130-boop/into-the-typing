@@ -74,11 +74,16 @@ test("all weapons and both playable stages are preloaded without duplicate URLs"
   assert.equal(game.run("assetLoadingState.ready"), true);
   const urls = game.snapshot("window.testImages.map(image => image.src)");
   assert.equal(urls.length, new Set(urls).size);
-  for (const type of ["egg", "chick"]) {
-    for (const animation of ["idle", "attack", "damage", "defeat"]) {
-      assert.ok(urls.some(url => url.includes("/enemies/" + type + "/level_1/" + animation + "/")));
-    }
+  const medakaUrls = urls.filter(url => url.includes("/enemies/medaka/"));
+  assert.equal(medakaUrls.length, 1);
+  assert.ok(medakaUrls[0].includes("/medaka/level_1/idle/frame_01.png"));
+  for (const animation of ["idle", "attack", "damage", "defeat"]) {
+    const frames = game.snapshot('getEnemyFrames("medaka_level_1", "' + animation + '")');
+    assert.ok(frames.length > 0);
+    for (const frame of frames) assert.ok(medakaUrls.includes(new URL(frame, "https://typing.test/").href));
+    assert.ok(urls.some(url => url.includes("/enemies/chick/level_1/" + animation + "/")));
   }
+  assert.ok(!urls.some(url => url.includes("/enemies/egg/")));
   for (const weapon of ["unarmed", "branch", "sword", "greatsword"]) {
     assert.ok(urls.some(url => url.includes("/player/" + weapon + "/")));
   }

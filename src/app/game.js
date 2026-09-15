@@ -18,6 +18,12 @@ const enemyAnimations = window.ENEMY_ANIMATIONS || {
   defaultEnemy: "goblin_level_1",
   frameMs: 140,
   enemies: {
+    medaka_level_1: {
+      idle: ["src/assets/images/enemies/medaka/level_1/idle/frame_01.png"],
+      attack: ["src/assets/images/enemies/medaka/level_1/idle/frame_01.png"],
+      damage: ["src/assets/images/enemies/medaka/level_1/idle/frame_01.png"],
+      defeat: ["src/assets/images/enemies/medaka/level_1/idle/frame_01.png"],
+    },
     egg_level_1: {
       idle: [
         "src/assets/images/enemies/egg/level_1/idle/frame_01.png",
