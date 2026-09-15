@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { readFileSync } from "node:fs";
 import { createGame } from "../helpers/game.mjs";
 
 function battle(weapon = "branch") {
@@ -27,6 +28,31 @@ function input(game, value) {
   game.advance(0);
 }
 
+const reviewedReadings = JSON.parse(readFileSync(new URL("../fixtures/japanese-readings.json", import.meta.url), "utf8"));
+
+test("every playable Japanese word matches its reviewed reading and kana boundaries", () => {
+  const game = createGame();
+  const words = game.snapshot("wordSets.ja.concat(wordSets.branch, wordSets.unarmed)");
+  const failures = [];
+  for (const word of words) {
+    const expected = reviewedReadings[word.translation];
+    const actual = game.snapshot("window.JAPANESE_INPUT.parse(" + JSON.stringify(word.text) + ", " + JSON.stringify(word.reading || "") + ")");
+    if (!expected || actual?.reading !== expected) failures.push({ word: word.translation, expected, actual: actual?.reading });
+    if (expected && actual?.reading === expected) {
+      let previous = "";
+      for (let length = 1; length <= expected.length; length++) {
+        const roman = game.run("window.JAPANESE_INPUT.match(" + JSON.stringify(expected.slice(0, length)) + ", "
+          + JSON.stringify(word.text) + ", " + JSON.stringify(word.translation) + ", " + JSON.stringify(actual) + ")");
+        assert.ok(roman !== null && roman.startsWith(previous), word.translation + ": " + expected.slice(0, length));
+        previous = roman;
+      }
+      assert.equal(previous, word.text, word.translation);
+    }
+  }
+  assert.deepEqual(failures, []);
+  assert.deepEqual(Object.keys(reviewedReadings).filter(label => !words.some(word => word.translation === label)), []);
+});
+
 test("every Japanese prompt has a complete kana reading, including n, small kana, and long vowels", () => {
   const game = createGame();
   assert.deepEqual(game.snapshot("wordSets.ja.concat(wordSets.branch, wordSets.unarmed).filter(word => !window.JAPANESE_INPUT.parse(word.text, word.reading)).map(word => word.text)"), []);
@@ -36,6 +62,50 @@ test("every Japanese prompt has a complete kana reading, including n, small kana
     ["mahoujinnokiseki", "まほうじんのきせき"], ["shinbun", "しんぶん"],
   ]) {
     assert.equal(game.run("window.JAPANESE_INPUT.parse(" + JSON.stringify(roman) + ", " + JSON.stringify(override || "") + ").reading"), expected);
+  }
+});
+
+test("weekdays and ambiguous kana prompts display and accept each correct character without misses", () => {
+  for (const label of ["月曜日", "火曜日", "水曜日", "木曜日", "金曜日", "土曜日", "日曜日", "本屋", "牛乳", "近所付き合い"]) {
+    const game = battle("sword");
+    const word = game.snapshot("wordSets.ja.find(word => word.translation === " + JSON.stringify(label) + ")");
+    const expected = reviewedReadings[label];
+    prompt(game, word.text, word.translation, word.reading);
+    assert.equal(game.run("els.remainingWord.textContent"), expected, label);
+    for (let length = 1; length <= expected.length; length++) {
+      input(game, expected.slice(0, length));
+      assert.equal(game.run("getCurrentEnemy().typingMisses"), 0, label + ": " + expected.slice(0, length));
+      if (length < expected.length) {
+        assert.equal(game.run("els.typedWord.textContent"), expected.slice(0, length));
+        assert.equal(game.run("els.remainingWord.textContent"), expected.slice(length));
+        assert.equal(game.run("state.combo"), 0);
+      }
+    }
+    assert.equal(game.run("state.combo"), 1, label);
+    assert.equal(game.run("getCurrentEnemy().hp"), 19, label);
+    assert.equal(game.run("els.flickInput.value"), "", label);
+  }
+});
+
+test("corrected words allow composing dakuten and small kana without accepting the old wrong reading", () => {
+  const cases = [
+    ["金曜日", "きにょうび", ["き", "きん", "きんよ", "きんよう", "きんようひ", "きんようび"]],
+    ["近所付き合い", "きんじょずきあい", ["き", "きん", "きんし", "きんじ", "きんじよ", "きんじょ", "きんじょつ", "きんじょづ", "きんじょづき", "きんじょづきあ", "きんじょづきあい"]],
+  ];
+  for (const [label, wrong, updates] of cases) {
+    const game = battle("sword");
+    const word = game.snapshot("wordSets.ja.find(word => word.translation === " + JSON.stringify(label) + ")");
+    prompt(game, word.text, word.translation, word.reading);
+    assert.equal(game.run("getFlickRoman(" + JSON.stringify(wrong) + ", getCurrentEnemy())"), null);
+    game.run("handleFlickCompositionStart()");
+    for (const value of updates) {
+      game.run("els.flickInput.value = " + JSON.stringify(value) + "; handleFlickInput({ isComposing: true })");
+      game.advance(0);
+      assert.equal(game.run("getCurrentEnemy().typingMisses"), 0, label + ": " + value);
+    }
+    assert.equal(game.run("getCurrentEnemy().hp"), 19);
+    assert.equal(game.run("state.combo"), 1);
+    assert.equal(game.run("els.flickInput.value"), "");
   }
 });
 
