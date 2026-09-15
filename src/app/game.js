@@ -236,6 +236,8 @@ const state = {
   specialEffectTimerId: 0,
   bossIntroTimerId: 0,
   noticeTimerId: 0,
+  typingMissTimerId: 0,
+  typingMissShakeTimerId: 0,
   startDelayTimerId: 0,
   inputBufferTimerId: 0,
   playerAttackTimerId: 0,
@@ -246,6 +248,7 @@ const state = {
 };
 
 function invalidateBattleGeneration() {
+  clearTypingMissEffect();
   state.battleGeneration += 1;
 }
 
@@ -276,6 +279,7 @@ const els = {
   specialButton: document.querySelector("#specialButton"),
   specialEffect: document.querySelector("#specialEffect"),
   arena: document.querySelector(".arena"),
+  typingMissEffect: document.querySelector("#typingMissEffect"),
   greatswordImpact: document.querySelector("#greatswordImpact"),
   bossIntro: document.querySelector("#bossIntro"),
   bossIntroKicker: document.querySelector("#bossIntroKicker"),
@@ -834,6 +838,7 @@ function setStoryPhase(phase) {
 }
 
 function showStoryDialogue(phase) {
+  clearTypingMissEffect();
   setStoryPhase(phase);
   cancelAnimationFrame(state.rafId);
   clearInputBuffer();
@@ -2187,7 +2192,35 @@ function normalizeTypedValue(value) {
     .replace(/[^a-z-]/g, "");
 }
 
+
+function clearTypingMissEffect() {
+  window.clearTimeout(state.typingMissTimerId);
+  window.clearTimeout(state.typingMissShakeTimerId);
+  state.typingMissTimerId = 0;
+  state.typingMissShakeTimerId = 0;
+  els.typingMissEffect.classList.remove("is-active");
+  els.arena.classList.remove("typing-miss-shake");
+}
+
+function playTypingMissEffect() {
+  if (!state.running || isStoryDialogueOpen()) return;
+  clearTypingMissEffect();
+  // Restart the feedback for a fresh miss, without moving the input controls.
+  void els.typingMissEffect.offsetWidth;
+  els.typingMissEffect.classList.add("is-active");
+  els.arena.classList.add("typing-miss-shake");
+  state.typingMissShakeTimerId = scheduleBattleTimeout(() => {
+    state.typingMissShakeTimerId = 0;
+    els.arena.classList.remove("typing-miss-shake");
+  }, 240);
+  state.typingMissTimerId = scheduleBattleTimeout(() => {
+    state.typingMissTimerId = 0;
+    els.typingMissEffect.classList.remove("is-active");
+  }, 550);
+}
+
 function recordTypingMiss(enemy) {
+  playTypingMissEffect();
   state.combo = 0;
   resetSuccessStreak();
   if (enemy.weaponId === "greatsword") {

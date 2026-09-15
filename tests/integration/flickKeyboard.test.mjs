@@ -60,7 +60,7 @@ test("wrong kana leaves accepted text intact and the next correct key needs no d
   key(game, "na", 2);
   assert.equal(game.run("els.flickInput.value"), "き");
   assert.equal(game.run("gameFlickUi.output.textContent"), "き");
-  assert.equal(game.run("gameFlickUi.feedback.textContent"), "ミス");
+  assert.equal(game.run("els.flickInput.getAttribute('aria-invalid')"), "true");
   assert.equal(game.run("getCurrentEnemy().typingMisses"), 1);
   key(game, "na", 2);
   assert.equal(game.run("getCurrentEnemy().typingMisses"), 2);

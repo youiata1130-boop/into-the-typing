@@ -5024,8 +5024,6 @@ html[data-flick-input="true"] .game-flick-entry {
   line-height: 1.3;
 }
 .game-flick-entry.is-pending output { color: #8b5b11; }
-.game-flick-entry.is-error { border-color: #c74343; background: #fff0f0; }
-#gameFlickFeedback { flex: 0 0 auto; color: #ad2929; font-size: 16px; font-weight: 700; }
 html[data-flick-input="true"] .game-flick-keyboard:not([hidden]) {
   display: grid;
   grid-template-columns: minmax(16px, 0.65fr) repeat(3, minmax(44px, 1fr)) minmax(44px, 0.65fr);
@@ -5114,4 +5112,39 @@ html[data-flick-input="true"] .control-panel * {
 html[data-flick-input="true"][data-screen="battle"],
 html[data-flick-input="true"][data-screen="battle"] body {
   overscroll-behavior: none;
+}
+
+/* Full-viewport miss feedback stays above the game and never intercepts input. */
+.typing-miss-effect {
+  position: fixed;
+  z-index: 2000;
+  top: var(--battle-viewport-top, 0px);
+  left: var(--battle-viewport-left, 0px);
+  width: var(--battle-viewport-width, 100vw);
+  height: var(--battle-viewport-height, 100dvh);
+  border: 3px solid rgb(239 44 61 / 80%);
+  box-shadow: inset 0 0 22px 4px rgb(225 28 46 / 70%),
+    inset 0 0 74px 16px rgb(225 28 46 / 45%);
+  opacity: 0;
+  pointer-events: none;
+}
+html[data-screen="battle"] .typing-miss-effect.is-active {
+  animation: typingMissEdge 550ms ease-out both;
+}
+.arena.typing-miss-shake {
+  animation: typingMissShake 240ms ease-out;
+}
+@keyframes typingMissEdge {
+  0%, 12% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes typingMissShake {
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(-3px, 1px); }
+  40% { transform: translate(3px, -1px); }
+  60% { transform: translate(-2px, 0); }
+  80% { transform: translate(2px, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .arena.typing-miss-shake { animation: none; }
 }

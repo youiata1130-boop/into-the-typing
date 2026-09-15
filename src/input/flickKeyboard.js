@@ -20,7 +20,6 @@ const gameFlickUi = {
   surface: document.querySelector(".control-panel"),
   keyboard: document.querySelector("#flickKeyboard"),
   output: document.querySelector("#gameFlickText"),
-  feedback: document.querySelector("#gameFlickFeedback"),
   entry: document.querySelector("#gameFlickEntry"),
   popup: document.querySelector("#flickPopup"),
   buttons: [],
@@ -49,10 +48,7 @@ function canUseGameFlickKeyboard() {
 
 function refreshGameFlickText() {
   gameFlickUi.output.textContent = els.flickInput.value;
-  const invalid = els.flickInput.getAttribute("aria-invalid") === "true";
-  gameFlickUi.entry.classList.toggle("is-error", invalid);
   gameFlickUi.entry.classList.toggle("is-pending", flickState.lastPending);
-  gameFlickUi.feedback.textContent = invalid ? "ミス" : "";
 }
 
 function syncGameFlickKeyboard() {
