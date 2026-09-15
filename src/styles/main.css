@@ -1971,6 +1971,7 @@ button {
   animation: enemyIdle 1.3s ease-in-out infinite;
 }
 
+.enemy-sprite[data-enemy-type="medaka_level_1"][data-animation="idle"] .enemy-image,
 .enemy-sprite[data-enemy-type="egg_level_1"][data-animation="idle"] .enemy-image,
 .enemy-sprite[data-enemy-type="chick_level_1"][data-animation="idle"] .enemy-image {
   animation: none;

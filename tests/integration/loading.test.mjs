@@ -75,8 +75,11 @@ test("all weapons and both playable stages are preloaded without duplicate URLs"
   const urls = game.snapshot("window.testImages.map(image => image.src)");
   assert.equal(urls.length, new Set(urls).size);
   const medakaUrls = urls.filter(url => url.includes("/enemies/medaka/"));
-  assert.equal(medakaUrls.length, 1);
-  assert.ok(medakaUrls[0].includes("/medaka/level_1/idle/frame_01.png"));
+  assert.equal(medakaUrls.length, 17);
+  for (let frame = 1; frame <= 16; frame++) {
+    assert.ok(medakaUrls.some(url => url.includes("/medaka/level_1/swim/frame_" + String(frame).padStart(2, "0") + ".png")));
+  }
+  assert.ok(medakaUrls.some(url => url.includes("/medaka/level_1/idle/frame_01.png")));
   for (const animation of ["idle", "attack", "damage", "defeat"]) {
     const frames = game.snapshot('getEnemyFrames("medaka_level_1", "' + animation + '")');
     assert.ok(frames.length > 0);

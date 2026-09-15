@@ -8,10 +8,13 @@ const enemyFrame = (enemy, level, state, frame) =>
 window.ENEMY_ANIMATIONS = {
   defaultEnemy: "goblin_level_1",
   frameMs: 140,
+  settings: {
+    medaka_level_1: { frameMs: 70, idleWhileStopped: true },
+  },
   enemies: {
-    // The approved fish art uses the shared CSS animation for each battle state.
+    // Swimming frames preserve the approved face; combat reactions use the original art.
     medaka_level_1: {
-      idle: [enemyFrame("medaka", "level_1", "idle", 1)],
+      idle: Array.from({ length: 16 }, (_, index) => enemyFrame("medaka", "level_1", "swim", index + 1)),
       attack: [enemyFrame("medaka", "level_1", "idle", 1)],
       damage: [enemyFrame("medaka", "level_1", "idle", 1)],
       defeat: [enemyFrame("medaka", "level_1", "idle", 1)],

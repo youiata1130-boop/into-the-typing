@@ -17,9 +17,13 @@ const specialDamage = 3;
 const enemyAnimations = window.ENEMY_ANIMATIONS || {
   defaultEnemy: "goblin_level_1",
   frameMs: 140,
+  settings: {
+    medaka_level_1: { frameMs: 70, idleWhileStopped: true },
+  },
   enemies: {
     medaka_level_1: {
-      idle: ["src/assets/images/enemies/medaka/level_1/idle/frame_01.png"],
+      idle: Array.from({ length: 16 }, (_, index) =>
+        `src/assets/images/enemies/medaka/level_1/swim/frame_${String(index + 1).padStart(2, "0")}.png`),
       attack: ["src/assets/images/enemies/medaka/level_1/idle/frame_01.png"],
       damage: ["src/assets/images/enemies/medaka/level_1/idle/frame_01.png"],
       defeat: ["src/assets/images/enemies/medaka/level_1/idle/frame_01.png"],
@@ -1185,7 +1189,7 @@ function playEnemyAnimation(enemy, animationName, options = {}) {
 
       enemy.frameIndex = (enemy.frameIndex + 1) % frames.length;
       updateEnemyFrame(enemy);
-    }, enemyAnimations.frameMs);
+    }, enemyAnimations.settings?.[enemy.type]?.frameMs ?? enemyAnimations.frameMs);
   }
 
   if (duration > 0) {
@@ -1196,6 +1200,13 @@ function playEnemyAnimation(enemy, animationName, options = {}) {
 }
 
 function stopEnemyWalkingAnimation(enemy) {
+  // Fish keep moving their fins between attacks, even after reaching the player.
+  if (enemyAnimations.settings?.[enemy.type]?.idleWhileStopped
+      && !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+    if (enemy.animation !== "idle" || !enemy.frameTimerId) playEnemyAnimation(enemy, "idle");
+    return;
+  }
+
   if (enemy.animation === "idle" && enemy.frameTimerId === 0 && enemy.frameIndex === 0) {
     return;
   }
