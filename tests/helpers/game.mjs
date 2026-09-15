@@ -40,7 +40,7 @@ export function createGame(savedItems = {}, { touch = false, loadImages = true, 
       cloneNode() {
         const clone = element();
         for (const [name, value] of attributes) clone.setAttribute(name, value);
-        for (const key of ["value", "defaultValue", "readOnly", "id"]) clone[key] = this[key];
+        for (const key of ["value", "defaultValue", "readOnly", "hidden", "id"]) clone[key] = this[key];
         classes.forEach(name => clone.classList.add(name));
         return clone;
       },

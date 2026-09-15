@@ -36,6 +36,7 @@ function clearFlickInput() {
   if (els.flickInput.value !== "") els.flickInput.value = "";
   els.flickInput.setSelectionRange?.(0, 0);
   els.flickInput.setAttribute("aria-invalid", "false");
+  refreshGameFlickText();
 }
 
 function finishFlickInput(value, key) {
@@ -129,9 +130,10 @@ function syncFlickInput() {
     flickState.promptKey = key;
     clearFlickInput();
   }
-  const readOnly = !state.running || isStoryDialogueOpen();
-  // Reapplying editability on every render can disrupt a mobile keyboard session.
-  if (els.flickInput.readOnly !== readOnly) els.flickInput.readOnly = readOnly;
+  // This is an internal buffer; the visible keyboard and output are not editable.
+  if (!els.flickInput.readOnly) els.flickInput.readOnly = true;
+  els.flickInput.hidden = true;
+  syncGameFlickKeyboard();
 }
 
 function getFlickReading(enemy) {
@@ -153,6 +155,7 @@ function renderFlickPrompt(enemy) {
   const confirmed = parsed.reading.startsWith(visibleReading) ? visibleReading.length : 0;
   els.typedWord.textContent = parsed.reading.slice(0, confirmed);
   els.remainingWord.textContent = parsed.reading.slice(confirmed);
+  refreshGameFlickText();
   scheduleBattleLayout();
 }
 
@@ -395,6 +398,7 @@ function bindFlickEditor(editor) {
 }
 
 function initializeFlickInput() {
+  initializeGameFlickKeyboard();
   const touchInput = window.matchMedia("(pointer: coarse)");
   const updateMode = () => {
     flickState.enabled = touchInput.matches;

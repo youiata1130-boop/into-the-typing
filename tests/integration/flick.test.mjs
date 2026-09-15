@@ -109,10 +109,10 @@ test("corrected words allow composing dakuten and small kana without accepting t
   }
 });
 
-test("flick input completes all three punches and the branch handoff keeps the input focused", () => {
+test("flick input completes all three punches and keeps the non-editable prompt focused", () => {
   const game = createGame({}, { touch: true });
   game.run("startGame(); advanceStory()");
-  assert.equal(game.run("document.activeElement === els.flickInput"), true);
+  assert.equal(game.run("document.activeElement === els.typingStatus"), true);
   for (let i = 1; i <= 3; i++) {
     assert.equal(game.run("getCurrentEnemy().translation"), ["あ", "木", "手"][i - 1]);
     assert.equal(game.run("getFlickReading(getCurrentEnemy()).reading"), ["あ", "き", "て"][i - 1]);
@@ -127,13 +127,13 @@ test("flick input completes all three punches and the branch handoff keeps the i
   assert.equal(game.run("(getCurrentEnemy()?.tutorial?.punches || 0)"), 3);
   game.run("advanceStory()");
   assert.equal(game.run("getCurrentEnemy().weaponId"), "branch");
-  assert.equal(game.run("document.activeElement === els.flickInput"), true);
+  assert.equal(game.run("document.activeElement === els.typingStatus"), true);
   for (const remaining of [72.75, 48.5, 24.25, 0]) {
     const reading = game.run("getFlickReading(getCurrentEnemy()).reading");
     input(game, reading);
     assert.equal(game.run("Number(getCurrentEnemy().hpTrack.getAttribute('aria-valuenow'))"), remaining);
     assert.equal(game.run("els.flickInput.value"), "");
-    assert.equal(game.run("document.activeElement === els.flickInput"), true);
+    assert.equal(game.run("document.activeElement === els.typingStatus"), true);
     game.advance(220);
   }
   assert.equal(game.run("state.cleared"), 1);
@@ -233,10 +233,10 @@ test("Return confirms consecutive words without another tap on the editor", () =
     game.run('els.flickInput.value = getFlickReading(getCurrentEnemy()).reading; handleFlickKeydown({ key: "Enter", preventDefault() { returns++; } })');
     game.advance(0);
     assert.equal(game.run("(getCurrentEnemy()?.tutorial?.punches || 0)"), count);
-    assert.equal(game.run("document.activeElement === els.flickInput"), true);
+    assert.equal(game.run("document.activeElement === els.typingStatus"), true);
     assert.equal(game.run("els.flickInput.value"), "");
     game.advance(480);
-    assert.equal(game.run("document.activeElement === els.flickInput"), true);
+    assert.equal(game.run("document.activeElement === els.typingStatus"), true);
   }
   assert.equal(game.run("returns"), 2);
 });
@@ -251,10 +251,10 @@ test("line-break input submits once and never accumulates blank lines", () => {
   input(game, game.run("getFlickReading(getCurrentEnemy()).reading") + "\n");
   assert.equal(game.run("(getCurrentEnemy()?.tutorial?.punches || 0)"), 2);
   assert.equal(game.run("els.flickInput.value"), "");
-  assert.equal(game.run("document.activeElement === els.flickInput"), true);
+  assert.equal(game.run("document.activeElement === els.typingStatus"), true);
 });
 
-test("rendering and typing do not reapply the focused editor's editability", () => {
+test("the internal text buffer stays read-only during typing and resets", () => {
   const game = battle();
   game.run(`let editabilityWrites = 0;
     let editableState = els.flickInput.readOnly;
@@ -266,7 +266,7 @@ test("rendering and typing do not reapply the focused editor's editability", () 
     applyTypedValue(getCurrentEnemy(), getCurrentEnemy().matchedWord.slice(0, 1));`);
   assert.equal(game.run("editabilityWrites"), 0);
   game.run("resetGame()");
-  assert.equal(game.run("editabilityWrites"), 1);
+  assert.equal(game.run("editabilityWrites"), 0);
 });
 
 test("keyboard dismissal and navigation are respected by renders and automatic callbacks", () => {
@@ -283,9 +283,9 @@ test("keyboard dismissal and navigation are respected by renders and automatic c
   game.advance(1000);
   assert.equal(game.run("document.activeElement === document.body"), true);
   game.run("focusGameSurface({ userGesture: true })");
-  assert.equal(game.run("document.activeElement === els.flickInput"), true);
+  assert.equal(game.run("document.activeElement === els.typingStatus"), true);
   game.run("resetGame(); showStageSelect(); focusGameSurface({ userGesture: true })");
-  assert.equal(game.run("document.activeElement === els.flickInput"), false);
+  assert.equal(game.run("document.activeElement === els.typingStatus"), false);
 });
 
 test("closing the keyboard immediately after Start is not undone by the start notice", () => {
@@ -326,7 +326,7 @@ test("wrong composing kana is removed immediately and automatic correction canno
   assert.equal(game.run("els.player.dataset.chargePose"), "0");
   assert.equal(game.run('els.flickInput.getAttribute("aria-invalid")'), "true");
   assert.equal(game.run("els.flickInput.value"), "きぼう");
-  assert.equal(game.run("document.activeElement === els.flickInput"), true);
+  assert.equal(game.run("document.activeElement === els.typingStatus"), true);
   assert.equal(game.run("getCurrentEnemy().typingMisses"), 1);
   game.run('els.flickInput.value = "きぼうのひかり"; handleFlickInput({ isComposing: true })');
   assert.equal(game.run("getCurrentEnemy().hp"), 17);
@@ -387,7 +387,7 @@ test("consecutive composing answers need no Enter and old commits cannot hit the
     game.advance(0);
     assert.equal(game.run("getCurrentEnemy().tutorial.punches"), hit);
     assert.equal(game.run("els.flickInput.value"), "");
-    assert.equal(game.run("document.activeElement === els.flickInput"), true);
+    assert.equal(game.run("document.activeElement === els.typingStatus"), true);
   }
   game.run('handleFlickCompositionStart(); els.flickInput.value = getFlickReading(getCurrentEnemy()).reading; handleFlickInput({ isComposing: true })');
   assert.equal(game.run("getCurrentEnemy().tutorial.punches"), 3);
@@ -407,7 +407,7 @@ test("Enter and line breaks are prevented even during composition without changi
   assert.equal(game.run("prevented"), 4);
   assert.equal(game.run("getCurrentEnemy().typed"), "kibou");
   assert.equal(game.run("getCurrentEnemy().typingMisses"), 0);
-  assert.equal(game.run("editor === els.flickInput && document.activeElement === editor && !editor.readOnly"), true);
+  assert.equal(game.run("editor === els.flickInput && document.activeElement === els.typingStatus && editor.readOnly"), true);
 });
 
 test("a completed word restored by the IME after its input event is cleared before the next prompt", () => {
@@ -456,7 +456,7 @@ test("repeated answers still count after a complete input reset", () => {
   game.advance(0);
   assert.equal(game.run("getCurrentEnemy().tutorial.punches"), 2);
   assert.equal(game.run("els.flickInput.value"), "");
-  assert.equal(game.run("document.activeElement === els.flickInput"), true);
+  assert.equal(game.run("document.activeElement === els.typingStatus"), true);
 });
 
 test("a new composition cancels old deferred cleanup without losing its prefix", () => {
@@ -506,7 +506,7 @@ test("Safari can restore the previous composition together with the first new ka
   assert.equal(game.run("els.flickInput.value"), "き");
   assert.equal(game.run("target.typed"), "ki");
   assert.equal(game.run("target.typingMisses"), 0);
-  assert.equal(game.run("document.activeElement === els.flickInput"), true);
+  assert.equal(game.run("document.activeElement === els.typingStatus"), true);
   game.run('els.flickInput.value = "がっこうきぼうのひかり"; handleFlickInput({ isComposing: true, inputType: "insertCompositionText", data: "がっこうきぼうのひかり" })');
   assert.equal(game.run("state.combo"), 2);
   assert.equal(game.run("els.flickInput.value"), "");
@@ -611,7 +611,7 @@ test("successive identical prompts accept new kana from a continuing native comp
     game.run("handleFlickBeforeInput({inputType:'insertCompositionText',isComposing:true,data:"+JSON.stringify(raw)+"}); els.flickInput.value="+JSON.stringify(raw)+"; handleFlickInput({inputType:'insertCompositionText',isComposing:true,data:"+JSON.stringify(raw)+"})");
     assert.equal(game.run("getCurrentEnemy().tutorial.punches"),hit);
     assert.equal(game.run("els.flickInput.value"),"");
-    assert.equal(game.run("document.activeElement === els.flickInput"),true);
+    assert.equal(game.run("document.activeElement === els.typingStatus"),true);
     game.advance(480);
   }
 });
@@ -642,9 +642,9 @@ test("a completed native composition retires its editor before the keyboard can 
     oldEditor.value = "がっこう";
   `);
   assert.equal(game.run("els.flickInput === oldEditor"), false);
-  assert.equal(game.run("connectedDuringFocus"), true);
+  assert.equal(game.run("connectedDuringFocus"), false);
   assert.equal(game.run("oldEditor.isConnected"), false);
-  assert.equal(game.run("document.activeElement === els.flickInput"), true);
+  assert.equal(game.run("document.activeElement === els.typingStatus"), true);
   assert.equal(game.run("els.flickInput.value"), "");
   assert.equal(game.run("flickState.composing"), false);
   assert.equal(game.run("state.combo"), 1);
@@ -696,7 +696,7 @@ test("fresh editors accept identical consecutive answers through native event li
     `);
     assert.equal(game.run("getCurrentEnemy().tutorial.punches"), hit);
     assert.equal(game.run("els.flickInput.value"), "");
-    assert.equal(game.run("document.activeElement === els.flickInput"), true);
+    assert.equal(game.run("document.activeElement === els.typingStatus"), true);
     game.advance(480);
   }
   assert.equal(game.run("editors.size"), 3);
@@ -730,7 +730,7 @@ test("wrong first kana disappears and the correct answer works without Backspace
   assert.equal(game.run("state.combo"), 0);
   assert.equal(game.run("els.flickInput.value"), "");
   assert.equal(game.run('els.flickInput.getAttribute("aria-invalid")'), "true");
-  assert.equal(game.run("document.activeElement === els.flickInput"), true);
+  assert.equal(game.run("document.activeElement === els.typingStatus"), true);
   game.run(`
     rejectedEditor.value = "ぬ";
     rejectedEditor.dispatchEvent({ type: "compositionend", data: "ぬ" });
@@ -788,7 +788,7 @@ test("a rejected composition cannot restore its typo or interrupt the new compos
   assert.equal(game.run("target.typed"), "kibouno");
   assert.equal(game.run("target.typingMisses"), 1);
   assert.equal(game.run("flickState.composing"), true);
-  assert.equal(game.run("document.activeElement === els.flickInput"), true);
+  assert.equal(game.run("document.activeElement === els.typingStatus"), true);
 });
 
 test("dakuten, handakuten and small kana can still be formed after an automatic rejection", () => {

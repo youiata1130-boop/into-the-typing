@@ -7,7 +7,7 @@
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='52'%3E%E2%9A%94%EF%B8%8F%3C/text%3E%3C/svg%3E">
     <link rel="preload" as="image" href="src/assets/images/backgrounds/shared/typing_rpg_background.png">
     <link rel="preload" as="image" href="src/assets/images/backgrounds/status/base_interior.png">
-    <link rel="stylesheet" href="src/styles/main.css?v=medaka-swim-v1">
+    <link rel="stylesheet" href="src/styles/main.css?v=game-flick-v1">
   </head>
   <body>
     <section class="loading-screen" id="loadingScreen" aria-labelledby="loadingText" aria-busy="true">
@@ -354,14 +354,20 @@
               <i id="weaponChargeFill"></i>
             </div>
           </div>
-          <div class="typing-status" id="typingStatus" data-weapon="sword" aria-live="polite">
+          <div class="typing-status" id="typingStatus" tabindex="-1" data-weapon="sword" aria-live="polite">
             <span class="word-card typing-word-card">
               <span class="word-translation" id="wordTranslation">はじめ</span>
               <span class="word-target"><span id="typedWord"></span><span id="remainingWord">hajime</span></span>
             </span>
           </div>
-          <textarea class="flick-input" id="flickInput" rows="1" lang="ja" inputmode="text" enterkeyhint="enter" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="ひらがな入力" aria-describedby="wordTranslation remainingWord" placeholder="ひらがなで入力"></textarea>
+          <div class="game-flick-entry" id="gameFlickEntry">
+            <output id="gameFlickText" aria-label="入力した文字"></output>
+            <span id="gameFlickFeedback" role="status" aria-live="polite"></span>
+          </div>
+          <textarea id="flickInput" hidden readonly tabindex="-1" inputmode="none" aria-hidden="true"></textarea>
         </div>
+        <div class="game-flick-keyboard" id="flickKeyboard" role="group" aria-label="フリックキーボード" hidden></div>
+        <div class="game-flick-popup" id="flickPopup" aria-hidden="true" hidden></div>
         <div class="control-side">
           <div class="stats action-stats">
             <div class="stat">
@@ -395,8 +401,9 @@
     <script src="src/ui/saveMenu.js?v=skill-tutorial-v1"></script>
     <script src="src/input/japanese.js?v=live-flick-v1"></script>
     <script src="src/ui/battleLayout.js?v=mobile-layout-v2"></script>
-    <script src="src/input/mobile.js?v=flick-reject-v4"></script>
+    <script src="src/input/mobile.js?v=game-flick-v1"></script>
+    <script src="src/input/flickKeyboard.js?v=game-flick-v1"></script>
     <script src="src/app/loading.js?v=treasure-reward-v1"></script>
-    <script src="src/app/game.js?v=medaka-swim-v1"></script>
+    <script src="src/app/game.js?v=game-flick-v1"></script>
   </body>
 </html>

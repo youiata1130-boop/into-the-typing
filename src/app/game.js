@@ -620,6 +620,7 @@ function updateWeaponCharge() {
 }
 
 function updateHud() {
+  syncGameFlickKeyboard();
   const playerHp = Math.max(0, Math.min(state.hp, getMaxHp()));
   els.scoreText.textContent = state.score;
   els.comboText.textContent = state.combo;
@@ -660,9 +661,9 @@ function focusStartSurface() {
 
 function focusGameSurface({ userGesture = false } = {}) {
   if (flickState.enabled) {
-    // Only a deliberate tap may open the keyboard. Rendering/timers never reopen it.
+    // Focus the non-editable prompt; the system keyboard must stay closed.
     if (userGesture && state.running && !isStoryDialogueOpen()) {
-      els.flickInput.focus({ preventScroll: true });
+      els.typingStatus.focus({ preventScroll: true });
     }
     return;
   }
