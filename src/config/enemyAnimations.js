@@ -26,6 +26,12 @@ window.ENEMY_ANIMATIONS = {
       damage: [enemyFrame("medaka", "boss", "idle", 1)],
       defeat: [enemyFrame("medaka", "boss", "idle", 1)],
     },
+    crab_level_1: {
+      idle: [enemyFrame("crab", "level_1", "idle", 1)],
+      attack: [enemyFrame("crab", "level_1", "idle", 1)],
+      damage: [enemyFrame("crab", "level_1", "idle", 1)],
+      defeat: [enemyFrame("crab", "level_1", "idle", 1)],
+    },
     egg_level_1: {
       idle: [
         enemyFrame("egg", "level_1", "idle", 1),

@@ -345,7 +345,7 @@ test("stage 2 has two fish then a fish boss and awards EXP only after the third 
   assert.equal(game.run("els.noticeButton.textContent"), "ステータスへ");
   game.run('continueAfterResult(); changePlayerStat("attack", 1); continueAfterSkillTutorial()');
   assert.equal(game.run("els.stageScreen.hidden"), false);
-  assert.equal(game.run('isStageAvailable("sky_castle")'), false);
+  assert.equal(game.run('isStageAvailable("sky_castle")'), true);
   const reloaded = createGame(game.saved());
   assert.equal(reloaded.run("state.totalExperience"), 40);
   assert.equal(reloaded.run('isStageAvailable("mist_road")'), true);

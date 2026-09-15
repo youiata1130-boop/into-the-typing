@@ -69,13 +69,20 @@ test("a stalled image times out and its late result cannot bypass Retry", () => 
   assert.equal(game.run("assetLoadingState.ready"), true);
 });
 
-test("all weapons and both playable stages are preloaded without duplicate URLs", () => {
+test("all weapons and all three playable stages are preloaded without duplicate URLs", () => {
   const game = createGame();
   assert.equal(game.run("assetLoadingState.ready"), true);
   const urls = game.snapshot("window.testImages.map(image => image.src)");
   assert.equal(urls.length, new Set(urls).size);
   const medakaUrls = urls.filter(url => url.includes("/enemies/medaka/"));
   assert.equal(medakaUrls.length, 34);
+  const crabUrls = urls.filter(url => url.includes("/enemies/crab/level_1/"));
+  assert.equal(crabUrls.length, 1);
+  for (const animation of ["idle", "attack", "damage", "defeat"]) {
+    for (const frame of game.snapshot('getEnemyFrames("crab_level_1", "' + animation + '")')) {
+      assert.ok(crabUrls.includes(new URL(frame, "https://typing.test/").href));
+    }
+  }
   for (const [type, folder] of [["medaka_level_1", "level_1"], ["medaka_boss", "boss"]]) {
     for (let frame = 1; frame <= 16; frame++) {
       assert.ok(medakaUrls.some(url => url.includes("/medaka/" + folder + "/swim/frame_" + String(frame).padStart(2, "0") + ".png")));

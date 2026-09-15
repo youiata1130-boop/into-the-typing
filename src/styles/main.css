@@ -557,6 +557,13 @@ button {
   box-shadow: inset 0 -16px 0 rgba(67, 122, 71, 0.15), 0 16px 36px rgba(34, 48, 71, 0.12);
 }
 
+/* The third map node keeps its existing ID; its playable stage is the shore. */
+.arena[data-stage="sky_castle"] {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.08)),
+    url("../assets/images/backgrounds/stages/crab_shore.png") center / cover no-repeat;
+}
+
 .sky {
   position: absolute;
   inset: 0 0 auto 0;
@@ -1906,10 +1913,15 @@ button {
   transition: filter 0.18s ease;
 }
 
-/* Give the slender fish the full enemy width, including fitted mobile layouts. */
+/* Use the fitted enemy width for the wide fish and crab artwork. */
 .enemy[data-enemy-type="medaka_level_1"] .enemy-sprite,
-.enemy[data-enemy-type="medaka_boss"] .enemy-sprite {
+.enemy[data-enemy-type="medaka_boss"] .enemy-sprite,
+.enemy[data-enemy-type="crab_level_1"] .enemy-sprite {
   width: 100%;
+}
+
+.enemy[data-enemy-type="crab_level_1"] .enemy-image {
+  object-position: center bottom;
 }
 
 /* The boss gets a larger fitted box, so its tail remains inside the arena. */

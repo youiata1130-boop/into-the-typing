@@ -36,6 +36,12 @@ const enemyAnimations = window.ENEMY_ANIMATIONS || {
       damage: ["src/assets/images/enemies/medaka/boss/idle/frame_01.png"],
       defeat: ["src/assets/images/enemies/medaka/boss/idle/frame_01.png"],
     },
+    crab_level_1: {
+      idle: ["src/assets/images/enemies/crab/level_1/idle/frame_01.png"],
+      attack: ["src/assets/images/enemies/crab/level_1/idle/frame_01.png"],
+      damage: ["src/assets/images/enemies/crab/level_1/idle/frame_01.png"],
+      defeat: ["src/assets/images/enemies/crab/level_1/idle/frame_01.png"],
+    },
     egg_level_1: {
       idle: [
         "src/assets/images/enemies/egg/level_1/idle/frame_01.png",
@@ -154,6 +160,15 @@ updateEnemyTypeDataset(initialPlayableEnemyWaves);
 function loadPlayerProgress(saved = null) {
   if (saved?.version === 2) {
     const restored = progression.restore(saved);
+    const equipmentTutorialCompleted = saved.introCompleted === true && saved.equipmentTutorialCompleted === true;
+    // Older saves predate clear records. Stage 1 gave no EXP; a completed
+    // stage 2 awarded 40 EXP. Infer its clear once, only for those old saves.
+    const clearedStages = Object.hasOwn(saved, "clearedStages")
+      ? [...new Set((Array.isArray(saved.clearedStages) ? saved.clearedStages : [])
+        .filter(id => typeof id === "string" && Object.hasOwn(stageDefinitions, id)))]
+      : equipmentTutorialCompleted
+        ? (restored.totalExperience >= 40 ? ["forest_path", "mist_road"] : ["forest_path"])
+        : [];
     const skillTutorialCompleted = saved.skillTutorialCompleted === true;
     // Preserve legacy iron-sword access and previously equipped greatswords.
     const ironSwordObtained = saved.introCompleted === true
@@ -163,6 +178,7 @@ function loadPlayerProgress(saved = null) {
         || (!Object.hasOwn(saved, "greatswordObtained") && saved.weaponId === "greatsword"));
     return {
       ...restored,
+      clearedStages,
       skillTutorialCompleted,
       skillTutorialPending: !skillTutorialCompleted && saved.skillTutorialPending === true && restored.skillPoints > 0,
       weaponId: saved.introCompleted === true && Object.hasOwn(weaponDefinitions, saved.weaponId)
@@ -172,15 +188,16 @@ function loadPlayerProgress(saved = null) {
       greatswordObtained,
       swordEquipPending: ironSwordObtained && saved.swordEquipPending === true && saved.weaponId !== "sword",
       introCompleted: saved.introCompleted === true,
-      equipmentTutorialCompleted: saved.introCompleted === true && saved.equipmentTutorialCompleted === true,
+      equipmentTutorialCompleted,
     };
   }
-  return { ...progression.restore(), weaponId: defaultWeaponId, introCompleted: false, equipmentTutorialCompleted: false, ironSwordObtained: false, greatswordObtained: false, swordEquipPending: false, skillTutorialPending: false, skillTutorialCompleted: false };
+  return { ...progression.restore(), clearedStages: [], weaponId: defaultWeaponId, introCompleted: false, equipmentTutorialCompleted: false, ironSwordObtained: false, greatswordObtained: false, swordEquipPending: false, skillTutorialPending: false, skillTutorialCompleted: false };
 }
 
 function playerProgressSnapshot(player = state) {
   return {
     version: 2, totalExperience: player.totalExperience, stats: player.stats,
+    clearedStages: [...player.clearedStages],
     weaponId: player.weaponId, introCompleted: player.introCompleted,
     equipmentTutorialCompleted: player.equipmentTutorialCompleted, ironSwordObtained: player.ironSwordObtained,
     swordEquipPending: player.swordEquipPending, greatswordObtained: player.greatswordObtained,
@@ -884,9 +901,16 @@ function advanceStory() {
   focusGameSurface({ userGesture: true });
 }
 
-function isStageAvailable(stageId) {
+function isStageAvailable(stageId, player = state) {
   const stage = stageDefinitions[stageId];
-  return Boolean(stage?.enabled && (!stage.requiresTutorial || state.equipmentTutorialCompleted));
+  return Boolean(stage?.enabled
+    && (!stage.requiresTutorial || player.equipmentTutorialCompleted)
+    && (!stage.requiresStage || player.clearedStages.includes(stage.requiresStage)));
+}
+
+function getHighestAvailableStageCode(player = state) {
+  return Object.entries(stageDefinitions)
+    .filter(([id]) => isStageAvailable(id, player)).at(-1)?.[1].code || "1";
 }
 
 function continueAfterResult() {
@@ -926,7 +950,10 @@ function syncStageButtons() {
       return;
     }
 
-    button.setAttribute("aria-label", [stage.code, stage.name, isEnabled ? "" : stage.requiresTutorial ? "チュートリアル未クリア" : stage.meta].filter(Boolean).join(" "));
+    const lockedReason = stage.requiresStage
+      ? `ステージ${getStageDefinition(stage.requiresStage).code}未クリア`
+      : stage.requiresTutorial ? "チュートリアル未クリア" : stage.meta;
+    button.setAttribute("aria-label", [stage.code, stage.name, isEnabled ? "" : lockedReason].filter(Boolean).join(" "));
 
     if (code) {
       code.textContent = stage.code;
@@ -2041,6 +2068,7 @@ function finishGame(cleared) {
   const treasure = cleared && getStageDefinition(state.stageId).rewardWeaponId === "sword";
   let resultText = "獲得経験値 0 EXP";
   if (cleared) {
+    if (!state.clearedStages.includes(state.stageId)) state.clearedStages.push(state.stageId);
     if (treasure) {
       if (!state.ironSwordObtained) state.swordEquipPending = true;
       state.ironSwordObtained = true;
@@ -2141,6 +2169,7 @@ function startGame(stageId = state.stageId) {
   setStoryPhase(needsIntroduction ? "encounter" : "none");
   state.language = "ja";
   state.stageId = resolvedStageId;
+  els.arena.dataset.stage = resolvedStageId;
   state.pendingStageId = "";
   state.playableEnemyWaves = buildPlayableEnemyWaves(stage.waves);
   state.roundLimit = getRoundLimit(state.playableEnemyWaves);

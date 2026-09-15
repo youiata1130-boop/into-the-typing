@@ -56,7 +56,7 @@ test("stage 1 never levels up and stage 2 teaches spending its one new skill poi
       reloaded.run('startGame("mist_road")');
       finishBattle(reloaded);
       assert.equal(reloaded.run("state.skillTutorialPending"), false);
-      assert.equal(reloaded.run("els.noticeButton.textContent"), "ステージ選択へ");
+      assert.equal(reloaded.run("els.noticeButton.textContent"), "ステージ3へ");
     }
     assert.equal(reloaded.run("state.level"), 3);
   }

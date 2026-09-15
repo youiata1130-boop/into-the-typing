@@ -31,6 +31,7 @@ const stageDefinitions = {
     enabled: true,
     requiresTutorial: true,
     skillPointTutorial: true,
+    nextStageId: "sky_castle",
     wordLength: {
       normalMin: 0,
     },
@@ -47,10 +48,20 @@ const stageDefinitions = {
   },
   sky_castle: {
     code: "3",
-    name: "天空城",
-    description: "まだ門が開いていない高難度ステージ",
-    meta: "封印中",
-    enabled: false,
-    waves: [],
+    name: "潮風の浜辺",
+    meta: "",
+    enabled: true,
+    requiresTutorial: true,
+    requiresStage: "mist_road",
+    wordLength: { normalMin: 0 },
+    specialGauge: {
+      chargeStartStreak: 3,
+      baseGain: 1.8,
+      gainPerStreak: 0.14,
+      streakCap: 16,
+    },
+    waves: [
+      { types: ["crab_level_1"], hp: 5, attackPower: { min: 10, max: 15 }, count: 3, experience: 25 },
+    ],
   },
 };

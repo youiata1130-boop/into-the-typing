@@ -29,10 +29,11 @@ function refreshSaveMenu() {
   saveEls.slots.forEach((button, index) => {
     const entry = getSaveEntry(index);
     const saved = entry.data;
+    const progress = saved ? loadPlayerProgress(saved.progress) : null;
     anySave ||= Boolean(saved);
     button.querySelector("[data-save-name]").textContent = saved?.name || (entry.error ? "読み込めないデータ" : "空き");
     button.querySelector("[data-save-detail]").textContent = saved
-      ? "Lv." + progression.restore(saved.progress).level + " ／ ステージ" + (saved.progress.equipmentTutorialCompleted ? "2" : "1")
+      ? "Lv." + progress.level + " ／ ステージ" + getHighestAvailableStageCode(progress)
       : "";
     button.disabled = saveMenuState.mode === "continue" && !saved;
   });
