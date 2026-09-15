@@ -33,8 +33,10 @@ function typeKana(game, value) {
     const row = mapping.find(row => row.kana.includes(plain));
     assert.ok(row, character);
     assert.equal(key(game, row.id, row.kana.indexOf(plain)), true);
-    if (small) key(game, "small");
-    else if (mark) key(game, mark === "\u3099" ? "dakuten" : "handakuten");
+    if (small || mark) {
+      const taps = character === "づ" || character === "ゔ" || mark === "\u309a" ? 2 : 1;
+      for (let i = 0; i < taps; i++) key(game, "modifier");
+    }
   }
 }
 
@@ -78,7 +80,7 @@ test("pending modifiers are visible and delete removes the pending or accepted k
   typeKana(game, "が");
   key(game, "ta", 2);
   assert.equal(game.run("gameFlickUi.output.textContent"), "がつ");
-  key(game, "small");
+  key(game, "modifier");
   assert.equal(game.run("gameFlickUi.output.textContent"), "がっ");
   key(game, "delete");
   assert.equal(game.run("gameFlickUi.output.textContent"), "が");
@@ -135,4 +137,105 @@ test("pointer release commits once; cancel, second touches and stale releases do
   assert.equal(game.run("els.flickInput.value"), "き");
   game.run("beginGameFlickGesture(pointer(50), kaKey.definition, kaKey.button); getCurrentEnemy().inputRevision++; endGameFlickGesture(pointer(20))");
   assert.equal(game.run("els.flickInput.value"), "き");
+});
+
+test("one modifier key cycles small kana, voiced kana, and semi-voiced kana in order", () => {
+  const game = createGame();
+  for (const cycle of ["あぁ", "つっづ", "はばぱ", "ひびぴ", "かが", "やゃ", "うぅゔ"]) {
+    for (let i = 0; i < cycle.length; i++) {
+      assert.equal(game.run("getGameFlickModified(" + JSON.stringify(cycle[i]) + ", 'modifier')"), cycle[(i + 1) % cycle.length]);
+    }
+  }
+  assert.equal(game.run("getGameFlickModified('ん', 'modifier')"), "");
+  const voiced = battle({ text: "dukai", translation: "使い", reading: "づかい" });
+  key(voiced, "ta", 2);
+  key(voiced, "modifier");
+  assert.equal(voiced.run("gameFlickUi.output.textContent"), "っ");
+  assert.equal(voiced.run("getCurrentEnemy().typingMisses"), 0);
+  key(voiced, "modifier");
+  assert.equal(voiced.run("gameFlickUi.output.textContent"), "づ");
+  typeKana(voiced, "かい");
+  assert.equal(voiced.run("state.combo"), 1);
+  assert.equal(voiced.run("getCurrentEnemy().typingMisses"), 0);
+});
+
+function pressKana(game) {
+  game.run("const heldKey = gameFlickUi.buttons.find(item => item.definition.id === 'ka');"
+    + "const heldPointer = (x = 50, y = 50) => ({ pointerId: 1, button: 0, clientX: x, clientY: y, preventDefault() {} });"
+    + "beginGameFlickGesture(heldPointer(), heldKey.definition, heldKey.button)");
+}
+
+test("kana guide waits 300 ms for a stationary press but quick flicks enter without waiting", () => {
+  const game = battle({ text: "kibou", translation: "希望" });
+  pressKana(game);
+  assert.equal(game.run("gameFlickUi.popup.hidden"), true);
+  game.advance(299);
+  assert.equal(game.run("gameFlickUi.popup.hidden"), true);
+  game.advance(1);
+  assert.equal(game.run("gameFlickUi.popup.hidden"), false);
+  game.run("cancelGameFlickGesture(); beginGameFlickGesture(heldPointer(), heldKey.definition, heldKey.button);"
+    + "moveGameFlickGesture(heldPointer(20))");
+  assert.equal(game.run("gameFlickUi.popup.hidden"), false);
+  assert.equal(game.run("gameFlickUi.choices[1].classList.contains('is-selected')"), true);
+  game.run("endGameFlickGesture(heldPointer(20))");
+  assert.equal(game.run("els.flickInput.value"), "き");
+  assert.equal(game.run("gameFlickUi.popup.hidden"), true);
+  game.advance(400);
+  assert.equal(game.run("gameFlickUi.popup.hidden"), true);
+});
+
+test("short taps, cancellation, next prompts and ending battle never leak delayed guides", () => {
+  for (const finish of ["endGameFlickGesture(heldPointer())", "cancelGameFlickGesture()", "getCurrentEnemy().inputRevision++", "finishGame(false)"]) {
+    const game = battle({ text: "kasa", translation: "傘" });
+    pressKana(game);
+    game.advance(100);
+    game.run(finish);
+    game.advance(300);
+    assert.equal(game.run("gameFlickUi.popup.hidden"), true, finish);
+  }
+});
+
+test("keyboard touch guards cover gaps, disabled keys, release and movement outside the panel", () => {
+  const game = battle({ text: "kibou", translation: "希望" });
+  game.run("let preventedTouches = 0; const finger = { identifier: 7, target: gameFlickUi.surface };"
+    + "const touchEvent = (type, target, touches) => ({ type, target, touches, changedTouches: [finger], cancelable: true, preventDefault() { preventedTouches++; } });"
+    + "guardGameFlickTouch(touchEvent('touchstart', gameFlickUi.surface, [finger]));"
+    + "guardGameFlickTouch(touchEvent('touchmove', document.body, [finger]));"
+    + "guardGameFlickTouch(touchEvent('touchend', document.body, []));");
+  assert.equal(game.run("preventedTouches"), 3);
+  assert.equal(game.run("gameFlickState.touchIds.size"), 0);
+  game.run("guardGameFlickTouch({type:'touchstart',target:document.body,touches:[],changedTouches:[],cancelable:true,preventDefault(){preventedTouches++;}})");
+  assert.equal(game.run("preventedTouches"), 3);
+  game.run("guardGameFlickTouch({type:'touchmove',target:gameFlickUi.surface,touches:[],cancelable:false,preventDefault(){throw new Error('not cancelable');}})");
+});
+
+test("two fingers cancel the letter, block zoom, and allow a new single-finger gesture afterward", () => {
+  const game = battle({ text: "kibou", translation: "希望" });
+  pressKana(game);
+  game.run("let blockedGestures = 0; const fingers = [1,2].map(identifier => ({identifier,target:gameFlickUi.keyboard}));"
+    + "guardGameFlickTouch({type:'touchstart',target:gameFlickUi.keyboard,touches:fingers,cancelable:true,preventDefault(){}});"
+    + "guardGameFlickBrowserGesture({type:'gesturestart',target:document.body,cancelable:true,preventDefault(){blockedGestures++;}});"
+    + "guardGameFlickBrowserGesture({type:'gesturechange',target:document.body,cancelable:true,preventDefault(){blockedGestures++;}});"
+    + "endGameFlickGesture(heldPointer(20));"
+    + "beginGameFlickGesture(heldPointer(),heldKey.definition,heldKey.button);");
+  assert.equal(game.run("gameFlickState.gesture"), null);
+  assert.equal(game.run("els.flickInput.value"), "");
+  assert.equal(game.run("blockedGestures"), 2);
+  game.run("guardGameFlickTouch({type:'touchend',target:document.body,touches:[],cancelable:true,preventDefault(){}});"
+    + "guardGameFlickBrowserGesture({type:'gestureend',target:gameFlickUi.keyboard,cancelable:true,preventDefault(){}});"
+    + "beginGameFlickGesture(heldPointer(),heldKey.definition,heldKey.button);endGameFlickGesture(heldPointer(20));");
+  assert.equal(game.run("els.flickInput.value"), "き");
+  game.run("guardGameFlickBrowserGesture({type:'gesturestart',target:document.body,cancelable:true,preventDefault(){blockedGestures++;}})");
+  assert.equal(game.run("blockedGestures"), 2);
+});
+
+test("keyboard blocks double-tap, selection, context menu and wheel defaults without affecting the rest of the page", () => {
+  const game = battle();
+  game.run("let blockedActions = 0");
+  for (const type of ["dblclick", "selectstart", "contextmenu", "dragstart", "wheel"]) {
+    game.run("guardGameFlickBrowserGesture({type:"+JSON.stringify(type)+",target:gameFlickUi.surface,cancelable:true,preventDefault(){blockedActions++;}})");
+  }
+  assert.equal(game.run("blockedActions"), 5);
+  game.run("finishGame(false);guardGameFlickBrowserGesture({type:'dblclick',target:gameFlickUi.surface,cancelable:true,preventDefault(){blockedActions++;}})");
+  assert.equal(game.run("blockedActions"), 5);
 });

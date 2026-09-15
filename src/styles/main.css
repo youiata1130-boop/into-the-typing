@@ -5028,8 +5028,13 @@ html[data-flick-input="true"] .game-flick-entry {
 #gameFlickFeedback { flex: 0 0 auto; color: #ad2929; font-size: 16px; font-weight: 700; }
 html[data-flick-input="true"] .game-flick-keyboard:not([hidden]) {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(44px, 0.7fr);
-  grid-template-rows: repeat(4, clamp(44px, calc(var(--battle-viewport-height, 100dvh) / 12), 58px));
+  grid-template-columns: minmax(16px, 0.65fr) repeat(3, minmax(44px, 1fr)) minmax(44px, 0.65fr);
+  grid-template-areas:
+    ". a ka sa delete"
+    ". ta na ha ."
+    ". ma ya ra ."
+    ". modifier wa long .";
+  grid-template-rows: repeat(4, clamp(44px, calc(var(--battle-viewport-height, 100dvh) / 12), 54px));
   gap: 6px;
   width: 100%;
   max-width: 520px;
@@ -5056,12 +5061,10 @@ html[data-flick-input="true"] .game-flick-keyboard:not([hidden]) {
   transition: background-color 80ms;
 }
 .game-flick-key[data-flick-key="delete"],
-.game-flick-key[data-flick-key="dakuten"],
-.game-flick-key[data-flick-key="handakuten"],
-.game-flick-key[data-flick-key="small"] {
+.game-flick-key[data-flick-key="modifier"] {
   background: #dce6ec;
 }
-.game-flick-key[data-flick-key="long"] { grid-column: span 2; }
+.game-flick-key[data-flick-key="modifier"] { font-size: 19px; letter-spacing: -2px; }
 .game-flick-key.is-pressed { background: #d0eef0; border-color: #1f7a8c; box-shadow: none; }
 .game-flick-key:disabled { opacity: 0.5; cursor: default; }
 .game-flick-key:focus-visible { outline: 3px solid #1f7a8c; outline-offset: 1px; }
@@ -5069,8 +5072,8 @@ html[data-flick-input="true"] .game-flick-keyboard:not([hidden]) {
   position: fixed;
   z-index: 1000;
   display: grid;
-  grid-template-columns: repeat(3, 42px);
-  grid-template-rows: repeat(3, 42px);
+  grid-template-columns: repeat(3, var(--flick-choice-width, 64px));
+  grid-template-rows: repeat(3, var(--flick-choice-height, 54px));
   pointer-events: none;
   filter: drop-shadow(0 3px 5px #22304744);
 }
@@ -5097,4 +5100,18 @@ html[data-flick-input="true"] .game-flick-keyboard:not([hidden]) {
   }
   html[data-flick-input="true"] .control-panel { align-content: end; padding-top: 6px; }
   html[data-flick-input="true"] .game-flick-keyboard:not([hidden]) { gap: 4px; }
+}
+
+/* Keep keyboard gestures on the page even when they start between keys. */
+html[data-flick-input="true"] .control-panel,
+html[data-flick-input="true"] .control-panel * {
+  touch-action: none;
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+html[data-flick-input="true"][data-screen="battle"],
+html[data-flick-input="true"][data-screen="battle"] body {
+  overscroll-behavior: none;
 }

@@ -7,17 +7,17 @@ const gameFlickKeys = [
   { id: "ta", label: "た", kana: ["た", "ち", "つ", "て", "と"] },
   { id: "na", label: "な", kana: ["な", "に", "ぬ", "ね", "の"] },
   { id: "ha", label: "は", kana: ["は", "ひ", "ふ", "へ", "ほ"] },
-  { id: "dakuten", label: "゛", action: "dakuten", description: "濁点" },
   { id: "ma", label: "ま", kana: ["ま", "み", "む", "め", "も"] },
   { id: "ya", label: "や", kana: ["や", "", "ゆ", "", "よ"] },
   { id: "ra", label: "ら", kana: ["ら", "り", "る", "れ", "ろ"] },
-  { id: "handakuten", label: "゜", action: "handakuten", description: "半濁点" },
-  { id: "small", label: "小", action: "small", description: "小さい文字" },
+  { id: "modifier", label: "小゛゜", action: "modifier", description: "小さい文字・濁点・半濁点" },
   { id: "wa", label: "わ", kana: ["わ", "を", "ん", "ー", ""] },
   { id: "long", label: "ー", kana: ["ー"], description: "長音" },
 ];
-const gameFlickState = { gesture: null };
+const gameFlickHoldMs = 300;
+const gameFlickState = { gesture: null, popupTimerId: 0, touchIds: new Set(), multiTouch: false, nativeGesture: false };
 const gameFlickUi = {
+  surface: document.querySelector(".control-panel"),
   keyboard: document.querySelector("#flickKeyboard"),
   output: document.querySelector("#gameFlickText"),
   feedback: document.querySelector("#gameFlickFeedback"),
@@ -26,19 +26,20 @@ const gameFlickUi = {
   buttons: [],
   choices: [],
 };
-const gameFlickModifiers = {
-  dakuten: ["かきくけこさしすせそたちつてとはひふへほう", "がぎぐげござじずぜぞだぢづでどばびぶべぼゔ"],
-  handakuten: ["はひふへほばびぶべぼ", "ぱぴぷぺぽぱぴぷぺぽ"],
-  small: ["あいうえおつやゆよわ", "ぁぃぅぇぉっゃゅょゎ"],
-};
+// One bottom-left key cycles the same letter through its small/voiced forms.
+const gameFlickModifierCycles = [
+  "あぁ", "いぃ", "うぅゔ", "えぇ", "おぉ",
+  "かが", "きぎ", "くぐ", "けげ", "こご",
+  "さざ", "しじ", "すず", "せぜ", "そぞ",
+  "ただ", "ちぢ", "つっづ", "てで", "とど",
+  "はばぱ", "ひびぴ", "ふぶぷ", "へべぺ", "ほぼぽ",
+  "やゃ", "ゆゅ", "よょ", "わゎ",
+];
 
 function getGameFlickModified(character, action) {
-  const pair = gameFlickModifiers[action];
-  if (!pair || !character) return "";
-  const index = pair[0].indexOf(character);
-  if (index >= 0) return pair[1][index];
-  const reverse = pair[1].indexOf(character);
-  return reverse >= 0 ? pair[0][reverse] : "";
+  if (action !== "modifier" || !character) return "";
+  const cycle = gameFlickModifierCycles.find(item => item.includes(character));
+  return cycle ? cycle[(cycle.indexOf(character) + 1) % cycle.length] : "";
 }
 
 function canUseGameFlickKeyboard() {
@@ -92,7 +93,7 @@ function applyGameFlickKey(id, direction = 0, key = flickPromptKey()) {
   // Invalidate delayed cleanup from a preceding answer before accepting this key.
   flickState.inputVersion += 1;
   els.flickInput.value = value;
-  // A base kana may wait for its explicit dakuten/small-kana button.
+  // A base kana may wait while the modifier key cycles to its voiced/small form.
   applyFlickValue(value, key, { composing: true, inputType });
   syncGameFlickKeyboard();
   return true;
@@ -113,11 +114,16 @@ function showGameFlickChoices(gesture) {
   const top = viewport?.offsetTop || 0;
   const width = viewport?.width || window.innerWidth || 390;
   const height = viewport?.height || window.innerHeight || 800;
-  const size = 126;
-  gameFlickUi.popup.style.left = Math.max(left + 8, Math.min(left + width - size - 8,
-    bounds.left + bounds.width / 2 - size / 2)) + "px";
-  gameFlickUi.popup.style.top = Math.max(top + 8, Math.min(top + height - size - 8,
-    bounds.top - size - 8)) + "px";
+  const cellWidth = Math.min(64, bounds.width);
+  const cellHeight = Math.min(58, bounds.height);
+  const popupWidth = cellWidth * 3;
+  const popupHeight = cellHeight * 3;
+  gameFlickUi.popup.style.setProperty("--flick-choice-width", cellWidth + "px");
+  gameFlickUi.popup.style.setProperty("--flick-choice-height", cellHeight + "px");
+  gameFlickUi.popup.style.left = Math.max(left + 8, Math.min(left + width - popupWidth - 8,
+    bounds.left + bounds.width / 2 - popupWidth / 2)) + "px";
+  gameFlickUi.popup.style.top = Math.max(top + 8, Math.min(top + height - popupHeight - 8,
+    bounds.top + bounds.height / 2 - popupHeight / 2)) + "px";
   gameFlickUi.popup.hidden = false;
   gameFlickUi.choices.forEach((choice, index) => {
     choice.textContent = definition.kana[index] || "";
@@ -128,18 +134,25 @@ function showGameFlickChoices(gesture) {
 
 function beginGameFlickGesture(event, definition, button) {
   if (event.isPrimary === false || event.button > 0 || gameFlickState.gesture
-      || button.disabled || !canUseGameFlickKeyboard()) return;
+      || gameFlickState.multiTouch || button.disabled || !canUseGameFlickKeyboard()) return;
   event.preventDefault();
   const bounds = button.getBoundingClientRect();
   const gesture = {
     pointerId: event.pointerId, definition, button, key: flickPromptKey(),
-    x: event.clientX, y: event.clientY, direction: 0,
+    x: event.clientX, y: event.clientY, direction: 0, choicesVisible: false,
     threshold: Math.min(18, bounds.width * 0.24),
   };
   gameFlickState.gesture = gesture;
   button.classList.add("is-pressed");
   button.setPointerCapture?.(event.pointerId);
-  showGameFlickChoices(gesture);
+  if (definition.kana?.length > 1) {
+    gameFlickState.popupTimerId = window.setTimeout(() => {
+      gameFlickState.popupTimerId = 0;
+      if (gameFlickState.gesture !== gesture || gesture.key !== flickPromptKey() || !canUseGameFlickKeyboard()) return;
+      gesture.choicesVisible = true;
+      showGameFlickChoices(gesture);
+    }, gameFlickHoldMs);
+  }
 }
 
 function moveGameFlickGesture(event) {
@@ -148,10 +161,14 @@ function moveGameFlickGesture(event) {
   event.preventDefault();
   gesture.direction = gameFlickDirection(event.clientX - gesture.x, event.clientY - gesture.y, gesture.threshold);
   if (gesture.definition.kana?.length === 1 && gesture.direction >= 0) gesture.direction = 0;
-  showGameFlickChoices(gesture);
+  // Fast flicks never wait for the long-press guide.
+  if (gesture.direction > 0) gesture.choicesVisible = true;
+  if (gesture.choicesVisible) showGameFlickChoices(gesture);
 }
 
 function cancelGameFlickGesture() {
+  window.clearTimeout(gameFlickState.popupTimerId);
+  gameFlickState.popupTimerId = 0;
   const gesture = gameFlickState.gesture;
   gameFlickState.gesture = null;
   gameFlickUi.popup.hidden = true;
@@ -172,7 +189,58 @@ function endGameFlickGesture(event) {
   applyGameFlickKey(definition.id, direction, key);
 }
 
+// Pointer prevention alone does not cancel Safari's native touch/gesture defaults.
+// Keep the whole panel, including gaps and disabled keys, inside the input surface.
+function isGameFlickSurface(target) {
+  return target === gameFlickUi.surface || target === gameFlickUi.keyboard
+    || target === gameFlickUi.entry || Boolean(target?.closest?.(".control-panel"));
+}
+
+function preventGameFlickDefault(event) {
+  if (event.cancelable) event.preventDefault();
+}
+
+function guardGameFlickTouch(event) {
+  const touches = Array.from(event.touches || []);
+  const changed = Array.from(event.changedTouches || []);
+  const visible = flickState.enabled && !gameFlickUi.keyboard.hidden;
+  const onSurface = visible && (isGameFlickSurface(event.target)
+    || touches.some(touch => isGameFlickSurface(touch.target))
+    || changed.some(touch => isGameFlickSurface(touch.target)));
+  if (!onSurface && !gameFlickState.touchIds.size) return;
+  preventGameFlickDefault(event);
+  gameFlickState.touchIds = new Set(touches.map(touch => touch.identifier));
+  if (touches.length > 1) {
+    gameFlickState.multiTouch = true;
+    cancelGameFlickGesture();
+  }
+  if (!touches.length) {
+    gameFlickState.multiTouch = false;
+    gameFlickState.nativeGesture = false;
+  }
+  if (event.type === "touchcancel") cancelGameFlickGesture();
+}
+
+function guardGameFlickBrowserGesture(event) {
+  const protectedTarget = flickState.enabled && !gameFlickUi.keyboard.hidden && isGameFlickSurface(event.target);
+  if (!protectedTarget && !gameFlickState.touchIds.size && !gameFlickState.nativeGesture) return;
+  preventGameFlickDefault(event);
+  if (event.type.startsWith("gesture")) {
+    gameFlickState.nativeGesture = event.type !== "gestureend";
+    if (gameFlickState.touchIds.size) gameFlickState.multiTouch = true;
+    cancelGameFlickGesture();
+  }
+}
+
+function resetGameFlickInteraction() {
+  cancelGameFlickGesture();
+  gameFlickState.touchIds.clear();
+  gameFlickState.multiTouch = false;
+  gameFlickState.nativeGesture = false;
+}
+
 function initializeGameFlickKeyboard() {
+  gameFlickUi.popup.hidden = true;
   for (let index = 0; index < 5; index++) {
     const choice = document.createElement("span");
     choice.className = "game-flick-choice";
@@ -185,6 +253,8 @@ function initializeGameFlickKeyboard() {
     button.type = "button";
     button.className = "game-flick-key";
     button.dataset.flickKey = definition.id;
+    button.style.gridArea = definition.id;
+    button.draggable = false;
     button.textContent = definition.label;
     button.setAttribute("aria-label", definition.description
       || definition.label + "行 " + definition.kana.filter(Boolean).join(" "));
@@ -216,10 +286,16 @@ function initializeGameFlickKeyboard() {
     gameFlickUi.buttons.push({ button, definition });
     gameFlickUi.keyboard.appendChild(button);
   }
+  for (const type of ["touchstart", "touchmove", "touchend", "touchcancel"]) {
+    document.addEventListener(type, guardGameFlickTouch, { capture: true, passive: false });
+  }
+  for (const type of ["gesturestart", "gesturechange", "gestureend", "dblclick", "contextmenu", "selectstart", "dragstart", "wheel"]) {
+    document.addEventListener(type, guardGameFlickBrowserGesture, { capture: true, passive: false });
+  }
   for (const type of ["blur", "pagehide", "resize", "orientationchange"]) {
-    window.addEventListener(type, cancelGameFlickGesture);
+    window.addEventListener(type, resetGameFlickInteraction);
   }
   document.addEventListener("visibilitychange", () => {
-    if (document.hidden) cancelGameFlickGesture();
+    if (document.hidden) resetGameFlickInteraction();
   });
 }
