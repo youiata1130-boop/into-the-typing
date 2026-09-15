@@ -553,15 +553,8 @@ button {
   border-radius: 8px;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.08)),
-    url("../assets/images/backgrounds/shared/typing_rpg_background.png") center / cover no-repeat;
-  box-shadow: inset 0 -16px 0 rgba(67, 122, 71, 0.15), 0 16px 36px rgba(34, 48, 71, 0.12);
-}
-
-/* The third map node keeps its existing ID; its playable stage is the shore. */
-.arena[data-stage="sky_castle"] {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.08)),
     url("../assets/images/backgrounds/stages/crab_shore.png") center / cover no-repeat;
+  box-shadow: inset 0 -16px 0 rgba(67, 122, 71, 0.15), 0 16px 36px rgba(34, 48, 71, 0.12);
 }
 
 .sky {
