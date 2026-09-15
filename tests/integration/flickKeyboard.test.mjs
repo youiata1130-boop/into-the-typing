@@ -171,10 +171,19 @@ test("kana guide waits 300 ms for a stationary press but quick flicks enter with
   assert.equal(game.run("gameFlickUi.popup.hidden"), true);
   game.advance(1);
   assert.equal(game.run("gameFlickUi.popup.hidden"), false);
+  assert.deepEqual(game.snapshot("gameFlickUi.choices.filter(choice => !choice.hidden).map(choice => choice.textContent)"), ["か", "き", "く", "け", "こ"]);
   game.run("cancelGameFlickGesture(); beginGameFlickGesture(heldPointer(), heldKey.definition, heldKey.button);"
     + "moveGameFlickGesture(heldPointer(20))");
   assert.equal(game.run("gameFlickUi.popup.hidden"), false);
   assert.equal(game.run("gameFlickUi.choices[1].classList.contains('is-selected')"), true);
+  assert.deepEqual(game.snapshot("gameFlickUi.choices.filter(choice => !choice.hidden).map(choice => choice.textContent)"), ["き"]);
+  // The delayed hold callback must not restore the other letters after a flick.
+  game.advance(300);
+  assert.deepEqual(game.snapshot("gameFlickUi.choices.filter(choice => !choice.hidden).map(choice => choice.textContent)"), ["き"]);
+  for (const [x, y, expected] of [[50, 20, "く"], [80, 50, "け"], [50, 80, "こ"], [20, 50, "き"]]) {
+    game.run("moveGameFlickGesture(heldPointer(" + x + ", " + y + "))");
+    assert.deepEqual(game.snapshot("gameFlickUi.choices.filter(choice => !choice.hidden).map(choice => choice.textContent)"), [expected]);
+  }
   game.run("endGameFlickGesture(heldPointer(20))");
   assert.equal(game.run("els.flickInput.value"), "き");
   assert.equal(game.run("gameFlickUi.popup.hidden"), true);

@@ -115,10 +115,10 @@ function showGameFlickChoices(gesture) {
     bounds.left + bounds.width / 2 - popupWidth / 2)) + "px";
   gameFlickUi.popup.style.top = Math.max(top + 8, Math.min(top + height - popupHeight - 8,
     bounds.top + bounds.height / 2 - popupHeight / 2)) + "px";
-  gameFlickUi.popup.hidden = false;
+  gameFlickUi.popup.hidden = direction < 0 || (direction > 0 && !definition.kana[direction]);
   gameFlickUi.choices.forEach((choice, index) => {
     choice.textContent = definition.kana[index] || "";
-    choice.hidden = !definition.kana[index];
+    choice.hidden = !definition.kana[index] || (direction !== 0 && direction !== index);
     choice.classList.toggle("is-selected", direction === index);
   });
 }
