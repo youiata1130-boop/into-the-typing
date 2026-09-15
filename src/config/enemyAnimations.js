@@ -10,6 +10,7 @@ window.ENEMY_ANIMATIONS = {
   frameMs: 140,
   settings: {
     medaka_level_1: { frameMs: 70, idleWhileStopped: true },
+    medaka_boss: { frameMs: 70, idleWhileStopped: true },
   },
   enemies: {
     // Swimming frames preserve the approved face; combat reactions use the original art.
@@ -18,6 +19,12 @@ window.ENEMY_ANIMATIONS = {
       attack: [enemyFrame("medaka", "level_1", "idle", 1)],
       damage: [enemyFrame("medaka", "level_1", "idle", 1)],
       defeat: [enemyFrame("medaka", "level_1", "idle", 1)],
+    },
+    medaka_boss: {
+      idle: Array.from({ length: 16 }, (_, index) => enemyFrame("medaka", "boss", "swim", index + 1)),
+      attack: [enemyFrame("medaka", "boss", "idle", 1)],
+      damage: [enemyFrame("medaka", "boss", "idle", 1)],
+      defeat: [enemyFrame("medaka", "boss", "idle", 1)],
     },
     egg_level_1: {
       idle: [

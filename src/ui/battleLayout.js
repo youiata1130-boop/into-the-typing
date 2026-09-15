@@ -1,25 +1,27 @@
 // Layout only: viewport changes never alter battle state or request keyboard focus.
 const battleViewportState = { baselines: new Map(), frameId: 0 };
 
-function calculateBattleLayout(width, height, backBottom, slots = 1) {
+function calculateBattleLayout(width, height, backBottom, slots = 1, enemySize = 1) {
+  const enemyBaseWidth = 120 * enemySize;
+  const enemyBaseHeight = 106 * enemySize;
   const padding = 8;
   const hpSpace = 18;
   const playerTop = Math.max(8, backBottom + 6);
   const slotGap = Math.min(48, Math.max(0, (height - 150) / Math.max(1, slots)));
   const enemyTop = 8 + slotGap * Math.max(0, slots - 1);
-  const horizontalScale = Math.min(1, Math.max(0, (width - padding * 2 - 20) / (129 + 120)));
+  const horizontalScale = Math.min(1, Math.max(0, (width - padding * 2 - 20) / (129 + enemyBaseWidth)));
   // Use the normal floor first, then move down, and only then reduce image size.
   const playerBottom = Math.max(8, Math.min(32, height - playerTop - hpSpace - 177 * horizontalScale));
-  const enemyBottom = Math.max(8, Math.min(26, height - enemyTop - hpSpace - 106 * horizontalScale));
+  const enemyBottom = Math.max(8, Math.min(26, height - enemyTop - hpSpace - enemyBaseHeight * horizontalScale));
   const playerScale = Math.max(0, Math.min(horizontalScale, (height - playerTop - hpSpace - playerBottom) / 177));
-  const enemyScale = Math.max(0, Math.min(horizontalScale, (height - enemyTop - hpSpace - enemyBottom) / 106));
+  const enemyScale = Math.max(0, Math.min(horizontalScale, (height - enemyTop - hpSpace - enemyBottom) / enemyBaseHeight));
   const playerWidth = 129 * playerScale;
-  const enemyWidth = 120 * enemyScale;
+  const enemyWidth = enemyBaseWidth * enemyScale;
   const enemyFar = Math.max(padding, width - padding - enemyWidth);
   const enemyNear = Math.min(enemyFar, padding + playerWidth + 20);
   return {
     playerWidth, playerHeight: 177 * playerScale, playerBottom,
-    enemyWidth, enemyHeight: 106 * enemyScale, enemySpriteWidth: 96 * enemyScale,
+    enemyWidth, enemyHeight: enemyBaseHeight * enemyScale, enemySpriteWidth: 96 * enemySize * enemyScale,
     enemyBottom, enemyFar, enemyTravel: enemyFar - enemyNear, slotGap,
   };
 }
@@ -32,7 +34,8 @@ function fitBattleCharacters() {
   const bounds = arena.getBoundingClientRect();
   const backBottom = els.resetButton.getBoundingClientRect().bottom - bounds.top;
   const slots = Math.max(1, ...state.activeEnemies.map(enemy => (enemy.slot || 0) + 1));
-  const layout = calculateBattleLayout(arena.clientWidth, arena.clientHeight, backBottom, slots);
+  const enemySize = state.activeEnemies.some(enemy => enemy.type === "medaka_boss") ? 1.3 : 1;
+  const layout = calculateBattleLayout(arena.clientWidth, arena.clientHeight, backBottom, slots, enemySize);
   for (const [name, value] of Object.entries(layout)) {
     const cssName = name.replace(/[A-Z]/g, letter => "-" + letter.toLowerCase());
     arena.style.setProperty("--fit-" + cssName, value.toFixed(2) + "px");

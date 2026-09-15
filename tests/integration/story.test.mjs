@@ -108,7 +108,7 @@ test("three branch hits finish 0.6 HP exactly and only stage clear awards EXP", 
     game.advance(220);
   }
   assert.deepEqual(game.snapshot("({ cleared: state.cleared, pending: state.pendingExperience, xp: state.totalExperience, level: state.level })"),
-    { cleared: 1, pending: 5, xp: 0, level: 1 });
+    { cleared: 1, pending: 10, xp: 0, level: 1 });
 });
 
 test("restarting during the third punch cancels the old weapon handoff", () => {
@@ -309,11 +309,12 @@ test("stage 1 remains a replayable tutorial after completion", () => {
   assert.equal(game.run("state.totalExperience"), 350);
 });
 
-test("stage 2 uses normal HP for seven encounters and awards EXP only on clear", () => {
+test("stage 2 has two fish then a fish boss and awards EXP only after the third defeat", () => {
   const game = createGame(equippedSave({ totalExperience: 0 }));
   game.run('showStageConfirm("mist_road"); startConfirmedStage()');
   assert.equal(game.run("state.stageId"), "mist_road");
   assert.equal(game.run("state.storyPhase"), "none");
+  assert.equal(game.run("state.roundLimit"), 3);
   const seen = new Map();
   let attacks = 0;
   for (let tick = 0; tick < 2000 && game.run("state.running"); tick++) {
@@ -330,12 +331,15 @@ test("stage 2 uses normal HP for seven encounters and awards EXP only on clear",
     game.advance(100);
   }
   assert.equal(game.run("state.running"), false);
-  assert.equal(seen.size, 7);
-  assert.equal(attacks, 95);
-  assert.equal([...seen.values()].filter(enemy => enemy.boss).length, 1);
-  assert.equal([...seen.values()].filter(enemy => enemy.type === "chick_level_1").length, 4);
+  assert.equal(seen.size, 3);
+  assert.equal(attacks, 40);
+  assert.deepEqual([...seen.values()].map(({ type, boss, hp }) => ({ type, boss, hp })), [
+    { type: "medaka_level_1", boss: false, hp: 2 },
+    { type: "medaka_level_1", boss: false, hp: 2 },
+    { type: "medaka_boss", boss: true, hp: 4 },
+  ]);
   assert.deepEqual(game.snapshot("({ cleared: state.cleared, xp: state.totalExperience, level: state.level, points: state.skillPoints })"),
-    { cleared: 7, xp: 40, level: 2, points: 1 });
+    { cleared: 3, xp: 40, level: 2, points: 1 });
   assert.match(game.run("els.noticeText.textContent"), /獲得経験値 40 EXP/);
   assert.match(game.run("els.noticeText.textContent"), /レベルアップ！/);
   assert.equal(game.run("els.noticeButton.textContent"), "ステータスへ");

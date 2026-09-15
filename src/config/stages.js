@@ -41,9 +41,8 @@ const stageDefinitions = {
       streakCap: 16,
     },
     waves: [
-      { types: ["medaka_level_1"], hp: 2, attackPower: { min: 6, max: 10 }, count: 3, experience: 5 },
-      { types: ["chick_level_1"], hp: 3, attackPower: { min: 8, max: 12 }, count: 3, experience: 5 },
-      { types: ["chick_level_1"], hp: 4, attackPower: { min: 12, max: 18 }, count: 1, experience: 10, boss: true },
+      { types: ["medaka_level_1"], hp: 2, attackPower: { min: 6, max: 10 }, count: 2, experience: 10 },
+      { types: ["medaka_boss"], hp: 4, attackPower: { min: 12, max: 18 }, count: 1, experience: 20, boss: true },
     ],
   },
   sky_castle: {

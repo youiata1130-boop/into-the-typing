@@ -19,6 +19,7 @@ const enemyAnimations = window.ENEMY_ANIMATIONS || {
   frameMs: 140,
   settings: {
     medaka_level_1: { frameMs: 70, idleWhileStopped: true },
+    medaka_boss: { frameMs: 70, idleWhileStopped: true },
   },
   enemies: {
     medaka_level_1: {
@@ -27,6 +28,13 @@ const enemyAnimations = window.ENEMY_ANIMATIONS || {
       attack: ["src/assets/images/enemies/medaka/level_1/idle/frame_01.png"],
       damage: ["src/assets/images/enemies/medaka/level_1/idle/frame_01.png"],
       defeat: ["src/assets/images/enemies/medaka/level_1/idle/frame_01.png"],
+    },
+    medaka_boss: {
+      idle: Array.from({ length: 16 }, (_, index) =>
+        `src/assets/images/enemies/medaka/boss/swim/frame_${String(index + 1).padStart(2, "0")}.png`),
+      attack: ["src/assets/images/enemies/medaka/boss/idle/frame_01.png"],
+      damage: ["src/assets/images/enemies/medaka/boss/idle/frame_01.png"],
+      defeat: ["src/assets/images/enemies/medaka/boss/idle/frame_01.png"],
     },
     egg_level_1: {
       idle: [
@@ -1700,6 +1708,7 @@ function addEnemyToWave(wave, index) {
   enemy.lastTick = now;
   state.activeEnemies.push(enemy);
   els.enemyLayer.appendChild(enemy.element);
+  scheduleBattleLayout();
   playEnemyAnimation(enemy, "idle");
   setTargetEnemy(enemy);
 

@@ -1907,8 +1907,21 @@ button {
 }
 
 /* Give the slender fish the full enemy width, including fitted mobile layouts. */
-.enemy[data-enemy-type="medaka_level_1"] .enemy-sprite {
+.enemy[data-enemy-type="medaka_level_1"] .enemy-sprite,
+.enemy[data-enemy-type="medaka_boss"] .enemy-sprite {
   width: 100%;
+}
+
+/* The boss gets a larger fitted box, so its tail remains inside the arena. */
+@media (min-width: 761px) {
+  html[data-flick-input="false"] .enemy[data-enemy-type="medaka_boss"] {
+    width: 192px;
+    left: calc(100% - 220px - (var(--enemy-progress) * (100% - 560px)));
+  }
+
+  html[data-flick-input="false"] .enemy[data-enemy-type="medaka_boss"] .enemy-sprite {
+    height: 177px;
+  }
 }
 
 .enemy-sprite::before,
@@ -1972,6 +1985,7 @@ button {
 }
 
 .enemy-sprite[data-enemy-type="medaka_level_1"][data-animation="idle"] .enemy-image,
+.enemy-sprite[data-enemy-type="medaka_boss"][data-animation="idle"] .enemy-image,
 .enemy-sprite[data-enemy-type="egg_level_1"][data-animation="idle"] .enemy-image,
 .enemy-sprite[data-enemy-type="chick_level_1"][data-animation="idle"] .enemy-image {
   animation: none;

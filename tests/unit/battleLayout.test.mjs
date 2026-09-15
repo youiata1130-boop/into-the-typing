@@ -43,3 +43,20 @@ test("viewport open, offset, rotation and close events update layout without foc
   assert.equal(game.run("document.documentElement.dataset.compactBattle"), "false");
   assert.equal(game.run("document.activeElement === document.body"), true);
 });
+
+test("the larger fish boss and its HP fit the arena at both ends of travel", () => {
+  const game = createGame();
+  for (const width of [278, 318, 358, 388, 810]) {
+    for (const height of [150, 190, 240, 400]) {
+      const l = game.snapshot("calculateBattleLayout(" + width + ", " + height + ", 54, 1, 1.3)");
+      assert.ok(height - l.playerBottom - l.playerHeight - 18 >= 60 - 0.01);
+      assert.ok(height - l.enemyBottom - l.enemyHeight - 18 >= 8 - 0.01);
+      assert.ok(l.enemyFar + l.enemyWidth <= width - 8 + 0.01);
+      assert.ok(l.enemyFar - l.enemyTravel >= 8 + l.playerWidth + 20 - 0.01);
+      assert.ok(l.enemyTravel >= 0);
+    }
+  }
+  const roomy = game.snapshot("calculateBattleLayout(388, 400, 54, 1, 1.3)");
+  assert.equal(roomy.enemyWidth, 156);
+  assert.ok(roomy.enemyHeight > 106);
+});

@@ -70,19 +70,23 @@ def save_previews(frames, directory):
     draw = ImageDraw.Draw(sheet)
     for cell, index in enumerate((0, 4, 8, 12)):
         x, y = cell % 2 * cell_width, cell // 2 * cell_height
-        preview = frames[index].resize((460, 250), Image.Resampling.LANCZOS)
-        sheet.paste(preview, (x + 10, y + 20), preview)
+        preview = frames[index].copy()
+        preview.thumbnail((460, 250), Image.Resampling.LANCZOS)
+        sheet.paste(preview, (x + (cell_width - preview.width) // 2,
+                              y + 20 + (250 - preview.height) // 2), preview)
         draw.text((x + 15, y + 8), f"Frame {index + 1:02d}", fill="#15273c")
     sheet.save(directory / "medaka-swim-contact-sheet.jpg", quality=90)
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--source", type=Path, default=SOURCE)
+    parser.add_argument("--output", type=Path, default=OUTPUT)
     parser.add_argument("--preview-dir", type=Path)
     args = parser.parse_args()
-    original = SOURCE.read_bytes()
-    source = Image.open(SOURCE).convert("RGBA")
-    OUTPUT.mkdir(parents=True, exist_ok=True)
+    original = args.source.read_bytes()
+    source = Image.open(args.source).convert("RGBA")
+    args.output.mkdir(parents=True, exist_ok=True)
     frames, manifest = [], []
     for index in range(FRAME_COUNT):
         # Sample between neutral poses so every saved frame is distinct.
@@ -91,7 +95,7 @@ def main():
         assert box and box[0] > 0 and box[1] > 0
         assert box[2] < frame.width and box[3] < frame.height, "Clipped fin"
         assert frame.getchannel("A").getextrema() == (0, 255)
-        path = OUTPUT / f"frame_{index + 1:02d}.png"
+        path = args.output / f"frame_{index + 1:02d}.png"
         frame.save(path, optimize=True)
         frames.append(frame)
         manifest.append({"file": path.name, "bytes": path.stat().st_size,
@@ -100,7 +104,7 @@ def main():
     face = np.asarray(frames[0])[:, :240]
     assert all(np.array_equal(np.asarray(frame)[:, :240], face) for frame in frames)
     assert len({item["sha256"] for item in manifest}) == FRAME_COUNT
-    assert SOURCE.read_bytes() == original, "The approved original must remain untouched"
+    assert args.source.read_bytes() == original, "The approved original must remain untouched"
     if args.preview_dir:
         save_previews(frames, args.preview_dir)
         (args.preview_dir / "medaka-swim-manifest.json").write_text(

@@ -75,18 +75,19 @@ test("all weapons and both playable stages are preloaded without duplicate URLs"
   const urls = game.snapshot("window.testImages.map(image => image.src)");
   assert.equal(urls.length, new Set(urls).size);
   const medakaUrls = urls.filter(url => url.includes("/enemies/medaka/"));
-  assert.equal(medakaUrls.length, 17);
-  for (let frame = 1; frame <= 16; frame++) {
-    assert.ok(medakaUrls.some(url => url.includes("/medaka/level_1/swim/frame_" + String(frame).padStart(2, "0") + ".png")));
+  assert.equal(medakaUrls.length, 34);
+  for (const [type, folder] of [["medaka_level_1", "level_1"], ["medaka_boss", "boss"]]) {
+    for (let frame = 1; frame <= 16; frame++) {
+      assert.ok(medakaUrls.some(url => url.includes("/medaka/" + folder + "/swim/frame_" + String(frame).padStart(2, "0") + ".png")));
+    }
+    assert.ok(medakaUrls.some(url => url.includes("/medaka/" + folder + "/idle/frame_01.png")));
+    for (const animation of ["idle", "attack", "damage", "defeat"]) {
+      const frames = game.snapshot('getEnemyFrames("' + type + '", "' + animation + '")');
+      assert.ok(frames.length > 0);
+      for (const frame of frames) assert.ok(medakaUrls.includes(new URL(frame, "https://typing.test/").href));
+    }
   }
-  assert.ok(medakaUrls.some(url => url.includes("/medaka/level_1/idle/frame_01.png")));
-  for (const animation of ["idle", "attack", "damage", "defeat"]) {
-    const frames = game.snapshot('getEnemyFrames("medaka_level_1", "' + animation + '")');
-    assert.ok(frames.length > 0);
-    for (const frame of frames) assert.ok(medakaUrls.includes(new URL(frame, "https://typing.test/").href));
-    assert.ok(urls.some(url => url.includes("/enemies/chick/level_1/" + animation + "/")));
-  }
-  assert.ok(!urls.some(url => url.includes("/enemies/egg/")));
+  assert.ok(!urls.some(url => url.includes("/enemies/egg/") || url.includes("/enemies/chick/")));
   for (const weapon of ["unarmed", "branch", "sword", "greatsword"]) {
     assert.ok(urls.some(url => url.includes("/player/" + weapon + "/")));
   }
