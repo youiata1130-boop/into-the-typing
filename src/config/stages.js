@@ -62,7 +62,8 @@ const stageDefinitions = {
       streakCap: 16,
     },
     waves: [
-      { types: ["crab_level_1"], hp: 5, attackPower: { min: 10, max: 15 }, count: 3, experience: 25 },
+      { types: ["crab_level_1"], hp: 5, attackPower: { min: 10, max: 15 }, count: 2, experience: 25 },
+      { types: ["crab_boss"], name: "カニの王様", hp: 8, attackPower: { min: 14, max: 20 }, count: 1, experience: 25, boss: true },
     ],
   },
 };

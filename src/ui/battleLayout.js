@@ -34,7 +34,7 @@ function fitBattleCharacters() {
   const bounds = arena.getBoundingClientRect();
   const backBottom = els.resetButton.getBoundingClientRect().bottom - bounds.top;
   const slots = Math.max(1, ...state.activeEnemies.map(enemy => (enemy.slot || 0) + 1));
-  const enemySize = state.activeEnemies.some(enemy => enemy.type === "medaka_boss") ? 1.3 : 1;
+  const enemySize = state.activeEnemies.some(enemy => enemy.type === "medaka_boss" || enemy.type === "crab_boss") ? 1.3 : 1;
   const layout = calculateBattleLayout(arena.clientWidth, arena.clientHeight, backBottom, slots, enemySize);
   for (const [name, value] of Object.entries(layout)) {
     const cssName = name.replace(/[A-Z]/g, letter => "-" + letter.toLowerCase());

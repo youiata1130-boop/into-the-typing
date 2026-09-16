@@ -42,6 +42,12 @@ const enemyAnimations = window.ENEMY_ANIMATIONS || {
       damage: ["src/assets/images/enemies/crab/level_1/idle/frame_01.png"],
       defeat: ["src/assets/images/enemies/crab/level_1/idle/frame_01.png"],
     },
+    crab_boss: {
+      idle: ["src/assets/images/enemies/crab/boss/idle/frame_01.png"],
+      attack: ["src/assets/images/enemies/crab/boss/idle/frame_01.png"],
+      damage: ["src/assets/images/enemies/crab/boss/idle/frame_01.png"],
+      defeat: ["src/assets/images/enemies/crab/boss/idle/frame_01.png"],
+    },
     egg_level_1: {
       idle: [
         "src/assets/images/enemies/egg/level_1/idle/frame_01.png",
@@ -1393,7 +1399,7 @@ function playBossIntro(enemy) {
   els.bossIntro.classList.remove("is-active");
   enemy.element.classList.remove("boss-entry");
   els.bossIntroKicker.textContent = t.bossKicker;
-  els.bossIntroTitle.textContent = t.bossTitle;
+  els.bossIntroTitle.textContent = enemy.name || t.bossTitle;
   els.bossIntroText.textContent = t.bossText;
   void els.bossIntro.offsetWidth;
   els.bossIntro.classList.add("is-active");
@@ -1651,7 +1657,7 @@ function updateEnemyHud(enemy) {
   const value = enemy.tutorial ? getTutorialGaugePercent(enemy) : Math.max(0, enemy.hp);
   const maximum = enemy.tutorial ? 100 : enemy.maxHp;
   enemy.hpFill.style.width = `${(value / maximum) * 100}%`;
-  enemy.hpTrack.setAttribute("aria-label", enemy.tutorial ? "敵のゲージ" : "敵の体力");
+  enemy.hpTrack.setAttribute("aria-label", enemy.tutorial ? "敵のゲージ" : enemy.name ? `${enemy.name}のHP` : "敵の体力");
   enemy.hpTrack.setAttribute("aria-valuemax", String(maximum));
   enemy.hpTrack.setAttribute("aria-valuenow", String(value));
 }
@@ -1704,6 +1710,7 @@ function createEnemy(wave, index) {
   const enemy = {
     id: `enemy-${state.nextEnemyId}`,
     type: getEnemyTypeForWave(wave, index),
+    name: wave.name || "",
     slot: 0,
     attackPower: normalizeAttackPower(wave.attackPower),
     boss: Boolean(wave.boss),

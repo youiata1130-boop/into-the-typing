@@ -59,7 +59,7 @@ test("stage 3 unlocks only on the saved stage 2 clear, after the skill guide", (
   assert.equal(createGame(game.saved()).run('isStageAvailable("sky_castle")'), true);
 });
 
-test("stage 3 spawns exactly three crabs and saves its 75 EXP once on clear", () => {
+test("stage 3 spawns two crabs then their king and saves 75 EXP only after the boss", () => {
   for (const touch of [false, true]) {
     const game = createGame(saved({ totalExperience: 40, stats: { attack: 2, agility: 1 },
       skillTutorialCompleted: true, clearedStages: ["forest_path", "mist_road"] }), { touch });
@@ -81,8 +81,12 @@ test("stage 3 spawns exactly three crabs and saves its 75 EXP once on clear", ()
     }
     assert.equal(game.run("state.running"), false);
     assert.equal(seen.size, 3);
-    assert.ok([...seen.values()].every(e => e.type === "crab_level_1" && e.hp === 5 && !e.boss));
-    assert.equal(attacks, 9);
+    assert.deepEqual([...seen.values()].map(({ type, hp, boss }) => ({ type, hp, boss })), [
+      { type: "crab_level_1", hp: 5, boss: false },
+      { type: "crab_level_1", hp: 5, boss: false },
+      { type: "crab_boss", hp: 8, boss: true },
+    ]);
+    assert.equal(attacks, 10);
     assert.deepEqual(game.snapshot("({ xp: state.totalExperience, level: state.level, sp: state.skillPoints, clears: state.clearedStages })"),
       { xp: 115, level: 3, sp: 1, clears: ["forest_path", "mist_road", "sky_castle"] });
     assert.equal(game.run("els.noticeButton.textContent"), "装備画面へ");
@@ -158,4 +162,28 @@ test("stage unlocks and save-card progress stay isolated across all three player
   assert.match(game.run('saveEls.slots[2].querySelector("[data-save-detail]").textContent'), /ステージ1$/);
   game.run('selectSaveSlot(0)');
   assert.equal(game.run('isStageAvailable("sky_castle")'), true);
+});
+
+test("the crab king is preloaded, announces its name, and its intro is cleared on exit", () => {
+  const game = createGame(saved({ totalExperience: 40, stats: { attack: 2, agility: 1 },
+    skillTutorialCompleted: true, clearedStages: ["forest_path", "mist_road"] }));
+  assert.equal(game.run('collectGameImageSources().some(src => src.includes("/crab/boss/idle/frame_01.png"))'), true);
+  game.run('startGame("sky_castle")');
+  for (let tick = 0; tick < 300 && !game.run("getCurrentEnemy()?.boss"); tick++) {
+    if (game.run("Boolean(getInputEnemy())")) game.run("applyTypedValue(getInputEnemy(), getInputEnemy().matchedWord)");
+    game.advance(100);
+  }
+  assert.equal(game.run("getCurrentEnemy().type"), "crab_boss");
+  assert.equal(game.run("getCurrentEnemy().name"), "カニの王様");
+  assert.equal(game.run("els.bossIntroTitle.textContent"), "カニの王様");
+  assert.equal(game.run('els.bossIntro.classList.contains("is-active")'), true);
+  assert.equal(game.run('getCurrentEnemy().hpTrack.getAttribute("aria-label")'), "カニの王様のHP");
+  assert.match(game.run("getCurrentEnemy().image.src"), /crab\/boss\/idle\/frame_01\.png/);
+  assert.equal(game.run("state.totalExperience"), 40);
+  assert.equal(game.run("state.greatswordObtained"), false);
+  game.run('showStageSelect(); startGame("sky_castle")');
+  assert.equal(game.run("getCurrentEnemy().type"), "crab_level_1");
+  assert.equal(game.run('els.bossIntro.classList.contains("is-active")'), false);
+  game.advance(1600);
+  assert.equal(game.run("state.greatswordObtained"), false);
 });

@@ -44,7 +44,7 @@ test("viewport open, offset, rotation and close events update layout without foc
   assert.equal(game.run("document.activeElement === document.body"), true);
 });
 
-test("the larger fish boss and its HP fit the arena at both ends of travel", () => {
+test("the larger fish and crab bosses and their HP fit the arena at both ends of travel", () => {
   const game = createGame();
   for (const width of [278, 318, 358, 388, 810]) {
     for (const height of [150, 190, 240, 400]) {

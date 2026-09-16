@@ -1909,22 +1909,26 @@ button {
 /* Use the fitted enemy width for the wide fish and crab artwork. */
 .enemy[data-enemy-type="medaka_level_1"] .enemy-sprite,
 .enemy[data-enemy-type="medaka_boss"] .enemy-sprite,
-.enemy[data-enemy-type="crab_level_1"] .enemy-sprite {
+.enemy[data-enemy-type="crab_level_1"] .enemy-sprite,
+.enemy[data-enemy-type="crab_boss"] .enemy-sprite {
   width: 100%;
 }
 
-.enemy[data-enemy-type="crab_level_1"] .enemy-image {
+.enemy[data-enemy-type="crab_level_1"] .enemy-image,
+.enemy[data-enemy-type="crab_boss"] .enemy-image {
   object-position: center bottom;
 }
 
-/* The boss gets a larger fitted box, so its tail remains inside the arena. */
+/* Wide bosses get a larger fitted box that stays inside the arena. */
 @media (min-width: 761px) {
-  html[data-flick-input="false"] .enemy[data-enemy-type="medaka_boss"] {
+  html[data-flick-input="false"] .enemy[data-enemy-type="medaka_boss"],
+  html[data-flick-input="false"] .enemy[data-enemy-type="crab_boss"] {
     width: 192px;
     left: calc(100% - 220px - (var(--enemy-progress) * (100% - 560px)));
   }
 
-  html[data-flick-input="false"] .enemy[data-enemy-type="medaka_boss"] .enemy-sprite {
+  html[data-flick-input="false"] .enemy[data-enemy-type="medaka_boss"] .enemy-sprite,
+  html[data-flick-input="false"] .enemy[data-enemy-type="crab_boss"] .enemy-sprite {
     height: 177px;
   }
 }
