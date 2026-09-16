@@ -79,7 +79,7 @@ function selectSaveSlot(index) {
       return;
     }
     if (activatePlayerSave(index, entry)) {
-      if (state.swordEquipPending) showWeaponScreen();
+      if (getPendingWeaponEquipId()) showWeaponScreen();
       else if (state.skillTutorialPending) showStatusScreen();
       else showStageSelect();
     }

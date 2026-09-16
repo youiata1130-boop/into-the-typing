@@ -173,9 +173,13 @@ function loadPlayerProgress(saved = null) {
     // Preserve legacy iron-sword access and previously equipped greatswords.
     const ironSwordObtained = saved.introCompleted === true
       && (saved.ironSwordObtained === true || !Object.hasOwn(saved, "ironSwordObtained"));
-    const greatswordObtained = saved.introCompleted === true
+    const previouslyOwnedGreatsword = saved.introCompleted === true
       && (saved.greatswordObtained === true
         || (!Object.hasOwn(saved, "greatswordObtained") && saved.weaponId === "greatsword"));
+    // Award the new reward to players whose stage 3 clear was already saved.
+    const missingGreatswordReward = saved.introCompleted === true
+      && clearedStages.includes("sky_castle") && !previouslyOwnedGreatsword;
+    const greatswordObtained = previouslyOwnedGreatsword || missingGreatswordReward;
     return {
       ...restored,
       clearedStages,
@@ -186,12 +190,14 @@ function loadPlayerProgress(saved = null) {
         && (saved.weaponId !== "greatsword" || greatswordObtained) ? saved.weaponId : defaultWeaponId,
       ironSwordObtained,
       greatswordObtained,
+      greatswordEquipPending: greatswordObtained && saved.weaponId !== "greatsword"
+        && (saved.greatswordEquipPending === true || missingGreatswordReward),
       swordEquipPending: ironSwordObtained && saved.swordEquipPending === true && saved.weaponId !== "sword",
       introCompleted: saved.introCompleted === true,
       equipmentTutorialCompleted,
     };
   }
-  return { ...progression.restore(), clearedStages: [], weaponId: defaultWeaponId, introCompleted: false, equipmentTutorialCompleted: false, ironSwordObtained: false, greatswordObtained: false, swordEquipPending: false, skillTutorialPending: false, skillTutorialCompleted: false };
+  return { ...progression.restore(), clearedStages: [], weaponId: defaultWeaponId, introCompleted: false, equipmentTutorialCompleted: false, ironSwordObtained: false, greatswordObtained: false, greatswordEquipPending: false, swordEquipPending: false, skillTutorialPending: false, skillTutorialCompleted: false };
 }
 
 function playerProgressSnapshot(player = state) {
@@ -201,6 +207,7 @@ function playerProgressSnapshot(player = state) {
     weaponId: player.weaponId, introCompleted: player.introCompleted,
     equipmentTutorialCompleted: player.equipmentTutorialCompleted, ironSwordObtained: player.ironSwordObtained,
     swordEquipPending: player.swordEquipPending, greatswordObtained: player.greatswordObtained,
+    greatswordEquipPending: player.greatswordEquipPending,
     skillTutorialPending: player.skillTutorialPending, skillTutorialCompleted: player.skillTutorialCompleted,
   };
 }
@@ -225,7 +232,7 @@ const state = {
   stageId: defaultStageId,
   pendingStageId: "",
   playerName: "",
-  swordEquipGuideActive: false,
+  weaponEquipGuideId: "",
   skillGuideActive: false,
   ...loadPlayerProgress(),
   running: false,
@@ -339,8 +346,10 @@ const els = {
   weaponPanel: document.querySelector("#weaponPanel"),
   weaponSword: document.querySelector("#weaponSword"),
   weaponSwordOption: document.querySelector("#weaponSwordOption"),
-  swordEquipGuide: document.querySelector("#swordEquipGuide"),
-  swordEquipNext: document.querySelector("#swordEquipNext"),
+  weaponGreatsword: document.querySelector("#weaponGreatsword"),
+  weaponGreatswordOption: document.querySelector("#weaponGreatswordOption"),
+  weaponEquipGuide: document.querySelector("#weaponEquipGuide"),
+  weaponEquipNext: document.querySelector("#weaponEquipNext"),
   battleScreen: document.querySelector("#battleScreen"),
   introStartButton: document.querySelector("#introStartButton"),
   homeButton: document.querySelector("#homeButton"),
@@ -375,6 +384,8 @@ const els = {
   noticeButton: document.querySelector("#noticeButton"),
   treasureReward: document.querySelector("#treasureReward"),
   treasureText: document.querySelector("#treasureText"),
+  treasureArt: document.querySelector("#treasureArt"),
+  treasureBlade: document.querySelector("#treasureBlade"),
   stageChoices: document.querySelector("#stageChoices"),
   stageConfirm: document.querySelector("#stageConfirm"),
   stageConfirmName: document.querySelector("#stageConfirmName"),
@@ -547,7 +558,7 @@ function updateStatusPanel() {
     input.closest(".weapon-option").hidden = !available;
   });
 
-  updateSwordEquipGuide();
+  updateWeaponEquipGuide();
 
   els.statusPanel.querySelectorAll("[data-stat][data-stat-delta]").forEach((button) => {
     const stat = button.dataset.stat;
@@ -669,9 +680,9 @@ function updateHud() {
 }
 
 function showScreen(screen) {
-  if (screen !== "weapons") state.swordEquipGuideActive = false;
+  if (screen !== "weapons") state.weaponEquipGuideId = "";
   if (screen !== "status") state.skillGuideActive = false;
-  updateSwordEquipGuide();
+  updateWeaponEquipGuide();
   updateSkillTutorial();
   saveEls.screen.hidden = screen !== "saves";
   els.startScreen.hidden = screen !== "start";
@@ -817,13 +828,21 @@ function flushBufferedInput() {
 }
 
 function showGameNotice(kind, kicker, title, text, options = {}) {
-  const { persistent = false, duration = 900, treasure = false } = options;
+  const { persistent = false, duration = 900, treasure = "" } = options;
 
   clearNoticeTimer();
   els.gameNotice.dataset.kind = kind;
   els.treasureReward.hidden = !treasure;
   els.treasureText.hidden = !treasure;
-  els.gameNotice.classList.toggle("has-treasure", treasure);
+  els.gameNotice.classList.toggle("has-treasure", Boolean(treasure));
+  if (treasure) {
+    const weaponName = getWeaponDefinition(treasure).name;
+    els.treasureText.textContent = `${weaponName}を手に入れた！`;
+    els.treasureArt.setAttribute("aria-label", `宝箱から現れた${weaponName}`);
+    els.treasureBlade.setAttribute("d", treasure === "greatsword"
+      ? "M140 10L166 31V110L140 122L114 110V31Z"
+      : "M140 10L151 31V110L140 122L129 110V31Z");
+  }
   els.noticeKicker.textContent = kicker;
   els.noticeTitle.textContent = title;
   els.noticeText.textContent = text;
@@ -916,8 +935,8 @@ function getHighestAvailableStageCode(player = state) {
 function continueAfterResult() {
   if (state.running) return;
   const nextStageId = getStageDefinition(state.stageId).nextStageId;
-  if (els.gameNotice.dataset.kind === "clear" && state.swordEquipPending
-      && getStageDefinition(state.stageId).rewardWeaponId === "sword") {
+  if (els.gameNotice.dataset.kind === "clear" && getPendingWeaponEquipId()
+      && getStageDefinition(state.stageId).rewardWeaponId === getPendingWeaponEquipId()) {
     showWeaponScreen();
   } else if (els.gameNotice.dataset.kind === "clear" && state.skillTutorialPending
       && getStageDefinition(state.stageId).skillPointTutorial) {
@@ -1091,27 +1110,39 @@ function showHomeScreen() {
   (fromStatus ? els.homeStatusButton : els.homeWeaponsButton).focus({ preventScroll: true });
 }
 
-function updateSwordEquipGuide() {
-  const active = state.swordEquipGuideActive;
-  const equipped = state.weaponId === "sword";
-  els.swordEquipGuide.hidden = !active;
-  els.swordEquipGuide.textContent = equipped ? "鉄の剣を装備しました" : "鉄の剣を選んで装備しよう";
-  els.weaponSwordOption.classList.toggle("is-recommended", active && !equipped);
-  els.swordEquipNext.hidden = !active;
-  els.swordEquipNext.disabled = !active || !equipped;
+function getPendingWeaponEquipId() {
+  if (state.greatswordEquipPending) return "greatsword";
+  return state.swordEquipPending ? "sword" : "";
+}
+
+function updateWeaponEquipGuide() {
+  const weaponId = state.weaponEquipGuideId;
+  const active = Boolean(weaponId);
+  const equipped = active && state.weaponId === weaponId;
+  const weaponName = getWeaponDefinition(weaponId).name;
+  els.weaponEquipGuide.hidden = !active;
+  els.weaponEquipGuide.textContent = equipped
+    ? `${weaponName}を装備しました` : `${weaponName}を選んで装備しよう`;
+  els.weaponSwordOption.classList.toggle("is-recommended", weaponId === "sword" && !equipped);
+  els.weaponGreatswordOption.classList.toggle("is-recommended", weaponId === "greatsword" && !equipped);
+  els.weaponEquipNext.hidden = !active;
+  els.weaponEquipNext.disabled = !active || !equipped;
+  els.weaponEquipNext.textContent = weaponId === "greatsword" ? labels().stageSelect : "ステージ2へ";
 }
 
 function showWeaponScreen() {
-  state.swordEquipGuideActive = state.swordEquipPending;
+  state.weaponEquipGuideId = getPendingWeaponEquipId();
   showMenuScreen("weapons");
   const selected = els.weaponPanel.querySelector("input[name='weapon']:checked:not(:disabled)");
-  const focusTarget = state.swordEquipGuideActive ? els.weaponSword : selected || els.weaponHomeButton;
+  const recommended = state.weaponEquipGuideId === "greatsword" ? els.weaponGreatsword : els.weaponSword;
+  const focusTarget = state.weaponEquipGuideId ? recommended : selected || els.weaponHomeButton;
   focusTarget.focus({ preventScroll: true });
 }
 
-function continueAfterSwordEquip() {
-  if (state.running || !state.swordEquipGuideActive || state.weaponId !== "sword") return;
-  startGame(stageDefinitions[defaultStageId].nextStageId);
+function continueAfterWeaponEquip() {
+  if (state.running || !state.weaponEquipGuideId || state.weaponId !== state.weaponEquipGuideId) return;
+  if (state.weaponEquipGuideId === "greatsword") showStageSelect();
+  else startGame(stageDefinitions[defaultStageId].nextStageId);
 }
 
 function updateSkillTutorial() {
@@ -1156,6 +1187,7 @@ function selectWeapon(weaponId) {
 
   state.weaponId = weaponId;
   if (weaponId === "sword") state.swordEquipPending = false;
+  if (weaponId === "greatsword") state.greatswordEquipPending = false;
   savePlayerProgress();
   updateHud();
   renderWord();
@@ -2065,13 +2097,20 @@ function finishGame(cleared) {
   clearBossIntro();
   els.startButton.textContent = t.start;
 
-  const treasure = cleared && getStageDefinition(state.stageId).rewardWeaponId === "sword";
+  const rewardWeaponId = getStageDefinition(state.stageId).rewardWeaponId;
+  const treasure = cleared && (
+    (rewardWeaponId === "sword" && !state.ironSwordObtained)
+    || (rewardWeaponId === "greatsword" && !state.greatswordObtained)
+  ) ? rewardWeaponId : "";
   let resultText = "獲得経験値 0 EXP";
   if (cleared) {
     if (!state.clearedStages.includes(state.stageId)) state.clearedStages.push(state.stageId);
-    if (treasure) {
-      if (!state.ironSwordObtained) state.swordEquipPending = true;
+    if (treasure === "sword") {
+      state.swordEquipPending = true;
       state.ironSwordObtained = true;
+    } else if (treasure === "greatsword") {
+      state.greatswordEquipPending = state.weaponId !== "greatsword";
+      state.greatswordObtained = true;
     }
     const previousLevel = state.level;
     const reward = progression.gainExperience(state, state.pendingExperience);
@@ -2102,7 +2141,7 @@ function finishGame(cleared) {
       { persistent: true, treasure },
     );
     const nextStageId = getStageDefinition(state.stageId).nextStageId;
-    if (state.swordEquipPending && treasure) {
+    if (getPendingWeaponEquipId() && getPendingWeaponEquipId() === rewardWeaponId) {
       els.noticeButton.textContent = "装備画面へ";
     } else if (state.skillTutorialPending && getStageDefinition(state.stageId).skillPointTutorial) {
       els.noticeButton.textContent = "ステータスへ";
@@ -2114,7 +2153,7 @@ function finishGame(cleared) {
 }
 
 function resetGame() {
-  state.swordEquipGuideActive = false;
+  state.weaponEquipGuideId = "";
   state.skillGuideActive = false;
   setStoryPhase("none");
   invalidateBattleGeneration();
@@ -2417,7 +2456,7 @@ els.homeButton.addEventListener("click", showHomeScreen);
 els.homeWeaponsButton.addEventListener("click", showWeaponScreen);
 els.homeStatusButton.addEventListener("click", showStatusScreen);
 els.weaponHomeButton.addEventListener("click", showHomeScreen);
-els.swordEquipNext.addEventListener("click", continueAfterSwordEquip);
+els.weaponEquipNext.addEventListener("click", continueAfterWeaponEquip);
 els.statusHomeButton.addEventListener("click", showHomeScreen);
 els.skillTutorialNext.addEventListener("click", continueAfterSkillTutorial);
 els.stageSelectButton.addEventListener("click", showStageSelect);

@@ -53,6 +53,7 @@ const stageDefinitions = {
     enabled: true,
     requiresTutorial: true,
     requiresStage: "mist_road",
+    rewardWeaponId: "greatsword",
     wordLength: { normalMin: 0 },
     specialGauge: {
       chargeStartStreak: 3,

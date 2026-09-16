@@ -23,7 +23,7 @@ test("stage 1 never levels up and stage 2 teaches spending its one new skill poi
       assert.equal(game.run("state.skillTutorialPending"), false);
       assert.doesNotMatch(game.run("els.noticeText.textContent"), /レベルアップ/);
     }
-    game.run('continueAfterResult(); selectWeapon("sword"); continueAfterSwordEquip()');
+    game.run('continueAfterResult(); selectWeapon("sword"); continueAfterWeaponEquip()');
     finishBattle(game);
     assert.deepEqual(game.snapshot("({ level: state.level, xp: state.totalExperience, points: state.skillPoints, hp: getMaxHp() })"),
       { level: 2, xp: 40, points: 1, hp: 110 });

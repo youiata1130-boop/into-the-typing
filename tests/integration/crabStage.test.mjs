@@ -85,15 +85,16 @@ test("stage 3 spawns exactly three crabs and saves its 75 EXP once on clear", ()
     assert.equal(attacks, 9);
     assert.deepEqual(game.snapshot("({ xp: state.totalExperience, level: state.level, sp: state.skillPoints, clears: state.clearedStages })"),
       { xp: 115, level: 3, sp: 1, clears: ["forest_path", "mist_road", "sky_castle"] });
-    assert.equal(game.run("els.noticeButton.textContent"), "ステージ選択へ");
+    assert.equal(game.run("els.noticeButton.textContent"), "装備画面へ");
     assert.equal(game.run("state.skillTutorialPending"), false);
-    assert.equal(game.run("els.treasureReward.hidden"), true);
+    assert.equal(game.run("els.treasureReward.hidden"), false);
+    assert.equal(game.run("state.greatswordObtained && state.greatswordEquipPending"), true);
     game.run("finishGame(true)");
     assert.equal(game.run("state.totalExperience"), 115);
     const reloaded = createGame(game.saved());
     assert.equal(reloaded.run("state.totalExperience"), 115);
     assert.equal(reloaded.run("getHighestAvailableStageCode()"), "3");
-    game.run('continueAfterResult(); startGame("forest_path")');
+    game.run('continueAfterResult(); selectWeapon("greatsword"); continueAfterWeaponEquip(); startGame("forest_path")');
     assert.equal(game.run("els.arena.dataset.stage"), "forest_path");
   }
 });

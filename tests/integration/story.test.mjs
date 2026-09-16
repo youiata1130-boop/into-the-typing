@@ -195,7 +195,7 @@ test("the tutorial has no HP and requires exactly four branch hits regardless of
     assert.equal(game.run("state.totalExperience"), 0);
     assert.equal(game.run("els.noticeTitle.textContent"), "チュートリアル完了");
     assert.equal(game.run("els.noticeButton.textContent"), "装備画面へ");
-    game.run('continueAfterResult(); selectWeapon("sword"); continueAfterSwordEquip()');
+    game.run('continueAfterResult(); selectWeapon("sword"); continueAfterWeaponEquip()');
     assert.equal(game.run("state.stageId"), "mist_road");
     assert.equal(game.run("getCurrentEnemy().tutorial"), undefined);
     assert.equal(game.run("getCurrentEnemy().hp"), 2);

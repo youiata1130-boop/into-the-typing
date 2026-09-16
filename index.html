@@ -135,7 +135,7 @@
           <button class="menu-back-button" id="weaponHomeButton" type="button">ホーム</button>
         </header>
         <fieldset class="weapon-picker" id="weaponPanel" aria-label="武器">
-          <p class="equipment-guide" id="swordEquipGuide" role="status" hidden></p>
+          <p class="equipment-guide" id="weaponEquipGuide" role="status" hidden></p>
           <div class="weapon-options">
             <label class="weapon-option" for="weaponBranch">
               <input id="weaponBranch" type="radio" name="weapon" value="branch" checked aria-labelledby="weaponBranchName">
@@ -145,12 +145,12 @@
               <input id="weaponSword" type="radio" name="weapon" value="sword" aria-labelledby="weaponSwordName" disabled>
               <span class="weapon-option-body"><strong id="weaponSwordName">鉄の剣</strong></span>
             </label>
-            <label class="weapon-option" for="weaponGreatsword" hidden>
+            <label class="weapon-option" id="weaponGreatswordOption" for="weaponGreatsword" hidden>
               <input id="weaponGreatsword" type="radio" name="weapon" value="greatsword" aria-labelledby="weaponGreatswordName" disabled>
               <span class="weapon-option-body"><strong id="weaponGreatswordName">大剣</strong></span>
             </label>
           </div>
-          <button class="equipment-next" id="swordEquipNext" type="button" hidden disabled>ステージ2へ</button>
+          <button class="equipment-next" id="weaponEquipNext" type="button" hidden disabled>ステージ2へ</button>
         </fieldset>
       </section>
 
@@ -278,7 +278,7 @@
             <span class="notice-kicker" id="noticeKicker">START</span>
             <strong id="noticeTitle">開始</strong>
             <div class="treasure-reward" id="treasureReward" hidden>
-              <svg class="treasure-art" viewBox="0 0 280 220" role="img" aria-label="宝箱から現れた鉄の剣">
+              <svg class="treasure-art" id="treasureArt" viewBox="0 0 280 220" role="img" aria-label="宝箱から現れた鉄の剣">
                 <defs>
                   <linearGradient id="chestWood" x2="0" y2="1">
                     <stop stop-color="#c98c47"/><stop offset="1" stop-color="#784120"/>
@@ -303,7 +303,7 @@
                 </g>
                 <path d="M45 137L64 113H216L235 137L221 150H59Z" fill="#39271e" stroke="#61401f" stroke-width="3"/>
                 <g class="treasure-sword" stroke="#536b78" stroke-width="2.5" stroke-linejoin="round">
-                  <path d="M140 10L151 31V110L140 122L129 110V31Z" fill="url(#ironBlade)"/>
+                  <path id="treasureBlade" d="M140 10L151 31V110L140 122L129 110V31Z" fill="url(#ironBlade)"/>
                   <path d="M140 30V109" stroke="#f5fcff" stroke-width="2"/>
                   <path d="M108 116Q140 106 172 116L168 125Q140 118 112 125Z" fill="url(#chestGold)" stroke="#896226"/>
                   <path d="M134 122H146V151H134Z" fill="#704a37" stroke="#533c2e"/>
@@ -395,16 +395,16 @@
     <script src="src/data/words.js?v=kana-readings-v2"></script>
     <script src="src/data/labels.js?v=folder-layout-v2"></script>
     <script src="src/config/weapons.js?v=treasure-reward-v1"></script>
-    <script src="src/config/stages.js?v=crab-stage-v1"></script>
+    <script src="src/config/stages.js?v=greatsword-reward-v1"></script>
     <script src="src/config/enemyAnimations.js?v=crab-stage-v1"></script>
     <script src="src/config/playerProgression.js?v=player-progression-v1"></script>
     <script src="src/config/saveSlots.js?v=player-saves-v1"></script>
-    <script src="src/ui/saveMenu.js?v=crab-stage-v1"></script>
+    <script src="src/ui/saveMenu.js?v=greatsword-reward-v1"></script>
     <script src="src/input/japanese.js?v=miss-feedback-v1"></script>
     <script src="src/ui/battleLayout.js?v=boss-medaka-v1"></script>
     <script src="src/input/mobile.js?v=miss-feedback-v1"></script>
     <script src="src/input/flickKeyboard.js?v=flick-direction-v1"></script>
     <script src="src/app/loading.js?v=treasure-reward-v1"></script>
-    <script src="src/app/game.js?v=crab-stage-v1"></script>
+    <script src="src/app/game.js?v=greatsword-reward-v1"></script>
   </body>
 </html>

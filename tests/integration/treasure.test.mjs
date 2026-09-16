@@ -30,6 +30,8 @@ test("stage 1 saves the sword reward and guides manual equipment before stage 2"
     assert.deepEqual(game.snapshot("({ running: state.running, weapon: state.weaponId, sword: state.ironSwordObtained, xp: state.totalExperience })"),
       { running: false, weapon: "branch", sword: true, xp: 0 });
     assert.equal(game.run("els.treasureReward.hidden || els.treasureText.hidden"), false);
+    assert.equal(game.run("els.treasureText.textContent"), "鉄の剣を手に入れた！");
+    assert.equal(game.run('els.treasureArt.getAttribute("aria-label")'), "宝箱から現れた鉄の剣");
     assert.equal(game.run('els.gameNotice.classList.contains("has-treasure")'), true);
     assert.equal(game.run("els.noticeButton.textContent"), "装備画面へ");
     assert.equal(game.run("document.activeElement === els.noticeButton"), true);
@@ -41,32 +43,32 @@ test("stage 1 saves the sword reward and guides manual equipment before stage 2"
     game.run("finishGame(true); continueAfterResult()");
     assert.equal(game.run("state.totalExperience"), 0);
     assert.equal(game.run("document.documentElement.dataset.screen"), "weapons");
-    assert.equal(game.run("els.swordEquipGuide.hidden"), false);
-    assert.equal(game.run("els.swordEquipGuide.textContent"), "鉄の剣を選んで装備しよう");
+    assert.equal(game.run("els.weaponEquipGuide.hidden"), false);
+    assert.equal(game.run("els.weaponEquipGuide.textContent"), "鉄の剣を選んで装備しよう");
     assert.equal(game.run("document.activeElement === els.weaponSword"), true);
     assert.equal(game.run('els.weaponSwordOption.classList.contains("is-recommended")'), true);
-    game.run("continueAfterSwordEquip()");
+    game.run("continueAfterWeaponEquip()");
     assert.equal(game.run("state.running"), false);
     game.run('selectWeapon("greatsword")');
     assert.equal(game.run("state.weaponId"), "branch");
     assert.equal(game.run('isWeaponAvailable("greatsword")'), false);
     assert.equal(game.savedProgress().greatswordObtained, false);
-    assert.equal(game.run("els.swordEquipNext.disabled"), true);
+    assert.equal(game.run("els.weaponEquipNext.disabled"), true);
     assert.equal(game.savedProgress().swordEquipPending, true);
     game.run('selectWeapon("sword")');
     assert.equal(game.savedProgress().weaponId, "sword");
     assert.equal(game.savedProgress().swordEquipPending, false);
-    assert.equal(game.run("els.swordEquipGuide.textContent"), "鉄の剣を装備しました");
-    assert.equal(game.run("els.swordEquipNext.disabled"), false);
+    assert.equal(game.run("els.weaponEquipGuide.textContent"), "鉄の剣を装備しました");
+    assert.equal(game.run("els.weaponEquipNext.disabled"), false);
     assert.equal(game.run('els.weaponSwordOption.classList.contains("is-recommended")'), false);
     const reloaded = createGame(game.saved());
     assert.equal(reloaded.run("state.weaponId"), "sword");
     assert.equal(reloaded.run("state.swordEquipPending"), false);
-    game.run("continueAfterSwordEquip()");
+    game.run("continueAfterWeaponEquip()");
     assert.equal(game.run("state.stageId"), "mist_road");
     assert.equal(game.run("getCurrentEnemy().weaponId"), "sword");
     assert.equal(game.run("els.treasureReward.hidden && els.treasureText.hidden"), true);
-    assert.equal(game.run("els.swordEquipGuide.hidden"), true);
+    assert.equal(game.run("els.weaponEquipGuide.hidden"), true);
   }
 });
 
@@ -77,15 +79,15 @@ test("unfinished sword equipment resumes per save and disappears after equipment
   game.run('showSaveMenu("continue"); selectSaveSlot(0)');
   assert.equal(game.run("document.documentElement.dataset.screen"), "weapons");
   assert.equal(game.run("state.weaponId"), "branch");
-  assert.equal(game.run("els.swordEquipGuide.hidden"), false);
+  assert.equal(game.run("els.weaponEquipGuide.hidden"), false);
   game.run('showStartScreen(); showSaveMenu("new"); selectSaveSlot(1); saveEls.name.value = "別のプレイヤー"; createPlayerSave(); showWeaponScreen()');
   assert.equal(game.run("state.swordEquipPending"), false);
-  assert.equal(game.run("els.swordEquipGuide.hidden"), true);
+  assert.equal(game.run("els.weaponEquipGuide.hidden"), true);
   game.run('showStartScreen(); showSaveMenu("continue"); selectSaveSlot(0)');
   assert.equal(game.run("document.documentElement.dataset.screen"), "weapons");
-  assert.equal(game.run("els.swordEquipGuide.hidden"), false);
+  assert.equal(game.run("els.weaponEquipGuide.hidden"), false);
   game.run('selectWeapon("sword"); selectWeapon("branch"); showHomeScreen(); showWeaponScreen()');
-  assert.equal(game.run("els.swordEquipGuide.hidden"), true);
+  assert.equal(game.run("els.weaponEquipGuide.hidden"), true);
   const reloaded = createGame(game.saved(), { chooseSave: false });
   reloaded.run('showSaveMenu("continue"); selectSaveSlot(0)');
   assert.equal(reloaded.run("document.documentElement.dataset.screen"), "stage");
@@ -181,7 +183,7 @@ test("the chest still grants a usable sword when saving is unavailable", () => {
   assert.equal(game.run("state.ironSwordObtained"), true);
   assert.equal(game.run("state.weaponId"), "branch");
   assert.equal(game.run("els.treasureReward.hidden"), false);
-  game.run('continueAfterResult(); selectWeapon("sword"); continueAfterSwordEquip()');
+  game.run('continueAfterResult(); selectWeapon("sword"); continueAfterWeaponEquip()');
   assert.equal(game.run("getCurrentEnemy().weaponId"), "sword");
 });
 
