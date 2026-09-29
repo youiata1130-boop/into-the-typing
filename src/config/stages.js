@@ -26,7 +26,7 @@ const stageDefinitions = {
   },
   mist_road: {
     code: "2",
-    name: "霧の古道",
+    name: "小魚たちの浅瀬",
     meta: "",
     enabled: true,
     requiresTutorial: true,
