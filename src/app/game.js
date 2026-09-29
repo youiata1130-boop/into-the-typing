@@ -4,6 +4,7 @@ const defaultPlayerStats = progression.defaultStats;
 let progressionSaveAvailable = true;
 const attackMs = 8200;
 const repeatAttackMs = 2200;
+const enemyAttackRecoveryMs = 360;
 const knockbackAmount = 0.14;
 const startNoticeMs = 850;
 const inputBufferRetryMs = 24;
@@ -1250,7 +1251,7 @@ function clearEnemyAnimationTimers(enemy) {
   enemy.frameTimerId = 0;
   enemy.returnTimerId = 0;
   enemy.typingShakeTimerId = 0;
-  enemy.element.classList.remove("typing-shake");
+  enemy.element.classList.remove("attack", "typing-shake");
 }
 
 function playEnemyAnimation(enemy, animationName, options = {}) {
@@ -1845,7 +1846,7 @@ function enemyLoop(now) {
   }
 
   state.activeEnemies.forEach((enemy) => {
-    if (enemy.resolving) {
+    if (enemy.resolving || enemy.animation === "attack") {
       enemy.lastTick = now;
       return;
     }
@@ -1889,16 +1890,18 @@ function startLoop() {
 }
 
 function enemyAttack(enemy) {
-  if (!state.running || isStoryDialogueOpen()) return;
-  enemy.resolving = true;
+  if (!state.running || isStoryDialogueOpen() || enemy.resolving || enemy.animation === "attack" || !isEnemyAlive(enemy)) return;
   enemy.atBase = true;
+  enemy.nextAttackAt = performance.now() + enemyAttackRecoveryMs + repeatAttackMs;
   const damage = rollAttackDamage(enemy.attackPower);
   state.hp = Math.max(0, state.hp - damage);
   state.combo = 0;
   resetSuccessStreak();
   state.perfect = false;
-  enemy.element.classList.add("attack");
   playEnemyAnimation(enemy, "attack", { loop: false });
+  enemy.element.classList.add("attack");
+  // Only a fatal hit locks input; the incoming attack animation does not.
+  enemy.resolving = state.hp <= 0;
   updateHud();
 
   if (state.hp <= 0) {
@@ -1906,16 +1909,13 @@ function enemyAttack(enemy) {
     return;
   }
 
-  scheduleBattleTimeout(() => {
+  // A counterattack replaces this animation and cancels its recovery callback.
+  enemy.returnTimerId = scheduleBattleTimeout(() => {
     if (state.running) {
-      enemy.resolving = false;
-      enemy.nextAttackAt = performance.now() + repeatAttackMs;
-      enemy.element.classList.remove("attack");
       stopEnemyWalkingAnimation(enemy);
       updateHud();
-      flushBufferedInput();
     }
-  }, 360);
+  }, enemyAttackRecoveryMs);
 }
 
 function damageEnemy(enemy) {

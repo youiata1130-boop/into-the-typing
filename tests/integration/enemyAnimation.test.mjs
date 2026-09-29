@@ -48,6 +48,7 @@ for (const type of ["medaka_level_1", "medaka_boss"]) {
     game.advance(220);
     assert.equal(game.run("getCurrentEnemy().animation"), "idle");
     assert.equal(game.run("window.swimIntervals.size"), 1);
+    game.advance(260); // Finish the unarmed player attack before the enemy can attack.
     game.run("enemyAttack(getCurrentEnemy())");
     assert.equal(game.run("getCurrentEnemy().animation"), "attack");
     assert.equal(game.run("window.swimIntervals.size"), 0);
