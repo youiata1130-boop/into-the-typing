@@ -200,18 +200,19 @@ function loadPlayerProgress(saved = null) {
       greatswordEquipPending: greatswordObtained && saved.weaponId !== "greatsword"
         && (saved.greatswordEquipPending === true || missingGreatswordReward),
       swordEquipPending: ironSwordObtained && saved.swordEquipPending === true && saved.weaponId !== "sword",
+      prologueCompleted: saved.prologueCompleted === true || saved.introCompleted === true || restored.totalExperience > 0,
       introCompleted: saved.introCompleted === true,
       equipmentTutorialCompleted,
     };
   }
-  return { ...progression.restore(), clearedStages: [], weaponId: defaultWeaponId, introCompleted: false, equipmentTutorialCompleted: false, ironSwordObtained: false, greatswordObtained: false, greatswordEquipPending: false, swordEquipPending: false, skillTutorialPending: false, skillTutorialCompleted: false };
+  return { ...progression.restore(), clearedStages: [], weaponId: defaultWeaponId, prologueCompleted: false, introCompleted: false, equipmentTutorialCompleted: false, ironSwordObtained: false, greatswordObtained: false, greatswordEquipPending: false, swordEquipPending: false, skillTutorialPending: false, skillTutorialCompleted: false };
 }
 
 function playerProgressSnapshot(player = state) {
   return {
     version: 2, totalExperience: player.totalExperience, stats: player.stats,
     clearedStages: [...player.clearedStages],
-    weaponId: player.weaponId, introCompleted: player.introCompleted,
+    weaponId: player.weaponId, prologueCompleted: player.prologueCompleted, introCompleted: player.introCompleted,
     equipmentTutorialCompleted: player.equipmentTutorialCompleted, ironSwordObtained: player.ironSwordObtained,
     swordEquipPending: player.swordEquipPending, greatswordObtained: player.greatswordObtained,
     greatswordEquipPending: player.greatswordEquipPending,
@@ -880,12 +881,19 @@ function isUnarmedStory() {
 function setStoryPhase(phase) {
   state.storyPhase = phase;
   const dialogueOpen = isStoryDialogueOpen();
+  const isPrologue = phase === "encounter" && !state.prologueCompleted;
   els.battleScreen.dataset.storyPhase = phase;
+  els.battleScreen.classList.toggle("is-prologue", isPrologue);
+  els.storyDialog.classList.toggle("is-prologue", isPrologue);
+  els.storyDialog.setAttribute("aria-label", isPrologue ? "物語のはじまり" : "会話");
   els.storyDialog.hidden = !dialogueOpen;
   els.storyItem.hidden = phase !== "weapon-offer";
-  els.storyNextButton.textContent = phase === "weapon-offer" ? "装備する" : "次へ";
+  els.storyNextButton.textContent = isPrologue ? "浜辺へ" : phase === "weapon-offer" ? "装備する" : "次へ";
   els.typingBox.hidden = dialogueOpen;
-  els.storyText.textContent = phase === "encounter" ? "敵が現れた！" : phase === "weapon-offer" ? "これを使って！" : "";
+  els.storyText.textContent = isPrologue
+    ? "海の向こうの世界にあこがれた少年は、小さな木の船で冒険に出た。\n\nところが、旅の途中で激しい嵐に遭い、船は大波にのまれてしまう。\n\n目を覚ますと、そこは見知らぬ無人島。\n少年の冒険は、この浜辺から始まる。"
+    : phase === "encounter" ? "敵が現れた！"
+      : phase === "weapon-offer" ? "木の枝を拾った！" : "";
 }
 
 function showStoryDialogue(phase) {
@@ -904,6 +912,10 @@ function advanceStory() {
   clearInputBuffer();
 
   if (state.storyPhase === "encounter") {
+    if (!state.prologueCompleted) {
+      state.prologueCompleted = true;
+      savePlayerProgress();
+    }
     setStoryPhase("unarmed");
     spawnNextEnemy();
   } else {

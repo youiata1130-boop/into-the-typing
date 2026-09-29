@@ -59,7 +59,7 @@ test("the branch picture and dialogue pause battle before Next equips the same e
   punch(game, 3);
   assert.equal(game.run("els.storyItem.hidden"), false);
   assert.equal(game.run("state.introCompleted"), false);
-  assert.equal(game.run("els.storyText.textContent"), "これを使って！");
+  assert.equal(game.run("els.storyText.textContent"), "木の枝を拾った！");
   const paused = game.snapshot("({ id: getCurrentEnemy().id, progress: getCurrentEnemy().progress, hp: state.hp })");
   game.advance(30000);
   game.run('enemyLoop(performance.now()); enemyAttack(getCurrentEnemy()); applyTypedValue(getCurrentEnemy(), getCurrentEnemy().matchedWord); enqueueBufferedInput("letter", "n")');
