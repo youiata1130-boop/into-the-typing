@@ -20,7 +20,7 @@ test("bosses use the normal word pool for every weapon, stage, and agility setti
     };
     Math.random = () => 0.5;
   `);
-  for (const stage of ["forest_path", "mist_road", "sky_castle"]) {
+  for (const stage of ["forest_path", "mist_road", "sky_castle", "storm_cove"]) {
     for (const [weapon, baseMin, baseMax] of [
       ["branch", 2, 3],
       ["sword", 2, 8],

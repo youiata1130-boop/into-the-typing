@@ -54,6 +54,7 @@ const stageDefinitions = {
     requiresTutorial: true,
     requiresStage: "mist_road",
     rewardWeaponId: "greatsword",
+    nextStageId: "storm_cove",
     wordLength: { normalMin: 0 },
     specialGauge: {
       chargeStartStreak: 3,
@@ -64,6 +65,26 @@ const stageDefinitions = {
     waves: [
       { types: ["crab_level_1"], hp: 5, attackPower: { min: 10, max: 15 }, count: 2, experience: 25 },
       { types: ["crab_boss"], name: "カニの王様", hp: 8, attackPower: { min: 14, max: 20 }, count: 1, experience: 25, boss: true },
+    ],
+  },
+  storm_cove: {
+    code: "4",
+    name: "荒波の入り江",
+    meta: "",
+    enabled: true,
+    requiresTutorial: true,
+    requiresStage: "sky_castle",
+    wordLength: { normalMin: 0 },
+    specialGauge: {
+      chargeStartStreak: 3,
+      baseGain: 1.8,
+      gainPerStreak: 0.14,
+      streakCap: 16,
+    },
+    waves: [
+      { types: ["medaka_level_1"], hp: 8, attackPower: { min: 10, max: 16 }, count: 2, experience: 20 },
+      { types: ["crab_level_1"], hp: 12, attackPower: { min: 14, max: 18 }, count: 2, experience: 25 },
+      { types: ["crab_boss"], name: "荒波のカニ王", hp: 24, attackPower: { min: 16, max: 22 }, count: 1, experience: 50, boss: true },
     ],
   },
 };

@@ -1121,6 +1121,11 @@ function getPendingWeaponEquipId() {
   return state.swordEquipPending ? "sword" : "";
 }
 
+function getEquipmentNextStageId() {
+  const rewardStage = Object.values(stageDefinitions).find(stage => stage.rewardWeaponId === state.weaponEquipGuideId);
+  return isStageAvailable(rewardStage?.nextStageId) ? rewardStage.nextStageId : "";
+}
+
 function updateWeaponEquipGuide() {
   const weaponId = state.weaponEquipGuideId;
   const active = Boolean(weaponId);
@@ -1133,7 +1138,8 @@ function updateWeaponEquipGuide() {
   els.weaponGreatswordOption.classList.toggle("is-recommended", weaponId === "greatsword" && !equipped);
   els.weaponEquipNext.hidden = !active;
   els.weaponEquipNext.disabled = !active || !equipped;
-  els.weaponEquipNext.textContent = weaponId === "greatsword" ? labels().stageSelect : "ステージ2へ";
+  const nextStageId = getEquipmentNextStageId();
+  els.weaponEquipNext.textContent = nextStageId ? `ステージ${stageDefinitions[nextStageId].code}へ` : labels().stageSelect;
 }
 
 function showWeaponScreen() {
@@ -1147,8 +1153,9 @@ function showWeaponScreen() {
 
 function continueAfterWeaponEquip() {
   if (state.running || !state.weaponEquipGuideId || state.weaponId !== state.weaponEquipGuideId) return;
-  if (state.weaponEquipGuideId === "greatsword") showStageSelect();
-  else startGame(stageDefinitions[defaultStageId].nextStageId);
+  const nextStageId = getEquipmentNextStageId();
+  if (nextStageId) startGame(nextStageId);
+  else showStageSelect();
 }
 
 function updateSkillTutorial() {

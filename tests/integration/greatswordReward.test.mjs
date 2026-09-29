@@ -19,7 +19,7 @@ function clearCrabs(game, beforeReward = false) {
   assert.equal(game.run("state.running"), false);
 }
 
-test("stage 3 gives a greatsword and guides manual equipment before returning to the map", () => {
+test("stage 3 gives a greatsword and guides manual equipment before stage 4", () => {
   const game = createGame(saved());
   clearCrabs(game, true);
   assert.equal(game.run('isWeaponAvailable("greatsword")'), false);
@@ -46,11 +46,12 @@ test("stage 3 gives a greatsword and guides manual equipment before returning to
   assert.equal(game.savedProgress().greatswordEquipPending, false);
   assert.equal(game.run("els.weaponEquipGuide.textContent"), "大剣を装備しました");
   assert.equal(game.run("els.weaponEquipNext.disabled"), false);
-  assert.equal(game.run("els.weaponEquipNext.textContent"), "ステージ選択へ");
+  assert.equal(game.run("els.weaponEquipNext.textContent"), "ステージ4へ");
   assert.equal(game.run('els.weaponGreatswordOption.classList.contains("is-recommended")'), false);
   game.run("continueAfterWeaponEquip()");
-  assert.equal(game.run("document.documentElement.dataset.screen"), "stage");
-  assert.equal(game.run("state.running"), false);
+  assert.equal(game.run("document.documentElement.dataset.screen"), "battle");
+  assert.equal(game.run("state.stageId"), "storm_cove");
+  assert.equal(game.run("state.running"), true);
   assert.equal(game.run("els.weaponEquipGuide.hidden"), true);
   game.run('startGame("sky_castle")');
   game.advance(1500);
@@ -106,9 +107,10 @@ test("replaying stage 3 never repeats the reward or completed equipment guide", 
     assert.equal(game.run("state.weaponId"), weaponId);
     assert.equal(game.run("state.greatswordEquipPending"), false);
     assert.equal(game.run("els.treasureReward.hidden"), true);
-    assert.equal(game.run("els.noticeButton.textContent"), "ステージ選択へ");
+    assert.equal(game.run("els.noticeButton.textContent"), "ステージ4へ");
     game.run("continueAfterResult()");
-    assert.equal(game.run("document.documentElement.dataset.screen"), "stage");
+    assert.equal(game.run("state.stageId"), "storm_cove");
+    assert.equal(game.run("document.documentElement.dataset.screen"), "battle");
   }
 });
 
@@ -152,5 +154,6 @@ test("greatsword reward and manual equipment remain usable if saving is unavaila
   game.run('continueAfterResult(); selectWeapon("greatsword"); continueAfterWeaponEquip()');
   assert.equal(game.run("state.weaponId"), "greatsword");
   assert.equal(game.run("state.greatswordEquipPending"), false);
-  assert.equal(game.run("document.documentElement.dataset.screen"), "stage");
+  assert.equal(game.run("state.stageId"), "storm_cove");
+  assert.equal(game.run("document.documentElement.dataset.screen"), "battle");
 });

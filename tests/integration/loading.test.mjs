@@ -69,7 +69,7 @@ test("a stalled image times out and its late result cannot bypass Retry", () => 
   assert.equal(game.run("assetLoadingState.ready"), true);
 });
 
-test("all weapons and all three playable stages are preloaded without duplicate URLs", () => {
+test("all weapons and all four playable stages are preloaded without duplicate URLs", () => {
   const game = createGame();
   assert.equal(game.run("assetLoadingState.ready"), true);
   const urls = game.snapshot("window.testImages.map(image => image.src)");

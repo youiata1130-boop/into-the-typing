@@ -3883,6 +3883,12 @@ button:disabled:active {
   left: 65%;
 }
 
+.stage-choice[data-stage="storm_cove"] {
+  top: 38%;
+  right: auto;
+  left: 26%;
+}
+
 .stage-choice:hover:not(:disabled) {
   filter: brightness(1.08);
   transform: translateY(-4px) scale(1.03);
@@ -4007,6 +4013,12 @@ button:disabled:active {
     top: 18%;
     right: auto;
     left: 75%;
+  }
+
+  .stage-choice[data-stage="storm_cove"] {
+    top: 25%;
+    right: auto;
+    left: 24%;
   }
 }
 

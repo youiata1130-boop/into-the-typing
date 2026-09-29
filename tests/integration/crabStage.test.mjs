@@ -97,7 +97,7 @@ test("stage 3 spawns two crabs then their king and saves 75 EXP only after the b
     assert.equal(game.run("state.totalExperience"), 115);
     const reloaded = createGame(game.saved());
     assert.equal(reloaded.run("state.totalExperience"), 115);
-    assert.equal(reloaded.run("getHighestAvailableStageCode()"), "3");
+    assert.equal(reloaded.run("getHighestAvailableStageCode()"), "4");
     game.run('continueAfterResult(); selectWeapon("greatsword"); continueAfterWeaponEquip(); startGame("forest_path")');
     assert.equal(game.run("els.arena.dataset.stage"), "forest_path");
   }
