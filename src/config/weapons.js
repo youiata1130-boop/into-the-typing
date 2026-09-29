@@ -27,6 +27,7 @@ const weaponDefinitions = {
 };
 const unarmedWeapon = { id: "unarmed", name: "素手", damage: 0.1 };
 const playerAssetVersion = "branch-intro-v1";
+const greatswordPoseVersion = "greatsword-poses-v2";
 const playerWeaponAssets = {
   branch: {
     idle: `src/assets/images/player/branch/idle/frame_01.png?v=${playerAssetVersion}`,
@@ -44,10 +45,10 @@ const playerWeaponAssets = {
     strike: `src/assets/images/player/sword/attack/frame_02.png?v=${playerAssetVersion}`,
   },
   greatsword: {
-    idle: `src/assets/images/player/greatsword/charge/frame_01.png?v=${playerAssetVersion}`,
+    idle: `src/assets/images/player/greatsword/charge/frame_01.png?v=${greatswordPoseVersion}`,
     charge: [
-      `src/assets/images/player/greatsword/charge/frame_01.png?v=${playerAssetVersion}`,
-      `src/assets/images/player/greatsword/idle/frame_01.png?v=${playerAssetVersion}`,
+      `src/assets/images/player/greatsword/charge/frame_01.png?v=${greatswordPoseVersion}`,
+      `src/assets/images/player/greatsword/idle/frame_01.png?v=${greatswordPoseVersion}`,
       `src/assets/images/player/greatsword/attack/frame_01.png?v=${playerAssetVersion}`,
     ],
     windup: `src/assets/images/player/greatsword/attack/frame_01.png?v=${playerAssetVersion}`,
