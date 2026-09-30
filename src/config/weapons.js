@@ -27,7 +27,7 @@ const weaponDefinitions = {
 };
 const unarmedWeapon = { id: "unarmed", name: "素手", damage: 0.1 };
 const playerAssetVersion = "branch-intro-v1";
-const greatswordPoseVersion = "greatsword-poses-v3";
+const greatswordPoseVersion = "greatsword-poses-v4";
 const playerWeaponAssets = {
   branch: {
     idle: `src/assets/images/player/branch/idle/frame_01.png?v=${playerAssetVersion}`,
