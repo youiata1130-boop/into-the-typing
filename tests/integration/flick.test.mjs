@@ -111,7 +111,7 @@ test("corrected words allow composing dakuten and small kana without accepting t
 
 test("flick input completes all three punches and keeps the non-editable prompt focused", () => {
   const game = createGame({}, { touch: true });
-  game.run("startGame(); advanceStory()");
+  game.run("startGame(); continueStoryToBattle()");
   assert.equal(game.run("document.activeElement === els.typingStatus"), true);
   for (let i = 1; i <= 3; i++) {
     assert.equal(game.run("getCurrentEnemy().translation"), ["あ", "木", "手"][i - 1]);
@@ -125,7 +125,7 @@ test("flick input completes all three punches and keeps the non-editable prompt 
   assert.equal(game.run("state.storyPhase"), "weapon-offer");
   input(game, "き");
   assert.equal(game.run("(getCurrentEnemy()?.tutorial?.punches || 0)"), 3);
-  game.run("advanceStory()");
+  game.run("continueStoryToBattle()");
   assert.equal(game.run("getCurrentEnemy().weaponId"), "branch");
   assert.equal(game.run("document.activeElement === els.typingStatus"), true);
   for (const remaining of [72.75, 48.5, 24.25, 0]) {
@@ -204,10 +204,10 @@ test("hiragana, katakana, halfwidth kana, kanji conversion, and Latin text are a
 
 test("stale IME commits and scheduled input cannot attack a restarted encounter", () => {
   const game = createGame({}, { touch: true });
-  game.run('startGame(); advanceStory(); handleFlickCompositionStart(); els.flickInput.value = "あ"; startGame(); advanceStory(); handleFlickCompositionEnd()');
+  game.run('startGame(); continueStoryToBattle(); handleFlickCompositionStart(); els.flickInput.value = "あ"; startGame(); continueStoryToBattle(); handleFlickCompositionEnd()');
   game.advance(0);
   assert.equal(game.run("(getCurrentEnemy()?.tutorial?.punches || 0)"), 0);
-  game.run('els.flickInput.value = "あ"; handleFlickInput({ isComposing: false }); startGame(); advanceStory()');
+  game.run('els.flickInput.value = "あ"; handleFlickInput({ isComposing: false }); startGame(); continueStoryToBattle()');
   game.advance(0);
   assert.equal(game.run("(getCurrentEnemy()?.tutorial?.punches || 0)"), 0);
   input(game, "あ");
@@ -228,7 +228,7 @@ test("native Space, Backspace, Enter, and composing keydowns are left to the IME
 
 test("Return confirms consecutive words without another tap on the editor", () => {
   const game = createGame({}, { touch: true });
-  game.run("startGame(); advanceStory(); let returns = 0;");
+  game.run("startGame(); continueStoryToBattle(); let returns = 0;");
   for (let count = 1; count <= 2; count++) {
     game.run('els.flickInput.value = getFlickReading(getCurrentEnemy()).reading; handleFlickKeydown({ key: "Enter", preventDefault() { returns++; } })');
     game.advance(0);
@@ -243,7 +243,7 @@ test("Return confirms consecutive words without another tap on the editor", () =
 
 test("line-break input submits once and never accumulates blank lines", () => {
   const game = createGame({}, { touch: true });
-  game.run('startGame(); advanceStory(); let prevented = false; els.flickInput.value = "あ"; handleFlickBeforeInput({ inputType: "insertLineBreak", cancelable: true, preventDefault() { prevented = true; } }); handleFlickKeydown({ key: "Enter", preventDefault() {} })');
+  game.run('startGame(); continueStoryToBattle(); let prevented = false; els.flickInput.value = "あ"; handleFlickBeforeInput({ inputType: "insertLineBreak", cancelable: true, preventDefault() { prevented = true; } }); handleFlickKeydown({ key: "Enter", preventDefault() {} })');
   game.advance(0);
   assert.equal(game.run("prevented"), true);
   assert.equal(game.run("(getCurrentEnemy()?.tutorial?.punches || 0)"), 1);
@@ -378,7 +378,7 @@ test("committing an unfinished modifier counts one miss", () => {
 
 test("consecutive composing answers need no Enter and old commits cannot hit the next prompt", () => {
   const game = createGame({}, { touch: true });
-  game.run("startGame(); advanceStory(); let answer");
+  game.run("startGame(); continueStoryToBattle(); let answer");
   for (let hit = 1; hit <= 2; hit++) {
     game.run('answer = getFlickReading(getCurrentEnemy()).reading; handleFlickCompositionStart(); els.flickInput.value = answer; handleFlickInput({ isComposing: true })');
     assert.equal(game.run("getCurrentEnemy().tutorial.punches"), hit);
@@ -450,7 +450,7 @@ test("an old answer reinserted before the next edit is removed without eating th
 test("repeated answers still count after a complete input reset", () => {
   const game = createGame({}, { touch: true });
   game.run("wordSets.unarmed.splice(1)");
-  game.run('startGame(); advanceStory(); handleFlickCompositionStart(); els.flickInput.value = "あ"; handleFlickInput({ isComposing: true })');
+  game.run('startGame(); continueStoryToBattle(); handleFlickCompositionStart(); els.flickInput.value = "あ"; handleFlickInput({ isComposing: true })');
   game.advance(480);
   game.run('handleFlickCompositionStart(); els.flickInput.value = "あ"; handleFlickInput({ isComposing: true })');
   game.advance(0);
@@ -605,7 +605,7 @@ test("late plain commits cannot erase an active new composition but real fresh m
 test("successive identical prompts accept new kana from a continuing native composition", () => {
   const game=createGame({}, {touch:true});
   game.run("wordSets.unarmed.splice(1)");
-  game.run("startGame(); advanceStory()");
+  game.run("startGame(); continueStoryToBattle()");
   for(let hit=1;hit<=3;hit++) {
     const raw="あ".repeat(hit);
     game.run("handleFlickBeforeInput({inputType:'insertCompositionText',isComposing:true,data:"+JSON.stringify(raw)+"}); els.flickInput.value="+JSON.stringify(raw)+"; handleFlickInput({inputType:'insertCompositionText',isComposing:true,data:"+JSON.stringify(raw)+"})");
@@ -686,7 +686,7 @@ test("events from a retired editor cannot change the next word or erase a new pr
 
 test("fresh editors accept identical consecutive answers through native event listeners", () => {
   const game = createGame({}, { touch: true });
-  game.run("wordSets.unarmed.splice(1); startGame(); advanceStory(); const editors = new Set()");
+  game.run("wordSets.unarmed.splice(1); startGame(); continueStoryToBattle(); const editors = new Set()");
   for (let hit = 1; hit <= 3; hit++) {
     game.run(`
       editors.add(els.flickInput);
@@ -720,7 +720,7 @@ test("finishing queued input does not take focus back after the player dismisses
 test("wrong first kana disappears and the correct answer works without Backspace", () => {
   const game = createGame({}, { touch: true });
   game.run(`
-    startGame(); advanceStory(); state.combo = 3;
+    startGame(); continueStoryToBattle(); state.combo = 3;
     const rejectedEditor = els.flickInput;
     rejectedEditor.dispatchEvent({ type: "compositionstart" });
     rejectedEditor.value = "ぬ";

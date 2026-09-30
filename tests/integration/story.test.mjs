@@ -23,7 +23,7 @@ test("stage 2 stays locked until the tutorial is completed and stage 1 waits for
   game.advance(20000);
   assert.deepEqual(game.snapshot("({ phase: state.storyPhase, enemies: state.activeEnemies.length, hp: state.hp })"),
     { phase: "encounter", enemies: 0, hp: 100 });
-  game.run('enqueueBufferedInput("letter", "a"); advanceStory(); advanceStory()');
+  game.run('enqueueBufferedInput("letter", "a"); continueStoryToBattle(); continueStoryToBattle()');
   assert.equal(game.run("state.activeEnemies.length"), 1);
   assert.equal(game.run("getCurrentEnemy().typed"), "");
 });
@@ -39,7 +39,7 @@ test("the new adventure starts fresh once and preserves the legacy save", () => 
 
 test("exactly three successful one-character punches trigger the offer, even with upgraded attack", () => {
   const game = createGame();
-  game.run("state.stats.attack = 99; startGame(); advanceStory(); state.specialGauge = 100");
+  game.run("state.stats.attack = 99; startGame(); continueStoryToBattle(); state.specialGauge = 100");
   assert.deepEqual(game.snapshot("({ word: getCurrentEnemy().matchedWord, text: getCurrentEnemy().translation, hasHp: Object.hasOwn(getCurrentEnemy(), 'hp') })"),
     { word: "a", text: "あ", hasHp: false });
   assert.equal(game.run("useSpecialMove()"), false);
@@ -55,7 +55,7 @@ test("exactly three successful one-character punches trigger the offer, even wit
 
 test("the branch picture and dialogue pause battle before Next equips the same enemy encounter", () => {
   const game = createGame();
-  game.run("startGame(); advanceStory()");
+  game.run("startGame(); continueStoryToBattle()");
   punch(game, 3);
   assert.equal(game.run("els.storyItem.hidden"), false);
   assert.equal(game.run("state.introCompleted"), false);
@@ -64,7 +64,7 @@ test("the branch picture and dialogue pause battle before Next equips the same e
   game.advance(30000);
   game.run('enemyLoop(performance.now()); enemyAttack(getCurrentEnemy()); applyTypedValue(getCurrentEnemy(), getCurrentEnemy().matchedWord); enqueueBufferedInput("letter", "n")');
   assert.deepEqual(game.snapshot("({ id: getCurrentEnemy().id, progress: getCurrentEnemy().progress, hp: state.hp })"), paused);
-  game.run("advanceStory(); advanceStory()");
+  game.run("continueStoryToBattle(); continueStoryToBattle()");
   assert.equal(game.run("getCurrentEnemy().id"), paused.id);
   assert.equal(game.run("state.activeEnemies.length"), 1);
   assert.equal(game.run("getCurrentEnemy().hpFill.style.width"), "97%");
@@ -113,7 +113,7 @@ test("three branch hits finish 0.6 HP exactly and only stage clear awards EXP", 
 
 test("restarting during the third punch cancels the old weapon handoff", () => {
   const game = createGame();
-  game.run("startGame(); advanceStory()");
+  game.run("startGame(); continueStoryToBattle()");
   punch(game, 2);
   game.run('applyTypedValue(getCurrentEnemy(), getCurrentEnemy().matchedWord)');
   game.advance(100);
@@ -122,7 +122,7 @@ test("restarting during the third punch cancels the old weapon handoff", () => {
   assert.equal(game.run("state.storyPhase"), "encounter");
   assert.equal(game.run("(getCurrentEnemy()?.tutorial?.punches || 0)"), 0);
   assert.equal(game.run("state.activeEnemies.length"), 0);
-  game.run("advanceStory()");
+  game.run("continueStoryToBattle()");
   punch(game);
   assert.equal(game.run("state.storyPhase"), "unarmed");
   assert.equal(game.run("getCurrentEnemy().hpFill.style.width"), "99%");
@@ -130,9 +130,9 @@ test("restarting during the third punch cancels the old weapon handoff", () => {
 
 test("completing the equipment lesson persists and stage 2 starts with the equipped weapon", () => {
   const first = createGame();
-  first.run("startGame(); advanceStory()");
+  first.run("startGame(); continueStoryToBattle()");
   punch(first, 3);
-  first.run("advanceStory()");
+  first.run("continueStoryToBattle()");
   for (let hit = 0; hit < 4; hit++) {
     first.run("applyTypedValue(getCurrentEnemy(), getCurrentEnemy().matchedWord)");
     first.advance(220);
@@ -165,11 +165,11 @@ test("new progress is retained through return, retry, and reload", () => {
 test("the tutorial has no HP and requires exactly four branch hits regardless of attack upgrades", () => {
   for (const attack of [1, 99]) {
     const game = createGame();
-    game.run("state.stats.attack = " + attack + "; startGame(); advanceStory(); const tutorialEnemy = getCurrentEnemy()");
+    game.run("state.stats.attack = " + attack + "; startGame(); continueStoryToBattle(); const tutorialEnemy = getCurrentEnemy()");
     assert.equal(game.run("Object.hasOwn(tutorialEnemy, 'hp') || Object.hasOwn(tutorialEnemy, 'maxHp')"), false);
     assert.equal(game.run("tutorialEnemy.hpFill.style.width"), "100%");
     punch(game, 3);
-    game.run("advanceStory(); state.specialGauge = 100");
+    game.run("continueStoryToBattle(); state.specialGauge = 100");
     assert.equal(game.run("tutorialEnemy.hpFill.style.width"), "97%");
     assert.equal(game.run("useSpecialMove()"), false);
     const remaining = [72.75, 48.5, 24.25, 0];
@@ -204,9 +204,9 @@ test("the tutorial has no HP and requires exactly four branch hits regardless of
 
 test("an interrupted branch lesson restarts, and its old defeat callback cannot finish the new tutorial", () => {
   const game = createGame();
-  game.run("startGame(); advanceStory()");
+  game.run("startGame(); continueStoryToBattle()");
   punch(game, 3);
-  game.run("advanceStory()");
+  game.run("continueStoryToBattle()");
   for (let hit = 0; hit < 3; hit++) {
     game.run("applyTypedValue(getCurrentEnemy(), getCurrentEnemy().matchedWord)");
     game.advance(220);
@@ -214,10 +214,10 @@ test("an interrupted branch lesson restarts, and its old defeat callback cannot 
   const saved = game.saved();
   assert.equal(game.savedProgress().equipmentTutorialCompleted, false);
   const reloaded = createGame(saved);
-  reloaded.run("startGame(); advanceStory()");
+  reloaded.run("startGame(); continueStoryToBattle()");
   assert.equal(reloaded.run("getCurrentEnemy().tutorial.punches"), 0);
   assert.equal(reloaded.run("getCurrentEnemy().tutorial.branchHits"), 0);
-  game.run("applyTypedValue(getCurrentEnemy(), getCurrentEnemy().matchedWord); startGame(); advanceStory()");
+  game.run("applyTypedValue(getCurrentEnemy(), getCurrentEnemy().matchedWord); startGame(); continueStoryToBattle()");
   game.advance(1000);
   assert.equal(game.run("state.equipmentTutorialCompleted"), false);
   assert.equal(game.run("state.cleared"), 0);
@@ -229,10 +229,10 @@ test("existing progress is preserved and the completed lesson unlocks stage 2", 
   const game = createGame({ [saveKey]: JSON.stringify(oldSave) });
   const growth = game.snapshot("({ xp: state.totalExperience, level: state.level, stats: state.stats, points: state.skillPoints })");
   assert.equal(game.run("state.weaponId"), "greatsword");
-  game.run("startGame(); advanceStory()");
+  game.run("startGame(); continueStoryToBattle()");
   assert.equal(game.run("getCurrentEnemy().weaponId"), "unarmed");
   punch(game, 3);
-  game.run("advanceStory()");
+  game.run("continueStoryToBattle()");
   for (let hit = 0; hit < 4; hit++) {
     game.run("applyTypedValue(getCurrentEnemy(), getCurrentEnemy().matchedWord)");
     game.advance(220);
@@ -246,11 +246,11 @@ test("existing progress is preserved and the completed lesson unlocks stage 2", 
 
 test("stage 1 ends after its single tutorial medaka and seven successful attacks", () => {
   const game = createGame();
-  game.run("startGame(); advanceStory()");
+  game.run("startGame(); continueStoryToBattle()");
   const seen = new Map();
   let attacks = 0;
   for (let tick = 0; tick < 2000 && game.run("state.running"); tick++) {
-    if (game.run("isStoryDialogueOpen()")) game.run("advanceStory()");
+    if (game.run("isStoryDialogueOpen()")) game.run("continueStoryToBattle()");
     const target = game.snapshot("getCurrentEnemy() ? { id: getCurrentEnemy().id, type: getCurrentEnemy().type, boss: getCurrentEnemy().boss } : null");
     if (target) seen.set(target.id, target);
     if (game.run("Boolean(getInputEnemy())")) {
@@ -274,9 +274,9 @@ test("equipping the branch or failing the lesson does not unlock stage 2", () =>
   assert.equal(game.run("state.pendingStageId"), "");
   game.run('state.pendingStageId = "mist_road"; startConfirmedStage()');
   assert.equal(game.run("state.running"), false);
-  game.run("startGame(); advanceStory()");
+  game.run("startGame(); continueStoryToBattle()");
   punch(game, 3);
-  game.run("advanceStory()");
+  game.run("continueStoryToBattle()");
   for (let hit = 0; hit < 3; hit++) {
     game.run("applyTypedValue(getCurrentEnemy(), getCurrentEnemy().matchedWord)");
     game.advance(220);
@@ -292,13 +292,13 @@ test("equipping the branch or failing the lesson does not unlock stage 2", () =>
 
 test("stage 1 remains a replayable tutorial after completion", () => {
   const game = createGame(equippedSave({ totalExperience: 350, stats: { attack: 3, agility: 2 } }));
-  game.run('startGame("forest_path"); advanceStory()');
+  game.run('startGame("forest_path"); continueStoryToBattle()');
   assert.equal(game.run("state.roundLimit"), 1);
   assert.equal(game.run("getCurrentEnemy().weaponId"), "unarmed");
   assert.equal(game.run("getCurrentEnemy().tutorial.punches"), 0);
   assert.equal(game.run('isStageAvailable("mist_road")'), true);
   punch(game, 3);
-  game.run("advanceStory()");
+  game.run("continueStoryToBattle()");
   for (let hit = 0; hit < 4; hit++) {
     game.run("applyTypedValue(getCurrentEnemy(), getCurrentEnemy().matchedWord)");
     game.advance(220);

@@ -15,6 +15,26 @@ const greatswordImpactDelayMs = 180;
 const greatswordImpactMs = 820;
 const specialGaugeMax = 100;
 const specialDamage = 3;
+const prologueScenes = [
+  {
+    title: "海への出発",
+    image: "src/assets/images/story/raft_departure.png",
+    alt: "いかだに乗り、青い海へこぎ出す少年",
+    text: "海の向こうの世界にあこがれた少年は、\n小さないかだに乗り、冒険へと出発した。",
+  },
+  {
+    title: "突然の嵐",
+    image: "src/assets/images/story/raft_storm.png",
+    alt: "激しい雨と大波の中、いかだにつかまる少年",
+    text: "ところが、旅の途中で空が暗くなり、激しい嵐に。\n少年のいかだは、大波にのまれてしまった。",
+  },
+  {
+    title: "見知らぬ浜辺",
+    image: "src/assets/images/backgrounds/stages/crab_shore.png",
+    alt: "無人島の白い浜辺と青い海",
+    text: "目を覚ますと、そこは見知らぬ無人島。\n少年の新たな冒険が、この浜辺から始まる。",
+  },
+];
 const enemyAnimations = window.ENEMY_ANIMATIONS || {
   defaultEnemy: "goblin_level_1",
   frameMs: 140,
@@ -245,6 +265,7 @@ const state = {
   ...loadPlayerProgress(),
   running: false,
   storyPhase: "none",
+  prologueSceneIndex: 0,
   hp: progression.rules.baseHp,
   pendingExperience: 0,
   battleExperience: 0,
@@ -334,6 +355,8 @@ const els = {
   typingBox: document.querySelector(".typing-box"),
   storyDialog: document.querySelector("#storyDialog"),
   storyText: document.querySelector("#storyText"),
+  prologueImage: document.querySelector("#prologueImage"),
+  prologueTitle: document.querySelector("#prologueTitle"),
   storyItem: document.querySelector("#storyItem"),
   storyNextButton: document.querySelector("#storyNextButton"),
   battleWeaponName: document.querySelector("#battleWeaponName"),
@@ -896,16 +919,26 @@ function setStoryPhase(phase) {
   state.storyPhase = phase;
   const dialogueOpen = isStoryDialogueOpen();
   const isPrologue = phase === "encounter" && !state.prologueCompleted;
+  const scene = isPrologue ? prologueScenes[state.prologueSceneIndex] : null;
   els.battleScreen.dataset.storyPhase = phase;
   els.battleScreen.classList.toggle("is-prologue", isPrologue);
   els.storyDialog.classList.toggle("is-prologue", isPrologue);
   els.storyDialog.setAttribute("aria-label", isPrologue ? "物語のはじまり" : "会話");
   els.storyDialog.hidden = !dialogueOpen;
   els.storyItem.hidden = phase !== "weapon-offer";
-  els.storyNextButton.textContent = isPrologue ? "浜辺へ" : phase === "weapon-offer" ? "装備する" : "次へ";
+  els.prologueImage.hidden = !isPrologue;
+  els.prologueTitle.hidden = !isPrologue;
+  if (scene) {
+    els.prologueImage.src = scene.image;
+    els.prologueImage.alt = scene.alt;
+    els.prologueTitle.textContent = scene.title;
+  }
+  els.storyNextButton.textContent = isPrologue
+    ? state.prologueSceneIndex === prologueScenes.length - 1 ? "浜辺へ" : "次へ"
+    : phase === "weapon-offer" ? "装備する" : "次へ";
   els.typingBox.hidden = dialogueOpen;
   els.storyText.textContent = isPrologue
-    ? "海の向こうの世界にあこがれた少年は、小さな木の船で冒険に出た。\n\nところが、旅の途中で激しい嵐に遭い、船は大波にのまれてしまう。\n\n目を覚ますと、そこは見知らぬ無人島。\n少年の冒険は、この浜辺から始まる。"
+    ? scene.text
     : phase === "encounter" ? "敵が現れた！"
       : phase === "weapon-offer" ? "木の枝を拾った！" : "";
 }
@@ -927,6 +960,11 @@ function advanceStory() {
 
   if (state.storyPhase === "encounter") {
     if (!state.prologueCompleted) {
+      if (state.prologueSceneIndex < prologueScenes.length - 1) {
+        state.prologueSceneIndex += 1;
+        setStoryPhase("encounter");
+        return;
+      }
       state.prologueCompleted = true;
       savePlayerProgress();
     }
@@ -2248,6 +2286,7 @@ function startGame(stageId = state.stageId) {
 
   invalidateBattleGeneration();
   const needsIntroduction = Boolean(stage.storyIntro && (stage.tutorial || !state.equipmentTutorialCompleted));
+  state.prologueSceneIndex = 0;
   setStoryPhase(needsIntroduction ? "encounter" : "none");
   state.language = "ja";
   state.stageId = resolvedStageId;

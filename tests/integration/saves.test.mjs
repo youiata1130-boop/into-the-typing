@@ -123,9 +123,9 @@ test("corrupt slots cannot continue and stay untouched until an explicit overwri
 test("switching players cancels pending tutorial attacks and native input from the previous player", () => {
   const game=fresh();
   newPlayer(game,0,"あおい");
-  game.run("startGame(); advanceStory(); handleFlickCompositionStart(); els.flickInput.value='あ'; handleFlickInput({isComposing:true})");
+  game.run("startGame(); continueStoryToBattle(); handleFlickCompositionStart(); els.flickInput.value='あ'; handleFlickInput({isComposing:true})");
   newPlayer(game,1,"そら");
-  game.run("startGame(); advanceStory(); handleFlickCompositionEnd()");
+  game.run("startGame(); continueStoryToBattle(); handleFlickCompositionEnd()");
   game.advance(1000);
   assert.equal(game.run("getCurrentEnemy().tutorial.punches"),0);
   assert.equal(game.run("state.playerName"),"そら");
@@ -164,6 +164,6 @@ test("an unfinished composition from another player cannot block the newly selec
   assert.equal(game.run("flickState.composing"),true);
   newPlayer(game,1,"そら");
   assert.equal(game.run("flickState.composing"),false);
-  game.run("startGame(); advanceStory(); els.flickInput.value='あ'; handleFlickInput({isComposing:false,inputType:'insertText',data:'あ'})");
+  game.run("startGame(); continueStoryToBattle(); els.flickInput.value='あ'; handleFlickInput({isComposing:false,inputType:'insertText',data:'あ'})");
   assert.equal(game.run("getCurrentEnemy().tutorial.punches"),1);
 });

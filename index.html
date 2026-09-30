@@ -8,7 +8,9 @@
     <link rel="preload" as="image" href="src/assets/images/backgrounds/shared/typing_rpg_background.png">
     <link rel="preload" as="image" href="src/assets/images/backgrounds/status/base_interior.png">
     <link rel="preload" as="image" href="src/assets/images/backgrounds/stages/crab_shore.png">
-    <link rel="stylesheet" href="src/styles/main.css?v=level-up-celebration-v1">
+    <link rel="preload" as="image" href="src/assets/images/story/raft_departure.png">
+    <link rel="preload" as="image" href="src/assets/images/story/raft_storm.png">
+    <link rel="stylesheet" href="src/styles/main.css?v=illustrated-prologue-v1">
   </head>
   <body>
     <section class="loading-screen" id="loadingScreen" aria-labelledby="loadingText" aria-busy="true">
@@ -372,6 +374,8 @@
 
         <section class="control-panel">
         <div class="story-dialog" id="storyDialog" role="region" aria-label="会話" hidden>
+          <img class="prologue-image" id="prologueImage" src="src/assets/images/story/raft_departure.png" alt="" hidden>
+          <h2 id="prologueTitle" hidden></h2>
           <div class="story-item" id="storyItem" hidden>
             <img id="storyItemImage" src="src/assets/images/items/weapons/branch.png?v=branch-intro-v1" alt="木の枝">
             <span>木の枝</span>
@@ -442,6 +446,6 @@
     <script src="src/input/mobile.js?v=miss-feedback-v1"></script>
     <script src="src/input/flickKeyboard.js?v=flick-direction-v1"></script>
     <script src="src/app/loading.js?v=treasure-reward-v1"></script>
-    <script src="src/app/game.js?v=level-up-celebration-v1"></script>
+    <script src="src/app/game.js?v=illustrated-prologue-v1"></script>
   </body>
 </html>

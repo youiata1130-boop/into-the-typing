@@ -5,7 +5,7 @@ import { createGame } from "../helpers/game.mjs";
 function finishBattle(game, { beforeReward = false } = {}) {
   for (let tick = 0; tick < 3000 && game.run("state.running"); tick++) {
     if (beforeReward && game.run("state.cleared === state.roundLimit")) return;
-    if (game.run("isStoryDialogueOpen()")) game.run("advanceStory()");
+    if (game.run("isStoryDialogueOpen()")) game.run("continueStoryToBattle()");
     if (game.run("Boolean(getInputEnemy())")) game.run("applyTypedValue(getInputEnemy(), getInputEnemy().matchedWord)");
     game.advance(100);
   }

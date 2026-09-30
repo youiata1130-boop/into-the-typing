@@ -14,7 +14,7 @@ function swimmingGame(reducedMotion = false, type = "medaka_level_1") {
       return id;
     };
     window.clearInterval = id => window.swimIntervals.delete(id);
-    startGame(); advanceStory();
+    startGame(); continueStoryToBattle();
     clearEnemyAnimationTimers();
     getCurrentEnemy().type = ${JSON.stringify(type)};
     playEnemyAnimation(getCurrentEnemy(), "idle");
@@ -61,7 +61,7 @@ for (const type of ["medaka_level_1", "medaka_boss"]) {
     const game = swimmingGame(false, type);
     game.run('showStoryDialogue("weapon-offer")');
     assert.equal(game.run("window.swimIntervals.size"), 0);
-    game.run("advanceStory()");
+    game.run("continueStoryToBattle()");
     assert.equal(game.run("window.swimIntervals.size"), 1);
     game.run("finishGame(false)");
     assert.equal(game.run("window.swimIntervals.size"), 0);

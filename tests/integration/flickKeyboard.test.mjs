@@ -104,13 +104,13 @@ test("game keyboard hides during dialogue/results and is unavailable on desktop"
   game.run("startGame()");
   assert.equal(game.run("gameFlickUi.keyboard.hidden"), true);
   assert.equal(key(game, "a"), false);
-  game.run("advanceStory()");
+  game.run("continueStoryToBattle()");
   assert.equal(game.run("gameFlickUi.keyboard.hidden"), false);
   game.run("finishGame(false)");
   assert.equal(game.run("gameFlickUi.keyboard.hidden"), true);
   assert.equal(key(game, "a"), false);
   const desktop = createGame();
-  desktop.run("startGame(); advanceStory()");
+  desktop.run("startGame(); continueStoryToBattle()");
   assert.equal(desktop.run("gameFlickUi.keyboard.hidden"), true);
   assert.equal(key(desktop, "a"), false);
 });

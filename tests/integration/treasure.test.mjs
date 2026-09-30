@@ -5,12 +5,12 @@ import { createGame } from "../helpers/game.mjs";
 const saveKey = "into-the-typing.player.v2";
 
 function completeLesson(game, { waitForReward = true } = {}) {
-  game.run('startGame("forest_path"); advanceStory()');
+  game.run('startGame("forest_path"); continueStoryToBattle()');
   for (let hit = 0; hit < 3; hit++) {
     game.run('applyTypedValue(getInputEnemy(), getInputEnemy().matchedWord)');
     game.advance(480);
   }
-  game.run("advanceStory()");
+  game.run("continueStoryToBattle()");
   for (let hit = 0; hit < 4; hit++) {
     game.run("applyTypedValue(getInputEnemy(), getInputEnemy().matchedWord)");
     game.advance(220);
@@ -112,12 +112,12 @@ test("failure and an interrupted clear never grant the sword", () => {
 
 test("receiving the branch alone and an early clear cannot grant the sword", () => {
   const game = createGame();
-  game.run("startGame(); advanceStory()");
+  game.run("startGame(); continueStoryToBattle()");
   for (let hit = 0; hit < 3; hit++) {
     game.run('applyTypedValue(getInputEnemy(), getInputEnemy().matchedWord)');
     game.advance(480);
   }
-  game.run("advanceStory(); finishGame(true)");
+  game.run("continueStoryToBattle(); finishGame(true)");
   assert.equal(game.run("state.running"), true);
   assert.equal(game.run("state.introCompleted"), true);
   assert.equal(game.run("state.ironSwordObtained"), false);

@@ -131,6 +131,11 @@ export function createGame(savedItems = {}, { touch = false, loadImages = true, 
     scriptUrl.search = "";
     vm.runInContext(readFileSync(scriptUrl, "utf8"), context, { filename: scriptUrl.pathname });
   }
+  // Battle tests advance all story pages; prologue tests exercise each click themselves.
+  vm.runInContext(`function continueStoryToBattle() {
+    for (let page = 0; page < 10 && state.running && isStoryDialogueOpen(); page++) advanceStory();
+    if (state.running && isStoryDialogueOpen()) throw new Error("Story did not reach battle");
+  }`, context);
   const run = source => vm.runInContext(source, context);
   const snapshot = source => JSON.parse(JSON.stringify(run(source)));
   if (chooseSave) {
