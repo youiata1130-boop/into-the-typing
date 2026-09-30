@@ -390,6 +390,11 @@ const els = {
   noticeTitle: document.querySelector("#noticeTitle"),
   noticeText: document.querySelector("#noticeText"),
   noticeButton: document.querySelector("#noticeButton"),
+  levelUpReward: document.querySelector("#levelUpReward"),
+  levelUpBefore: document.querySelector("#levelUpBefore"),
+  levelUpAfter: document.querySelector("#levelUpAfter"),
+  levelUpHp: document.querySelector("#levelUpHp"),
+  levelUpPoints: document.querySelector("#levelUpPoints"),
   treasureReward: document.querySelector("#treasureReward"),
   treasureText: document.querySelector("#treasureText"),
   treasureArt: document.querySelector("#treasureArt"),
@@ -726,7 +731,8 @@ function focusStageSurface() {
 }
 
 function hideGameNotice() {
-  els.gameNotice.classList.remove("is-visible", "is-actionable", "has-treasure");
+  els.gameNotice.classList.remove("is-visible", "is-actionable", "has-treasure", "has-level-up");
+  els.levelUpReward.hidden = true;
   els.treasureReward.hidden = true;
   els.treasureText.hidden = true;
   els.gameNotice.setAttribute("aria-hidden", "true");
@@ -836,10 +842,18 @@ function flushBufferedInput() {
 }
 
 function showGameNotice(kind, kicker, title, text, options = {}) {
-  const { persistent = false, duration = 900, treasure = "" } = options;
+  const { persistent = false, duration = 900, treasure = "", levelUp = null } = options;
 
   clearNoticeTimer();
   els.gameNotice.dataset.kind = kind;
+  els.levelUpReward.hidden = !levelUp;
+  els.gameNotice.classList.toggle("has-level-up", Boolean(levelUp));
+  if (levelUp) {
+    els.levelUpBefore.textContent = `Lv.${levelUp.from}`;
+    els.levelUpAfter.textContent = `Lv.${levelUp.to}`;
+    els.levelUpHp.textContent = `+${levelUp.hp}`;
+    els.levelUpPoints.textContent = `+${levelUp.points}`;
+  }
   els.treasureReward.hidden = !treasure;
   els.treasureText.hidden = !treasure;
   els.gameNotice.classList.toggle("has-treasure", Boolean(treasure));
@@ -2129,6 +2143,7 @@ function finishGame(cleared) {
     || (rewardWeaponId === "greatsword" && !state.greatswordObtained)
   ) ? rewardWeaponId : "";
   let resultText = "獲得経験値 0 EXP";
+  let levelUp = null;
   if (cleared) {
     if (!state.clearedStages.includes(state.stageId)) state.clearedStages.push(state.stageId);
     if (treasure === "sword") {
@@ -2148,8 +2163,10 @@ function finishGame(cleared) {
     state.hp = Math.min(getMaxHp(), state.hp + reward.hpGained);
     resultText = `獲得経験値 ${reward.gained} EXP`;
     if (reward.levels > 0) {
-      resultText += `\nレベルアップ！ Lv.${previousLevel} → Lv.${state.level}`;
-      resultText += `\n最大HP +${reward.hpGained} ／ スキルポイント +${reward.levels * progression.rules.pointsPerLevel}`;
+      levelUp = {
+        from: previousLevel, to: state.level, hp: reward.hpGained,
+        points: reward.levels * progression.rules.pointsPerLevel,
+      };
     }
     savePlayerProgress();
   }
@@ -2164,7 +2181,7 @@ function finishGame(cleared) {
       noDamageClear ? "PERFECT" : "CLEAR",
       getStageDefinition(state.stageId).tutorial ? "チュートリアル完了" : noDamageClear ? t.perfectTitle : t.clearTitle,
       resultText,
-      { persistent: true, treasure },
+      { persistent: true, treasure, levelUp },
     );
     const nextStageId = getStageDefinition(state.stageId).nextStageId;
     if (getPendingWeaponEquipId() && getPendingWeaponEquipId() === rewardWeaponId) {
@@ -2174,7 +2191,7 @@ function finishGame(cleared) {
     } else if (isStageAvailable(nextStageId)) {
       els.noticeButton.textContent = `ステージ${stageDefinitions[nextStageId].code}へ`;
     }
-    if (treasure || state.skillTutorialPending) els.noticeButton.focus({ preventScroll: true });
+    if (treasure || levelUp || state.skillTutorialPending) els.noticeButton.focus({ preventScroll: true });
   }
 }
 

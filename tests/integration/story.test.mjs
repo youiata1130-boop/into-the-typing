@@ -341,7 +341,7 @@ test("stage 2 has two fish then a fish boss and awards EXP only after the third 
   assert.deepEqual(game.snapshot("({ cleared: state.cleared, xp: state.totalExperience, level: state.level, points: state.skillPoints })"),
     { cleared: 3, xp: 40, level: 2, points: 1 });
   assert.match(game.run("els.noticeText.textContent"), /獲得経験値 40 EXP/);
-  assert.match(game.run("els.noticeText.textContent"), /レベルアップ！/);
+  assert.equal(game.run("els.levelUpReward.hidden"), false);
   assert.equal(game.run("els.noticeButton.textContent"), "ステータスへ");
   game.run('continueAfterResult(); changePlayerStat("attack", 1); continueAfterSkillTutorial()');
   assert.equal(game.run("els.stageScreen.hidden"), false);

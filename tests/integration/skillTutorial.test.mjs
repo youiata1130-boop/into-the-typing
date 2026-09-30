@@ -27,7 +27,8 @@ test("stage 1 never levels up and stage 2 teaches spending its one new skill poi
     finishBattle(game);
     assert.deepEqual(game.snapshot("({ level: state.level, xp: state.totalExperience, points: state.skillPoints, hp: getMaxHp() })"),
       { level: 2, xp: 40, points: 1, hp: 110 });
-    assert.match(game.run("els.noticeText.textContent"), /Lv.1 → Lv.2/);
+    assert.deepEqual(game.snapshot("[els.levelUpBefore.textContent, els.levelUpAfter.textContent]"), ["Lv.1", "Lv.2"]);
+    assert.equal(game.run("els.levelUpReward.hidden"), false);
     assert.equal(game.run("els.noticeButton.textContent"), "ステータスへ");
     assert.equal(game.run("els.statusScreen.hidden"), true);
     assert.equal(game.savedProgress().skillTutorialPending, true);

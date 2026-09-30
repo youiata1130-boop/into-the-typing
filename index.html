@@ -8,7 +8,7 @@
     <link rel="preload" as="image" href="src/assets/images/backgrounds/shared/typing_rpg_background.png">
     <link rel="preload" as="image" href="src/assets/images/backgrounds/status/base_interior.png">
     <link rel="preload" as="image" href="src/assets/images/backgrounds/stages/crab_shore.png">
-    <link rel="stylesheet" href="src/styles/main.css?v=island-prologue-v1">
+    <link rel="stylesheet" href="src/styles/main.css?v=level-up-celebration-v1">
   </head>
   <body>
     <section class="loading-screen" id="loadingScreen" aria-labelledby="loadingText" aria-busy="true">
@@ -281,9 +281,39 @@
         </div>
         <div class="ground"></div>
         <div class="game-notice" id="gameNotice" data-kind="start" aria-live="polite" aria-hidden="true">
+          <div class="level-up-confetti" aria-hidden="true">
+            <i style="--x:4%;--drift:-30px;--delay:0s"></i>
+            <i style="--x:10%;--drift:30px;--delay:0.1s"></i>
+            <i style="--x:16%;--drift:-30px;--delay:0.2s"></i>
+            <i style="--x:22%;--drift:30px;--delay:0.3s"></i>
+            <i style="--x:28%;--drift:-30px;--delay:0.4s"></i>
+            <i style="--x:34%;--drift:30px;--delay:0s"></i>
+            <i style="--x:40%;--drift:-30px;--delay:0.1s"></i>
+            <i style="--x:46%;--drift:30px;--delay:0.2s"></i>
+            <i style="--x:52%;--drift:-30px;--delay:0.3s"></i>
+            <i style="--x:58%;--drift:30px;--delay:0.4s"></i>
+            <i style="--x:64%;--drift:-30px;--delay:0s"></i>
+            <i style="--x:70%;--drift:30px;--delay:0.1s"></i>
+            <i style="--x:76%;--drift:-30px;--delay:0.2s"></i>
+            <i style="--x:82%;--drift:30px;--delay:0.3s"></i>
+            <i style="--x:88%;--drift:-30px;--delay:0.4s"></i>
+            <i style="--x:94%;--drift:30px;--delay:0s"></i>
+          </div>
           <div class="notice-card">
             <span class="notice-kicker" id="noticeKicker">START</span>
             <strong id="noticeTitle">開始</strong>
+            <div class="level-up-reward" id="levelUpReward" role="group" aria-label="レベルアップの報酬" hidden>
+              <p class="level-up-title">レベルアップ！</p>
+              <div class="level-up-levels">
+                <span id="levelUpBefore" class="level-up-before"></span>
+                <span class="level-up-arrow" aria-hidden="true">→</span>
+                <strong id="levelUpAfter" class="level-up-after"></strong>
+              </div>
+              <div class="level-up-benefits">
+                <div><span>最大HP</span><strong id="levelUpHp"></strong></div>
+                <div><span>スキルポイント</span><strong id="levelUpPoints"></strong></div>
+              </div>
+            </div>
             <div class="treasure-reward" id="treasureReward" hidden>
               <svg class="treasure-art" id="treasureArt" viewBox="0 0 280 220" role="img" aria-label="宝箱から現れた鉄の剣">
                 <defs>
@@ -412,6 +442,6 @@
     <script src="src/input/mobile.js?v=miss-feedback-v1"></script>
     <script src="src/input/flickKeyboard.js?v=flick-direction-v1"></script>
     <script src="src/app/loading.js?v=treasure-reward-v1"></script>
-    <script src="src/app/game.js?v=island-prologue-v1"></script>
+    <script src="src/app/game.js?v=level-up-celebration-v1"></script>
   </body>
 </html>

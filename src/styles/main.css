@@ -2365,7 +2365,8 @@ button {
 }
 
 
-.game-notice.has-treasure {
+.game-notice.has-treasure,
+.game-notice.has-level-up {
   position: fixed;
   z-index: 20;
   top: var(--battle-viewport-top, 0px);
@@ -5223,4 +5224,136 @@ html[data-screen="battle"] .typing-miss-effect.is-active {
 }
 @media (prefers-reduced-motion: reduce) {
   .arena.typing-miss-shake { animation: none; }
+}
+
+/* Celebrate a level gain while keeping its rewards and next action readable. */
+.level-up-reward[hidden], .level-up-confetti { display: none; }
+.game-notice.has-level-up {
+  background: radial-gradient(ellipse at 50% 38%, rgba(255,215,105,.36), rgba(22,39,65,.6));
+}
+.has-level-up .notice-card {
+  position: relative;
+  z-index: 1;
+  width: min(480px, 100%);
+  max-height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 22px;
+  gap: 12px;
+  border: 2px solid #d5a348;
+  border-radius: 20px;
+  background: radial-gradient(ellipse at 50% 22%, #fff7cf, transparent 70%), linear-gradient(#fffefa, #fff5e1);
+  box-shadow: 0 0 0 5px rgba(255,226,147,.24), 0 16px 48px rgba(39,34,19,.3);
+  animation: levelUpCardReveal 450ms ease-out both;
+}
+.has-level-up .notice-kicker { display: none; }
+.has-level-up #noticeTitle { font-size: 20px; line-height: 1.3; color: #64543a; }
+.level-up-reward { position: relative; display: grid; justify-items: center; gap: 12px; width: 100%; }
+.level-up-title {
+  margin: 0;
+  color: #8e5009;
+  font-size: clamp(26px, 6vw, 34px);
+  font-weight: 900;
+  line-height: 1.2;
+  text-shadow: 0 2px #fff;
+}
+.level-up-title::before, .level-up-title::after {
+  content: "✦"; display: inline-block; margin: 0 6px; color: #d69828; font-size: .65em; vertical-align: 12%;
+}
+.level-up-levels { display: flex; align-items: center; justify-content: center; gap: 12px; }
+.level-up-before { color: #776951; font-size: clamp(20px, 5vw, 26px); font-weight: 800; }
+.level-up-arrow { color: #b47715; font-size: 28px; font-weight: 800; }
+.level-up-levels .level-up-after {
+  min-width: 100px;
+  padding: 10px 14px;
+  color: #854804;
+  font-size: clamp(36px, 11vw, 54px);
+  line-height: 1.1;
+  border: 2px solid #e0b957;
+  border-radius: 16px;
+  background: linear-gradient(145deg, #fffef2, #ffe49b);
+  box-shadow: 0 4px 0 #e5bf68, 0 0 28px rgba(255,205,63,.45);
+  animation: levelUpNumberReveal 650ms cubic-bezier(.18,.85,.3,1.2) both;
+}
+.level-up-benefits { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; width: 100%; }
+.level-up-benefits > div {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 10px 6px;
+  border: 1px solid #e1cc9b;
+  border-radius: 10px;
+  background: rgba(255,255,255,.8);
+}
+.level-up-benefits span { font-size: 16px; font-weight: 700; line-height: 1.35; color: #68552f; }
+.level-up-benefits strong { font-size: 26px; line-height: 1.1; color: #91600e; }
+.has-level-up #noticeText { font-size: 16px; color: #68552f; }
+.has-level-up #noticeButton {
+  min-height: 44px;
+  margin-top: 0;
+  min-width: min(220px, 100%);
+  border-color: #93620f;
+  background: #99620f;
+  color: #fff;
+  box-shadow: 0 4px 0 #704509;
+}
+.has-level-up #noticeButton:hover { background: #80500b; }
+.has-level-up .treasure-reward { width: min(150px, 100%); }
+.has-level-up .treasure-art { max-height: 100px; }
+.has-level-up .treasure-text { font-size: 18px; line-height: 1.3; }
+.has-level-up .level-up-confetti { display: block; position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.level-up-confetti i {
+  position: absolute;
+  top: -24px;
+  left: var(--x);
+  width: 8px;
+  height: 15px;
+  border-radius: 2px;
+  background: #ffd56b;
+  animation: levelUpConfetti 2400ms var(--delay) ease-out both;
+}
+.level-up-confetti i:nth-child(3n) { background: #8bddf0; width: 10px; height: 10px; }
+.level-up-confetti i:nth-child(3n + 1) { background: #ffaaa0; }
+@keyframes levelUpCardReveal {
+  from { opacity: 0; transform: translateY(14px) scale(.96); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes levelUpNumberReveal {
+  from { opacity: 0; transform: scale(.78); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes levelUpConfetti {
+  0% { opacity: 0; transform: translate(0, -24px) rotate(0deg); }
+  12% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { opacity: 0; transform: translate(var(--drift), var(--battle-viewport-height, 100dvh)) rotate(460deg); }
+}
+@media (max-height: 500px) {
+  .has-level-up .notice-card {
+    width: min(620px, 100%);
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "title title" "level level" "xp action";
+    gap: 8px;
+    padding: 12px;
+  }
+  .has-level-up.has-treasure .notice-card {
+    grid-template-columns: minmax(0, 1fr) minmax(120px, .65fr);
+    grid-template-areas: "title title" "level treasure" "level loot" "xp action";
+  }
+  .has-level-up #noticeTitle { grid-area: title; font-size: 18px; }
+  .has-level-up .level-up-reward { grid-area: level; gap: 8px; }
+  .has-level-up .treasure-reward { grid-area: treasure; }
+  .has-level-up .treasure-text { grid-area: loot; font-size: 16px; }
+  .has-level-up #noticeText { grid-area: xp; }
+  .has-level-up #noticeButton { grid-area: action; min-width: 0; }
+  .has-level-up .level-up-title { font-size: 26px; }
+  .has-level-up .level-up-after { font-size: 36px; padding: 5px 12px; }
+  .has-level-up .level-up-benefits > div { padding: 6px; }
+  .has-level-up .level-up-benefits strong { font-size: 22px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .has-level-up .notice-card, .has-level-up .level-up-after { animation: none; }
+  .has-level-up .level-up-confetti { display: none; }
 }
