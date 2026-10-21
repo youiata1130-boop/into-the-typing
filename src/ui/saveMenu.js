@@ -60,6 +60,7 @@ function activatePlayerSave(index, entry = saveSlots.read(index)) {
   activeSaveSlot = index;
   activeSaveToken = entry.raw;
   Object.assign(state, loadPlayerProgress(entry.data.progress), { playerName: entry.data.name, stageId: defaultStageId });
+  state.stageMapRegionId = Object.entries(stageDefinitions).filter(([id]) => isStageAvailable(id)).at(-1)?.[1].regionId || "coast";
   state.playableEnemyWaves = buildPlayableEnemyWaves(getStageDefinition(defaultStageId).waves);
   state.roundLimit = getRoundLimit(state.playableEnemyWaves);
   state.progressNotice = "";

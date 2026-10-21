@@ -10,7 +10,7 @@
     <link rel="preload" as="image" href="src/assets/images/backgrounds/stages/crab_shore.png">
     <link rel="preload" as="image" href="src/assets/images/story/raft_departure.png">
     <link rel="preload" as="image" href="src/assets/images/story/raft_storm.png">
-    <link rel="stylesheet" href="src/styles/main.css?v=illustrated-prologue-v1">
+    <link rel="stylesheet" href="src/styles/main.css?v=20261021-forest-guard-v1">
   </head>
   <body>
     <section class="loading-screen" id="loadingScreen" aria-labelledby="loadingText" aria-busy="true">
@@ -79,40 +79,79 @@
           </div>
         </header>
 
-        <div class="stage-map-panel">
+        <div class="stage-map-panel" id="stageMapPanel" data-region="coast" role="region" aria-label="1 海辺の地図">
           <picture class="stage-map-art" aria-hidden="true">
-            <source media="(orientation: portrait)" srcset="src/assets/images/backgrounds/stage_map/desk_portrait.jpg">
-            <img src="src/assets/images/backgrounds/stage_map/desk_landscape.jpg" alt="">
+            <img id="stageMapImage" src="src/assets/images/backgrounds/stage_map/coast.jpg" width="1536" height="1024" alt="">
           </picture>
           <div class="stage-choices" id="stageChoices" role="group" aria-label="クエスト地点">
-            <button class="stage-choice" id="stageChoiceForest" type="button" data-stage="forest_path" aria-label="1 旅の始まり" aria-controls="stageConfirm" aria-expanded="false">
-              <span class="stage-circle"><strong class="stage-code">1</strong></span>
+            <button class="stage-choice" id="stageChoiceForest" type="button" data-stage="forest_path" aria-label="1-1 旅の始まり" aria-controls="stageConfirm" aria-expanded="false">
+              <span class="stage-circle"><strong class="stage-code">1-1</strong></span>
               <span class="stage-node-copy" aria-hidden="true">
                 <span class="stage-name">旅の始まり</span>
                 <em class="stage-meta"></em>
               </span>
             </button>
-            <button class="stage-choice" id="stageChoiceMist" type="button" data-stage="mist_road" aria-label="2 小魚たちの浅瀬（チュートリアル未クリア）" aria-controls="stageConfirm" aria-expanded="false" disabled aria-disabled="true">
-              <span class="stage-circle"><strong class="stage-code">2</strong></span>
+            <button class="stage-choice" id="stageChoiceMist" type="button" data-stage="mist_road" aria-label="1-2 小魚たちの浅瀬（チュートリアル未クリア）" aria-controls="stageConfirm" aria-expanded="false" disabled aria-disabled="true">
+              <span class="stage-circle"><strong class="stage-code">1-2</strong></span>
               <span class="stage-node-copy" aria-hidden="true">
                 <span class="stage-name">小魚たちの浅瀬</span>
                 <em class="stage-meta"></em>
               </span>
             </button>
-            <button class="stage-choice" id="stageChoiceCastle" type="button" data-stage="sky_castle" aria-label="3 潮風の浜辺（ステージ2未クリア）" aria-controls="stageConfirm" aria-expanded="false" disabled aria-disabled="true">
-              <span class="stage-circle"><strong class="stage-code">3</strong></span>
+            <button class="stage-choice" id="stageChoiceCastle" type="button" data-stage="sky_castle" aria-label="1-3 潮風の浜辺（ステージ1-2未クリア）" aria-controls="stageConfirm" aria-expanded="false" disabled aria-disabled="true">
+              <span class="stage-circle"><strong class="stage-code">1-3</strong></span>
               <span class="stage-node-copy" aria-hidden="true">
                 <span class="stage-name">潮風の浜辺</span>
                 <em class="stage-meta"></em>
               </span>
             </button>
-            <button class="stage-choice" id="stageChoiceCove" type="button" data-stage="storm_cove" aria-label="4 荒波の入り江（ステージ3未クリア）" aria-controls="stageConfirm" aria-expanded="false" disabled aria-disabled="true">
-              <span class="stage-circle"><strong class="stage-code">4</strong></span>
+            <button class="stage-choice" id="stageChoiceCove" type="button" data-stage="storm_cove" aria-label="1-4 荒波の入り江（ステージ1-3未クリア）" aria-controls="stageConfirm" aria-expanded="false" disabled aria-disabled="true">
+              <span class="stage-circle"><strong class="stage-code">1-4</strong></span>
               <span class="stage-node-copy" aria-hidden="true">
                 <span class="stage-name">荒波の入り江</span>
                 <em class="stage-meta"></em>
               </span>
             </button>
+            <button class="stage-choice" id="stageChoiceGrassland" type="button" data-stage="grassland_path" aria-label="2-1 草原の入口（ステージ1-4未クリア）" aria-controls="stageConfirm" aria-expanded="false" disabled aria-disabled="true" hidden>
+              <span class="stage-circle"><strong class="stage-code">2-1</strong></span>
+              <span class="stage-node-copy" aria-hidden="true">
+                <span class="stage-name">草原の入口</span>
+                <em class="stage-meta"></em>
+              </span>
+            </button>
+            <button class="stage-choice" id="stageChoiceMeadow" type="button" data-stage="flower_meadow" aria-label="2-2 花咲く草原（ステージ2-1未クリア）" aria-controls="stageConfirm" aria-expanded="false" disabled aria-disabled="true" hidden>
+              <span class="stage-circle"><strong class="stage-code">2-2</strong></span>
+              <span class="stage-node-copy" aria-hidden="true">
+                <span class="stage-name">花咲く草原</span>
+                <em class="stage-meta"></em>
+              </span>
+            </button>
+            <button class="stage-choice" id="stageChoiceSwarm" type="button" data-stage="swarm_meadow" aria-label="2-3 蜂群の草原（ステージ2-2未クリア）" aria-controls="stageConfirm" aria-expanded="false" disabled aria-disabled="true" hidden>
+              <span class="stage-circle"><strong class="stage-code">2-3</strong></span>
+              <span class="stage-node-copy" aria-hidden="true">
+                <span class="stage-name">蜂群の草原</span>
+                <em class="stage-meta"></em>
+              </span>
+            </button>
+            <button class="stage-choice" id="stageChoiceMushroom" type="button" data-stage="mushroom_forest" aria-label="3-1 キノコの森（ステージ2-3未クリア）" aria-controls="stageConfirm" aria-expanded="false" disabled aria-disabled="true" hidden>
+              <span class="stage-circle"><strong class="stage-code">3-1</strong></span>
+              <span class="stage-node-copy" aria-hidden="true">
+                <span class="stage-name">キノコの森</span>
+                <em class="stage-meta"></em>
+              </span>
+            </button>
+            <button class="stage-choice" id="stageChoiceSpore" type="button" data-stage="spore_path" aria-label="3-2 胞子の小道（ステージ3-1未クリア）" aria-controls="stageConfirm" aria-expanded="false" disabled aria-disabled="true" hidden>
+              <span class="stage-circle"><strong class="stage-code">3-2</strong></span>
+              <span class="stage-node-copy" aria-hidden="true">
+                <span class="stage-name">胞子の小道</span>
+                <em class="stage-meta"></em>
+              </span>
+            </button>
+          </div>
+          <div class="stage-region-switch" id="stageRegionSwitch" role="group" aria-label="地図の切り替え">
+            <button type="button" data-region="coast" aria-pressed="true" aria-controls="stageChoices"><span class="region-seal" aria-hidden="true">1</span><span>海辺</span></button>
+            <button type="button" data-region="grassland" aria-pressed="false" aria-controls="stageChoices"><span class="region-seal" aria-hidden="true">2</span><span>草原</span></button>
+            <button type="button" data-region="forest" aria-pressed="false" aria-controls="stageChoices"><span class="region-seal" aria-hidden="true">3</span><span>森</span></button>
           </div>
           <div class="stage-confirm" id="stageConfirm" role="dialog" aria-labelledby="stageConfirmName" aria-describedby="stageConfirmMeta" hidden>
             <div class="stage-confirm-copy">
@@ -135,6 +174,7 @@
         <nav class="home-actions" aria-label="ホーム">
           <button id="homeWeaponsButton" type="button">装備</button>
           <button id="homeStatusButton" type="button">ステータス</button>
+          <button id="soundToggle" type="button" aria-pressed="true">効果音 ON</button>
         </nav>
       </section>
 
@@ -158,8 +198,16 @@
               <input id="weaponGreatsword" type="radio" name="weapon" value="greatsword" aria-labelledby="weaponGreatswordName" disabled>
               <span class="weapon-option-body"><strong id="weaponGreatswordName">大剣</strong></span>
             </label>
+            <label class="weapon-option" id="weaponDualBladesOption" for="weaponDualBlades" hidden>
+              <input id="weaponDualBlades" type="radio" name="weapon" value="dualBlades" aria-labelledby="weaponDualBladesName" disabled>
+              <span class="weapon-option-body"><strong id="weaponDualBladesName">双剣</strong></span>
+            </label>
+            <label class="weapon-option" id="weaponSwordShieldOption" for="weaponSwordShield" hidden>
+              <input id="weaponSwordShield" type="radio" name="weapon" value="swordShield" aria-labelledby="weaponSwordShieldName" disabled>
+              <span class="weapon-option-body"><strong id="weaponSwordShieldName">片手剣</strong></span>
+            </label>
           </div>
-          <button class="equipment-next" id="weaponEquipNext" type="button" hidden disabled>ステージ2へ</button>
+          <button class="equipment-next" id="weaponEquipNext" type="button" hidden disabled>ステージ1-2へ</button>
         </fieldset>
       </section>
 
@@ -226,6 +274,11 @@
         </div>
         <div class="lane" id="lane">
           <div class="player" aria-label="プレイヤー剣士">
+            <div class="weapon-charge" id="weaponCharge" hidden>
+              <div class="weapon-charge-track" id="weaponChargeMeter" role="meter" aria-label="大剣の溜め" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                <i id="weaponChargeFill"></i>
+              </div>
+            </div>
             <div class="character-hp player-hp">
               <span>HP</span>
               <div class="character-hp-track" id="playerHpTrack" role="meter" aria-label="体力" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100">
@@ -246,7 +299,9 @@
               <img class="player-image player-frame player-frame-charge" id="playerFrameCharge" src="src/assets/images/player/greatsword/attack/frame_01.png?v=branch-intro-v1" alt="" aria-hidden="true">
               <img class="player-image player-frame player-frame-windup" id="playerFrameWindup" src="src/assets/images/player/sword/attack/frame_01.png?v=branch-intro-v1" alt="">
               <img class="player-image player-frame player-frame-strike" id="playerFrameStrike" src="src/assets/images/player/sword/attack/frame_02.png?v=branch-intro-v1" alt="">
+              <img class="player-image player-frame player-frame-guard" id="playerFrameGuard" src="src/assets/images/player/sword_shield/guard/frame_01.png" alt="" aria-hidden="true">
             </div>
+            <span class="guard-impact" aria-hidden="true"></span>
           </div>
           <div class="enemy-layer" id="enemyLayer" aria-label="敵"></div>
         </div>
@@ -341,7 +396,7 @@
                   <path d="M48 107H232V119H48Z" fill="url(#chestGold)"/>
                 </g>
                 <path d="M45 137L64 113H216L235 137L221 150H59Z" fill="#39271e" stroke="#61401f" stroke-width="3"/>
-                <g class="treasure-sword" stroke="#536b78" stroke-width="2.5" stroke-linejoin="round">
+                <g class="treasure-sword" id="treasureSingleSword" stroke="#536b78" stroke-width="2.5" stroke-linejoin="round">
                   <path id="treasureBlade" d="M140 10L151 31V110L140 122L129 110V31Z" fill="url(#ironBlade)"/>
                   <path d="M140 30V109" stroke="#f5fcff" stroke-width="2"/>
                   <path d="M108 116Q140 106 172 116L168 125Q140 118 112 125Z" fill="url(#chestGold)" stroke="#896226"/>
@@ -349,6 +404,8 @@
                   <path d="M135 130L145 135M135 139L145 144" stroke="#c49767" stroke-width="2"/>
                   <path d="M133 151H147L150 158L140 165L130 158Z" fill="url(#chestGold)" stroke="#896226"/>
                 </g>
+                <image class="treasure-sword" id="treasureDualBlades" href="src/assets/images/items/weapons/dual_blades.png" x="64" y="0" width="152" height="160" style="display:none"/>
+                <image class="treasure-sword" id="treasureSwordShield" href="src/assets/images/items/weapons/sword_shield.png" x="64" y="0" width="152" height="160" style="display:none"/>
                 <g stroke="#61401f" stroke-width="3" stroke-linejoin="round">
                   <path d="M46 137H234L227 190Q226 198 215 198H65Q54 198 53 190Z" fill="url(#chestWood)"/>
                   <path d="M56 163H225M59 182H222" fill="none" stroke="#885326" stroke-width="2"/>
@@ -373,6 +430,14 @@
         </section>
 
         <section class="control-panel">
+        <div class="skill-panel" id="skillPanel" hidden>
+          <div class="skill-gauge-body">
+            <div class="skill-gauge-heading"><span>スキル</span><strong id="skillGaugeValue">0％</strong></div>
+            <div class="skill-gauge" id="skillGauge" role="progressbar" aria-label="スキルゲージ" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="skillGaugeFill"></i></div>
+          </div>
+          <button id="guardButton" type="button" aria-keyshortcuts="Space" aria-pressed="false" hidden><span id="guardButtonText">ガード</span><kbd>Space</kbd></button>
+          <button id="specialButton" type="button" aria-keyshortcuts="Space" disabled><span id="skillName">強撃</span><kbd id="specialShortcut">Space</kbd></button>
+        </div>
         <div class="story-dialog" id="storyDialog" role="region" aria-label="会話" hidden>
           <img class="prologue-image" id="prologueImage" src="src/assets/images/story/raft_departure.png" alt="" hidden>
           <h2 id="prologueTitle" hidden></h2>
@@ -388,20 +453,14 @@
             <span class="typing-label" id="typingLabel">入力</span>
             <span class="battle-weapon-badge" id="battleWeaponName">鉄の剣</span>
           </div>
-          <div class="weapon-charge" id="weaponCharge" hidden>
-            <div class="weapon-charge-head">
-              <span id="weaponChargeText">ため 0 / 1 ・ ミス 0</span>
-              <strong id="weaponDamagePreview">予想 4ダメージ</strong>
-            </div>
-            <div class="weapon-charge-track" id="weaponChargeMeter" role="meter" aria-label="大剣のため" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0">
-              <i id="weaponChargeFill"></i>
-            </div>
-          </div>
           <div class="typing-status" id="typingStatus" tabindex="-1" data-weapon="sword" aria-live="polite">
             <span class="word-card typing-word-card">
               <span class="word-translation" id="wordTranslation">はじめ</span>
               <span class="word-target"><span id="typedWord"></span><span id="remainingWord">hajime</span></span>
             </span>
+            <div class="attack-cooldown" id="attackCooldown" role="progressbar" aria-label="攻撃後のクールタイム" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" hidden>
+              <i id="attackCooldownFill"></i>
+            </div>
           </div>
           <div class="game-flick-entry" id="gameFlickEntry">
             <output id="gameFlickText" aria-label="入力した文字"></output>
@@ -422,7 +481,6 @@
             </div>
           </div>
           <div class="actions">
-            <button id="specialButton" type="button" disabled>必殺技</button>
             <button id="startButton" type="button">スタート</button>
           </div>
         </div>
@@ -433,19 +491,24 @@
       <p class="save-error" id="progressSaveStatus" role="alert" hidden></p>
     </main>
 
-    <script src="src/data/words.js?v=kana-readings-v2"></script>
-    <script src="src/data/labels.js?v=folder-layout-v2"></script>
-    <script src="src/config/weapons.js?v=greatsword-poses-v4"></script>
-    <script src="src/config/stages.js?v=stage-two-name-v1"></script>
-    <script src="src/config/enemyAnimations.js?v=crab-king-v1"></script>
-    <script src="src/config/playerProgression.js?v=player-progression-v1"></script>
-    <script src="src/config/saveSlots.js?v=player-saves-v1"></script>
-    <script src="src/ui/saveMenu.js?v=greatsword-reward-v1"></script>
-    <script src="src/input/japanese.js?v=miss-feedback-v1"></script>
-    <script src="src/ui/battleLayout.js?v=crab-king-v1"></script>
-    <script src="src/input/mobile.js?v=miss-feedback-v1"></script>
-    <script src="src/input/flickKeyboard.js?v=flick-direction-v1"></script>
-    <script src="src/app/loading.js?v=treasure-reward-v1"></script>
-    <script src="src/app/game.js?v=illustrated-prologue-v1"></script>
+    <script src="src/data/words.js?v=20261021-forest-guard-v1"></script>
+    <script src="src/data/labels.js?v=20261021-forest-guard-v1"></script>
+    <script src="src/config/weapons.js?v=20261021-forest-guard-v1"></script>
+    <script src="src/config/stages.js?v=20261021-forest-guard-v1"></script>
+    <script src="src/config/skills.js?v=20261021-forest-guard-v1"></script>
+    <script src="src/config/enemyAnimations.js?v=20261021-forest-guard-v1"></script>
+    <script src="src/config/playerProgression.js?v=20261021-forest-guard-v1"></script>
+    <script src="src/config/saveSlots.js?v=20261021-forest-guard-v1"></script>
+    <script src="src/ui/saveMenu.js?v=20261021-forest-guard-v1"></script>
+    <script src="src/input/japanese.js?v=20261021-forest-guard-v1"></script>
+    <script src="src/ui/battleLayout.js?v=20261021-forest-guard-v1"></script>
+    <script src="src/input/mobile.js?v=20261021-forest-guard-v1"></script>
+    <script src="src/input/flickKeyboard.js?v=20261021-forest-guard-v1"></script>
+    <script src="src/app/loading.js?v=20261021-forest-guard-v1"></script>
+    <script src="src/app/sound.js?v=20261021-forest-guard-v1"></script>
+    <script src="src/app/skills.js?v=20261021-forest-guard-v1"></script>
+    <script src="src/app/enemyCharge.js?v=20261021-forest-guard-v1"></script>
+    <script src="src/app/guard.js?v=20261021-forest-guard-v1"></script>
+    <script src="src/app/game.js?v=20261021-forest-guard-v1"></script>
   </body>
 </html>

@@ -22,6 +22,9 @@ function collectGameImageSources() {
     if (src && !/^(data|blob):/.test(src)) sources.add(new URL(src, base).href);
   };
   Object.values(playerWeaponAssets).forEach(weapon => Object.values(weapon).flat().forEach(src => add(src)));
+  Object.values(weaponDefinitions).forEach(weapon => add(weapon.itemImage));
+  Object.values(stageDefinitions).filter(stage => stage.enabled).forEach(stage => add(stage.background));
+  Object.values(stageMapRegions).forEach(region => add(region.image));
   const types = new Set(Object.values(stageDefinitions).filter(stage => stage.enabled)
     .flatMap(stage => stage.waves.flatMap(getWaveEnemyTypes)));
   types.forEach(type => Object.values(enemyAnimations.enemies[type]).flat().forEach(src => add(src)));

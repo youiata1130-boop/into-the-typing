@@ -183,6 +183,8 @@ function endGameFlickGesture(event) {
 // Pointer prevention alone does not cancel Safari's native touch/gesture defaults.
 // Keep the whole panel, including gaps and disabled keys, inside the input surface.
 function isGameFlickSurface(target) {
+  // A regular button needs its native touch click to activate the skill.
+  if (target?.closest?.("#specialButton")) return false;
   return target === gameFlickUi.surface || target === gameFlickUi.keyboard
     || target === gameFlickUi.entry || Boolean(target?.closest?.(".control-panel"));
 }

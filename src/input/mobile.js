@@ -156,13 +156,20 @@ function renderFlickPrompt(enemy) {
   els.typedWord.textContent = parsed.reading.slice(0, confirmed);
   els.remainingWord.textContent = parsed.reading.slice(confirmed);
   refreshGameFlickText();
-  scheduleBattleLayout();
+  // Arena/charge size changes are observed by battleLayout; letters alone
+  // must not schedule another full character-layout measurement.
 }
 
 function getFlickRoman(value, enemy, parsed = getFlickReading(enemy)) {
   const normalized = window.JAPANESE_INPUT.normalize(value);
   return /^[a-z-]*$/.test(normalized) ? normalized
     : window.JAPANESE_INPUT.match(value, enemy.word, enemy.translation, parsed);
+}
+
+function getFlickChargeProgress(value, parsed) {
+  const reading = window.JAPANESE_INPUT.normalize(value);
+  return parsed?.reading && parsed.reading.startsWith(reading)
+    ? reading.length / parsed.reading.length : undefined;
 }
 
 function rejectFlickValue(value, enemy, key, inputType) {
@@ -194,7 +201,7 @@ function rejectFlickValue(value, enemy, key, inputType) {
   // Late events stay attached to the retired editor and cannot restore the typo.
   renewFlickEditor(accepted);
   if (complete && miss) recordTypingMiss(enemy);
-  applyTypedValue(enemy, roman);
+  applyTypedValue(enemy, roman, { readingProgress: getFlickChargeProgress(accepted, parsed) });
   if (!complete && miss) recordTypingMiss(enemy);
   els.flickInput.setAttribute("aria-invalid", "true");
   if (enemy.resolving) finishFlickInput(accepted, key);
@@ -226,7 +233,7 @@ function applyFlickValue(value, key = flickPromptKey(), { composing = false, inp
   flickState.acceptedValue = pendingPrefix ?? window.JAPANESE_INPUT.normalize(value);
   // Keep valid partial kana in the same editor; a full answer ends its session.
   if (flickState.composing && enemy.inputs.includes(roman)) flickState.compositionConsumed = true;
-  applyTypedValue(enemy, roman);
+  applyTypedValue(enemy, roman, { readingProgress: getFlickChargeProgress(flickState.acceptedValue, parsed) });
   if (enemy.resolving) finishFlickInput(value, key);
 }
 

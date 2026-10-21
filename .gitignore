@@ -2,6 +2,9 @@
 node_modules/
 npm-debug.log*
 
+# Local verification logs, scripts, and previews
+/tmp/
+
 # Operating-system metadata
 .DS_Store
 Thumbs.db

@@ -13,6 +13,36 @@ window.ENEMY_ANIMATIONS = {
     medaka_boss: { frameMs: 70, idleWhileStopped: true },
   },
   enemies: {
+    mushroom_level_1: {
+      idle: [enemyFrame("mushroom", "level_1", "idle", 1)],
+      attack: [enemyFrame("mushroom", "level_1", "idle", 1)],
+      damage: [enemyFrame("mushroom", "level_1", "idle", 1)],
+      defeat: [enemyFrame("mushroom", "level_1", "idle", 1)],
+    },
+    bee_boss: {
+      idle: [enemyFrame("bee", "boss", "idle", 1)],
+      attack: [enemyFrame("bee", "boss", "idle", 1)],
+      damage: [enemyFrame("bee", "boss", "idle", 1)],
+      defeat: [enemyFrame("bee", "boss", "idle", 1)],
+    },
+    bee_level_1: {
+      idle: [enemyFrame("bee", "level_1", "idle", 1)],
+      attack: [enemyFrame("bee", "level_1", "idle", 1)],
+      damage: [enemyFrame("bee", "level_1", "idle", 1)],
+      defeat: [enemyFrame("bee", "level_1", "idle", 1)],
+    },
+    snake_level_1: {
+      idle: [enemyFrame("snake", "level_1", "idle", 1)],
+      attack: [enemyFrame("snake", "level_1", "idle", 1)],
+      damage: [enemyFrame("snake", "level_1", "idle", 1)],
+      defeat: [enemyFrame("snake", "level_1", "idle", 1)],
+    },
+    snake_boss: {
+      idle: [enemyFrame("snake", "boss", "idle", 1)],
+      attack: [enemyFrame("snake", "boss", "idle", 1)],
+      damage: [enemyFrame("snake", "boss", "idle", 1)],
+      defeat: [enemyFrame("snake", "boss", "idle", 1)],
+    },
     // Swimming frames preserve the approved face; combat reactions use the original art.
     medaka_level_1: {
       idle: Array.from({ length: 16 }, (_, index) => enemyFrame("medaka", "level_1", "swim", index + 1)),

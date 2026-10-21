@@ -44,7 +44,7 @@ test("viewport open, offset, rotation and close events update layout without foc
   assert.equal(game.run("document.activeElement === document.body"), true);
 });
 
-test("the larger fish and crab bosses and their HP fit the arena at both ends of travel", () => {
+test("the larger bosses and their HP fit the arena at both ends of travel", () => {
   const game = createGame();
   for (const width of [278, 318, 358, 388, 810]) {
     for (const height of [150, 190, 240, 400]) {
@@ -59,4 +59,62 @@ test("the larger fish and crab bosses and their HP fit the arena at both ends of
   const roomy = game.snapshot("calculateBattleLayout(388, 400, 54, 1, 1.3)");
   assert.equal(roomy.enemyWidth, 156);
   assert.ok(roomy.enemyHeight > 106);
+});
+
+test("the Snake King uses the larger mobile layout", () => {
+  const game = createGame({}, { touch: true });
+  game.run(`
+    const fittedStyles = {};
+    els.arena.style.setProperty = (name, value) => { fittedStyles[name] = value; };
+    els.arena.clientWidth = 388; els.arena.clientHeight = 400;
+    els.battleScreen.hidden = false; els.weaponCharge.hidden = true;
+    els.resetButton.getBoundingClientRect = () => ({ bottom: 54 });
+    state.activeEnemies = [{ type: "snake_boss", slot: 0 }];
+    fitBattleCharacters();
+  `);
+  assert.equal(game.run('fittedStyles["--fit-enemy-width"]'), "156.00px");
+});
+
+test("the overhead greatsword gauge reserves player space without shrinking enemies", () => {
+  const game = createGame();
+  for (const width of [278, 318, 358]) {
+    for (const height of [150, 190, 240, 400]) {
+      const l = game.snapshot("calculateBattleLayout(" + width + ", " + height + ", 54, 1, 1.3, 46)");
+      const withoutGauge = game.snapshot("calculateBattleLayout(" + width + ", " + height + ", 54, 1, 1.3)");
+      assert.ok(height - l.playerBottom - l.playerHeight - 24 - 46 >= 60 - 0.01);
+      assert.ok(height - l.enemyBottom - l.enemyHeight - 18 >= 8 - 0.01);
+      assert.equal(l.enemyHeight, withoutGauge.enemyHeight);
+      assert.ok(l.playerHeight > 0 && l.enemyHeight > 0);
+      assert.ok(l.enemyTravel >= 0);
+    }
+  }
+});
+
+test("all bee lanes arrive beside the player and fit without overlapping", () => {
+  const game = createGame();
+  for (const slots of [2, 4]) {
+    for (const [width, height, right, top] of [[278, 150, 61, 60], [358, 400, 137, 191], [810, 190, 92, 60], [960, 360, 223, 75]]) {
+      const layout = game.snapshot(`calculateSwarmLayout(${width}, ${height}, { right: ${right}, top: ${top} }, 96, ${slots})`);
+      const near = Math.max(right + 20, 104);
+      assert.ok(Math.abs(layout.far - layout.travel - near) < .001);
+      assert.ok(layout.travel > 0);
+      assert.ok(layout.far + layout.width <= width - 8 + .001);
+      const blockHeight = layout.height + layout["hp-height"] + layout.gap;
+      assert.ok(layout["row-step"] > blockHeight);
+      assert.ok(8 + (slots - 1) * layout["row-step"] + blockHeight <= height - 8 + .001);
+      if (height < 220) assert.ok(layout.height >= 19);
+    }
+  }
+});
+
+test("the Queen uses a larger single lane and still arrives beside the player on small screens", () => {
+  const game = createGame();
+  for (const [width, height, right, top] of [[278,150,61,60], [390,450,137,241], [810,190,92,60], [1100,670,223,385]]) {
+    const queen = game.snapshot(`calculateSwarmLayout(${width}, ${height}, { right: ${right}, top: ${top} }, 96, 1, 2)`);
+    const bee = game.snapshot(`calculateSwarmLayout(${width}, ${height}, { right: ${right}, top: ${top} }, 96, 4)`);
+    assert.ok(queen.width > bee.width);
+    assert.ok(queen.far + queen.width <= width - 8 + .01);
+    assert.ok(Math.abs(queen.far - queen.travel - Math.max(right + 20,104)) < .01);
+    assert.ok(8 + queen.height + queen["hp-height"] + queen.gap <= height - 8);
+  }
 });

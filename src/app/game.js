@@ -13,8 +13,7 @@ const inputBufferMax = 32;
 const playerAttackMs = 480;
 const greatswordImpactDelayMs = 180;
 const greatswordImpactMs = 820;
-const specialGaugeMax = 100;
-const specialDamage = 3;
+const specialGaugeMax = skillGaugeSettings.max;
 const prologueScenes = [
   {
     title: "海への出発",
@@ -148,6 +147,8 @@ function isWeaponAvailable(weaponId) {
   if (!Object.hasOwn(weaponDefinitions, weaponId)) return false;
   if (weaponId === "sword") return state.introCompleted && state.ironSwordObtained;
   if (weaponId === "greatsword") return state.introCompleted && state.greatswordObtained;
+  if (weaponId === "dualBlades") return state.introCompleted && state.dualBladesObtained;
+  if (weaponId === "swordShield") return state.introCompleted && state.swordShieldObtained;
   return weaponId === defaultWeaponId;
 }
 
@@ -207,16 +208,32 @@ function loadPlayerProgress(saved = null) {
     const missingGreatswordReward = saved.introCompleted === true
       && clearedStages.includes("sky_castle") && !previouslyOwnedGreatsword;
     const greatswordObtained = previouslyOwnedGreatsword || missingGreatswordReward;
+    const missingDualBladesReward = saved.introCompleted === true
+      && clearedStages.includes("flower_meadow") && saved.dualBladesObtained !== true;
+    const dualBladesObtained = saved.introCompleted === true && (saved.dualBladesObtained === true || missingDualBladesReward);
+    const missingSwordShieldReward = saved.introCompleted === true
+      && clearedStages.includes("mushroom_forest") && saved.swordShieldObtained !== true;
+    const swordShieldObtained = saved.introCompleted === true && (saved.swordShieldObtained === true || missingSwordShieldReward);
+    // The mistakenly introduced dagger is retired; keep the player's iron sword.
+    const restoredWeaponId = saved.weaponId === "dagger" && ironSwordObtained ? "sword" : saved.weaponId;
     return {
       ...restored,
       clearedStages,
       skillTutorialCompleted,
       skillTutorialPending: !skillTutorialCompleted && saved.skillTutorialPending === true && restored.skillPoints > 0,
-      weaponId: saved.introCompleted === true && Object.hasOwn(weaponDefinitions, saved.weaponId)
-        && (saved.weaponId !== "sword" || ironSwordObtained)
-        && (saved.weaponId !== "greatsword" || greatswordObtained) ? saved.weaponId : defaultWeaponId,
+      weaponId: saved.introCompleted === true && Object.hasOwn(weaponDefinitions, restoredWeaponId)
+        && (restoredWeaponId !== "sword" || ironSwordObtained)
+        && (restoredWeaponId !== "greatsword" || greatswordObtained)
+        && (restoredWeaponId !== "dualBlades" || dualBladesObtained)
+        && (restoredWeaponId !== "swordShield" || swordShieldObtained) ? restoredWeaponId : defaultWeaponId,
       ironSwordObtained,
       greatswordObtained,
+      dualBladesObtained,
+      swordShieldObtained,
+      swordShieldEquipPending: swordShieldObtained && saved.weaponId !== "swordShield"
+        && (saved.swordShieldEquipPending === true || missingSwordShieldReward),
+      dualBladesEquipPending: dualBladesObtained && saved.weaponId !== "dualBlades"
+        && (saved.dualBladesEquipPending === true || missingDualBladesReward),
       greatswordEquipPending: greatswordObtained && saved.weaponId !== "greatsword"
         && (saved.greatswordEquipPending === true || missingGreatswordReward),
       swordEquipPending: ironSwordObtained && saved.swordEquipPending === true && saved.weaponId !== "sword",
@@ -225,7 +242,7 @@ function loadPlayerProgress(saved = null) {
       equipmentTutorialCompleted,
     };
   }
-  return { ...progression.restore(), clearedStages: [], weaponId: defaultWeaponId, prologueCompleted: false, introCompleted: false, equipmentTutorialCompleted: false, ironSwordObtained: false, greatswordObtained: false, greatswordEquipPending: false, swordEquipPending: false, skillTutorialPending: false, skillTutorialCompleted: false };
+  return { ...progression.restore(), clearedStages: [], weaponId: defaultWeaponId, prologueCompleted: false, introCompleted: false, equipmentTutorialCompleted: false, ironSwordObtained: false, greatswordObtained: false, greatswordEquipPending: false, dualBladesObtained: false, dualBladesEquipPending: false, swordShieldObtained: false, swordShieldEquipPending: false, swordEquipPending: false, skillTutorialPending: false, skillTutorialCompleted: false };
 }
 
 function playerProgressSnapshot(player = state) {
@@ -236,6 +253,8 @@ function playerProgressSnapshot(player = state) {
     equipmentTutorialCompleted: player.equipmentTutorialCompleted, ironSwordObtained: player.ironSwordObtained,
     swordEquipPending: player.swordEquipPending, greatswordObtained: player.greatswordObtained,
     greatswordEquipPending: player.greatswordEquipPending,
+    dualBladesObtained: player.dualBladesObtained, dualBladesEquipPending: player.dualBladesEquipPending,
+    swordShieldObtained: player.swordShieldObtained, swordShieldEquipPending: player.swordShieldEquipPending,
     skillTutorialPending: player.skillTutorialPending, skillTutorialCompleted: player.skillTutorialCompleted,
   };
 }
@@ -258,6 +277,7 @@ function getMaxHp() {
 const state = {
   language: "ja",
   stageId: defaultStageId,
+  stageMapRegionId: "coast",
   pendingStageId: "",
   playerName: "",
   weaponEquipGuideId: "",
@@ -275,7 +295,9 @@ const state = {
   combo: 0,
   successStreak: 0,
   specialGauge: 0,
+  skillId: defaultSkillId,
   specialInProgress: false,
+  guarding: false,
   cleared: 0,
   currentWaveIndex: 0,
   currentWaveSpawned: 0,
@@ -300,8 +322,14 @@ const state = {
   typingMissTimerId: 0,
   typingMissShakeTimerId: 0,
   startDelayTimerId: 0,
+  battleStartsAt: 0,
   inputBufferTimerId: 0,
   playerAttackTimerId: 0,
+  playerAttackReadyAt: 0,
+  playerAttackCooldownMs: 0,
+  stageAttackCooldowns: {},
+  playerAttackCooldownTimerId: 0,
+  enemySpawnTimerId: 0,
   greatswordImpactDelayTimerId: 0,
   greatswordImpactTimerId: 0,
   inputBuffer: [],
@@ -309,6 +337,10 @@ const state = {
 };
 
 function invalidateBattleGeneration() {
+  clearPlayerGuard();
+  window.clearTimeout(state.enemySpawnTimerId);
+  state.enemySpawnTimerId = 0;
+  clearPlayerAttackCooldown();
   clearTypingMissEffect();
   state.battleGeneration += 1;
 }
@@ -335,9 +367,18 @@ const els = {
   playerFrameCharge: document.querySelector("#playerFrameCharge"),
   playerFrameWindup: document.querySelector("#playerFrameWindup"),
   playerFrameStrike: document.querySelector("#playerFrameStrike"),
+  playerFrameGuard: document.querySelector("#playerFrameGuard"),
   playerHpTrack: document.querySelector("#playerHpTrack"),
   playerHpFill: document.querySelector("#playerHpFill"),
   specialButton: document.querySelector("#specialButton"),
+  specialShortcut: document.querySelector("#specialShortcut"),
+  guardButton: document.querySelector("#guardButton"),
+  guardButtonText: document.querySelector("#guardButtonText"),
+  skillPanel: document.querySelector("#skillPanel"),
+  skillName: document.querySelector("#skillName"),
+  skillGauge: document.querySelector("#skillGauge"),
+  skillGaugeFill: document.querySelector("#skillGaugeFill"),
+  skillGaugeValue: document.querySelector("#skillGaugeValue"),
   specialEffect: document.querySelector("#specialEffect"),
   arena: document.querySelector(".arena"),
   typingMissEffect: document.querySelector("#typingMissEffect"),
@@ -351,6 +392,8 @@ const els = {
   remainingWord: document.querySelector("#remainingWord"),
   typingLabel: document.querySelector("#typingLabel"),
   typingStatus: document.querySelector("#typingStatus"),
+  attackCooldown: document.querySelector("#attackCooldown"),
+  attackCooldownFill: document.querySelector("#attackCooldownFill"),
   flickInput: document.querySelector("#flickInput"),
   typingBox: document.querySelector(".typing-box"),
   storyDialog: document.querySelector("#storyDialog"),
@@ -361,12 +404,13 @@ const els = {
   storyNextButton: document.querySelector("#storyNextButton"),
   battleWeaponName: document.querySelector("#battleWeaponName"),
   weaponCharge: document.querySelector("#weaponCharge"),
-  weaponChargeText: document.querySelector("#weaponChargeText"),
-  weaponDamagePreview: document.querySelector("#weaponDamagePreview"),
   weaponChargeMeter: document.querySelector("#weaponChargeMeter"),
   weaponChargeFill: document.querySelector("#weaponChargeFill"),
   startScreen: document.querySelector("#startScreen"),
   stageScreen: document.querySelector("#stageScreen"),
+  stageMapPanel: document.querySelector("#stageMapPanel"),
+  stageMapImage: document.querySelector("#stageMapImage"),
+  stageRegionSwitch: document.querySelector("#stageRegionSwitch"),
   homeScreen: document.querySelector("#homeScreen"),
   weaponScreen: document.querySelector("#weaponScreen"),
   statusScreen: document.querySelector("#statusScreen"),
@@ -379,6 +423,10 @@ const els = {
   weaponSwordOption: document.querySelector("#weaponSwordOption"),
   weaponGreatsword: document.querySelector("#weaponGreatsword"),
   weaponGreatswordOption: document.querySelector("#weaponGreatswordOption"),
+  weaponDualBlades: document.querySelector("#weaponDualBlades"),
+  weaponDualBladesOption: document.querySelector("#weaponDualBladesOption"),
+  weaponSwordShield: document.querySelector("#weaponSwordShield"),
+  weaponSwordShieldOption: document.querySelector("#weaponSwordShieldOption"),
   weaponEquipGuide: document.querySelector("#weaponEquipGuide"),
   weaponEquipNext: document.querySelector("#weaponEquipNext"),
   battleScreen: document.querySelector("#battleScreen"),
@@ -422,6 +470,9 @@ const els = {
   treasureText: document.querySelector("#treasureText"),
   treasureArt: document.querySelector("#treasureArt"),
   treasureBlade: document.querySelector("#treasureBlade"),
+  treasureSingleSword: document.querySelector("#treasureSingleSword"),
+  treasureDualBlades: document.querySelector("#treasureDualBlades"),
+  treasureSwordShield: document.querySelector("#treasureSwordShield"),
   stageChoices: document.querySelector("#stageChoices"),
   stageConfirm: document.querySelector("#stageConfirm"),
   stageConfirmName: document.querySelector("#stageConfirmName"),
@@ -448,19 +499,11 @@ function updateLanguageText() {
   els.typingLabel.textContent = t.input;
   els.introStartButton.textContent = "初めから";
   els.startButton.textContent = state.running ? t.restart : t.start;
-  els.specialButton.textContent = t.special;
   els.noticeButton.textContent = t.stageSelect;
   els.stageSelectButton.textContent = t.stageSelect;
   els.stageConfirmStart.textContent = t.confirmStart;
   els.stageConfirmCancel.textContent = t.confirmCancel;
   els.keyHint.textContent = t.specialKeyHint;
-}
-
-function getSpecialGaugeSettings() {
-  return {
-    ...defaultSpecialGaugeSettings,
-    ...(getStageDefinition(state.stageId).specialGauge || {}),
-  };
 }
 
 function getWordLengthSettings() {
@@ -474,9 +517,9 @@ function getStatValue(stat) {
   return state.stats?.[stat] ?? defaultPlayerStats[stat] ?? 1;
 }
 
-function getAdjustedWordLengthSettings(weaponId = state.weaponId) {
+function getAdjustedWordLengthSettings(weaponId = state.weaponId, agility = getStatValue("agility")) {
   const base = getWordLengthSettings();
-  const reduction = getStatValue("agility") - defaultPlayerStats.agility;
+  const reduction = agility - defaultPlayerStats.agility;
   const normalBaseMax = base.normalMax ?? Math.max(base.normalMin + 8, 8);
   let normalMin = base.normalMin;
   let normalMax = normalBaseMax;
@@ -500,6 +543,14 @@ function getAdjustedWordLengthSettings(weaponId = state.weaponId) {
   };
 }
 
+function getGreatswordCharge(enemy) {
+  const weapon = getWeaponDefinition("greatsword");
+  const progress = Math.max(0, Math.min(1, enemy?.chargeInputProgress || 0));
+  const misses = Math.max(0, enemy?.typingMisses || 0);
+  // Every miss reduces both the current charge and this word's attainable charge.
+  return progress * Math.pow(1 - weapon.chargeMissPenalty, misses);
+}
+
 function getWeaponDamageMultiplier(enemy = null) {
   const weapon = getWeaponDefinition(enemy?.weaponId || getBattleWeaponId());
 
@@ -507,32 +558,19 @@ function getWeaponDamageMultiplier(enemy = null) {
     return weapon.damageMultiplier || 1;
   }
 
-  const misses = Math.max(0, Math.round(enemy?.typingMisses || 0));
-  return Math.max(
-    weapon.minDamageMultiplier,
-    weapon.maxDamageMultiplier - misses * weapon.missPenalty,
-  );
+  return Math.max(weapon.minDamageMultiplier, weapon.maxDamageMultiplier * getGreatswordCharge(enemy));
 }
 
 function getPlayerAttackDamage(enemy = null) {
   const weaponId = enemy?.weaponId || getBattleWeaponId();
   if (weaponId === unarmedWeapon.id) return unarmedWeapon.damage;
   const damage = getStatValue("attack") * getWeaponDamageMultiplier(enemy);
-  return weaponId === "branch" ? Math.round(damage * 10) / 10 : Math.max(1, Math.round(damage));
+  return weaponId === "branch" || weaponId === "greatsword"
+    ? Math.round(damage * 10) / 10 : Math.max(1, Math.round(damage));
 }
 
 function getSpecialGain() {
-  if (isUnarmedStory()) return 0;
-  const settings = getSpecialGaugeSettings();
-
-  if (state.successStreak < settings.chargeStartStreak) {
-    return 0;
-  }
-
-  const chargedStreak = Math.min(state.successStreak, settings.streakCap) - settings.chargeStartStreak + 1;
-  const streakBonus = chargedStreak * settings.gainPerStreak;
-
-  return settings.baseGain + streakBonus;
+  return canChargeSkill() ? skillGaugeSettings.gainPerCharacter : 0;
 }
 
 function chargeSpecialGauge() {
@@ -551,7 +589,7 @@ function resetSuccessStreak() {
 }
 
 function isSpecialReady() {
-  return !isUnarmedStory() && !isStoryDialogueOpen()
+  return canChargeSkill() && !isUnarmedStory()
     && !state.activeEnemies.some(enemy => enemy.tutorial && isEnemyAlive(enemy))
     && state.specialGauge >= specialGaugeMax;
 }
@@ -610,7 +648,8 @@ function syncPlayerWeaponArt(weapon, chargePose = 0) {
   const assets = getPlayerWeaponAssets(weapon.id);
   const frames = [
     [els.playerFrameIdle, assets.idle],
-    [els.playerFrameWindup, assets.windup],
+    [els.playerFrameGuard, assets.guard || assets.idle],
+    [els.playerFrameWindup, assets.charge?.[chargePose] || assets.windup],
     [els.playerFrameStrike, assets.strike],
   ];
 
@@ -624,35 +663,30 @@ function syncPlayerWeaponArt(weapon, chargePose = 0) {
     }
   });
 
-  const playerLabel = weapon.id === "unarmed" ? "素手で構える主人公" : `${weapon.name}を装備した主人公`;
+  const playerLabel = state.guarding ? "盾でガードする主人公"
+    : weapon.id === "unarmed" ? "素手で構える主人公" : `${weapon.name}を装備した主人公`;
   els.playerFrameIdle.alt = playerLabel;
   els.player.setAttribute("aria-label", playerLabel);
 }
 
 function updateWeaponCharge() {
-  const t = labels();
   const selectedEnemy = getCurrentEnemy();
   const weapon = getWeaponDefinition(selectedEnemy?.weaponId || getBattleWeaponId());
   const isGreatsword = weapon.id === "greatsword";
-  const typedLength = selectedEnemy?.typed.length || 0;
-  const totalLength = selectedEnemy?.matchedWord.length || 0;
-  const misses = selectedEnemy?.typingMisses || 0;
-  // Only characters entered since the last miss contribute to the current wind-up.
-  const chargeStartLength = Math.min(typedLength, selectedEnemy?.chargeStartLength || 0);
-  const chargedLength = Math.max(0, typedLength - chargeStartLength);
-  const meterMaximum = Math.max(1, totalLength - chargeStartLength);
-  const chargeProgress = Math.min(1, chargedLength / meterMaximum);
-  const chargePercent = chargeProgress * 100;
-  const chargeLevel = chargedLength > 0 ? Math.min(4, Math.ceil(chargeProgress * 4)) : 0;
-  const poseCount = getPlayerWeaponAssets(weapon.id).charge?.length || 1;
-  const chargePose = Math.min(poseCount - 1, Math.floor(chargeProgress * poseCount));
-  const damage = getPlayerAttackDamage(
-    selectedEnemy || { weaponId: weapon.id, typingMisses: 0 },
-  );
+  const chargeProgress = isGreatsword ? getGreatswordCharge(selectedEnemy) : 0;
+  const chargePercent = Math.round(chargeProgress * 1000) / 10;
+  const chargeLevel = chargeProgress > 0 ? Math.min(4, Math.ceil(chargeProgress * 4)) : 0;
+  const chargePose = isGreatsword
+    ? weapon.chargePoseThresholds.filter(threshold => chargeProgress >= threshold).length : 0;
+  const damage = getPlayerAttackDamage(selectedEnemy || { weaponId: weapon.id });
 
   syncPlayerWeaponArt(weapon, chargePose);
   els.battleWeaponName.textContent = weapon.name;
-  els.weaponCharge.hidden = !isGreatsword;
+  const chargeHidden = !isGreatsword || !state.running || isStoryDialogueOpen();
+  if (els.weaponCharge.hidden !== chargeHidden) {
+    els.weaponCharge.hidden = chargeHidden;
+    scheduleBattleLayout();
+  }
   els.typingStatus.dataset.weapon = weapon.id;
   els.player.dataset.weapon = weapon.id;
   els.player.dataset.chargeLevel = String(isGreatsword ? chargeLevel : 0);
@@ -670,8 +704,7 @@ function updateWeaponCharge() {
       && selectedEnemy
       && !selectedEnemy.resolving
       && !state.specialInProgress
-      && chargedLength > 0
-      && typedLength < totalLength
+      && chargeProgress > 0
     ),
   );
 
@@ -679,38 +712,78 @@ function updateWeaponCharge() {
     return;
   }
 
-  els.weaponChargeText.textContent = totalLength
-    ? t.weaponChargeText(chargedLength, meterMaximum, misses)
-    : t.weaponChargeReady;
-  els.weaponDamagePreview.textContent = t.weaponDamagePreview(damage);
   els.weaponChargeFill.style.width = `${chargePercent}%`;
-  els.weaponCharge.dataset.penalized = String(misses > 0);
-  els.weaponChargeMeter.setAttribute("aria-valuemax", String(meterMaximum));
-  els.weaponChargeMeter.setAttribute("aria-valuenow", String(chargedLength));
-  els.weaponChargeMeter.setAttribute(
-    "aria-valuetext",
-    totalLength
-      ? `ため${meterMaximum}文字中${chargedLength}文字、ミス${misses}回、予想${damage}ダメージ`
-      : `入力待ち、予想${damage}ダメージ`,
+  els.weaponCharge.dataset.penalized = String((selectedEnemy?.typingMisses || 0) > 0);
+  els.weaponCharge.dataset.full = String(chargeProgress === 1);
+  els.weaponChargeMeter.setAttribute("aria-valuemax", "100");
+  els.weaponChargeMeter.setAttribute("aria-valuenow", String(chargePercent));
+  els.weaponChargeMeter.setAttribute("aria-valuetext", `溜め${chargePercent}％、攻撃力${damage}`);
+}
+
+function clearPlayerAttackCooldown() {
+  window.clearTimeout(state.playerAttackCooldownTimerId);
+  state.playerAttackCooldownTimerId = 0;
+  state.playerAttackReadyAt = 0;
+  state.playerAttackCooldownMs = 0;
+  updateAttackCooldown();
+}
+
+function updateAttackCooldown() {
+  const remaining = Math.max(0, state.playerAttackReadyAt - performance.now());
+  els.attackCooldown.hidden = !state.running || state.hp <= 0 || remaining === 0;
+  const percent = state.playerAttackCooldownMs > 0
+    ? Math.ceil(remaining / state.playerAttackCooldownMs * 100) : 0;
+  els.attackCooldown.setAttribute("aria-valuenow", String(percent));
+}
+
+function snapshotAttackCooldowns() {
+  // Use configured word lengths, never the randomly selected word's length.
+  state.stageAttackCooldowns = Object.fromEntries(
+    [...Object.values(weaponDefinitions), unarmedWeapon].map(weapon => {
+      const base = getAdjustedWordLengthSettings(weapon.id, defaultPlayerStats.agility);
+      const adjusted = getAdjustedWordLengthSettings(weapon.id);
+      const unarmedLength = wordSets.unarmed.reduce((sum, word) => sum + word.text.length, 0)
+        / wordSets.unarmed.length;
+      const ratio = weapon.id === "unarmed"
+        ? Math.max(1, unarmedLength - (getStatValue("agility") - defaultPlayerStats.agility)) / unarmedLength
+        : (adjusted.normalMin + adjusted.normalMax) / (base.normalMin + base.normalMax);
+      return [weapon.id, Math.max(1, Math.round((weapon.attackCooldownMs ?? 220) * ratio))];
+    }),
   );
 }
 
+function startPlayerAttackCooldown(weaponId) {
+  clearPlayerAttackCooldown();
+  const duration = state.stageAttackCooldowns[weaponId];
+  state.playerAttackCooldownMs = duration;
+  state.playerAttackReadyAt = performance.now() + duration;
+  els.attackCooldown.style.setProperty("--attack-cooldown-duration", `${duration}ms`);
+  els.attackCooldownFill.style.animation = "none";
+  void els.attackCooldownFill.offsetWidth;
+  els.attackCooldownFill.style.animation = "";
+  updateAttackCooldown();
+  renderWord();
+  state.playerAttackCooldownTimerId = scheduleBattleTimeout(() => {
+    state.playerAttackCooldownTimerId = 0;
+    state.playerAttackReadyAt = 0;
+    // Retain early queued keystrokes until this cooldown's buffer is consumed.
+    renderWord();
+    updateHud();
+    flushBufferedInput();
+  }, duration);
+}
+
 function updateHud() {
+  updateGuardHud();
   syncGameFlickKeyboard();
+  updateAttackCooldown();
   const playerHp = Math.max(0, Math.min(state.hp, getMaxHp()));
   els.scoreText.textContent = state.score;
   els.comboText.textContent = state.combo;
   els.playerHpFill.style.width = `${(playerHp / getMaxHp()) * 100}%`;
   els.playerHpTrack.setAttribute("aria-valuemax", String(getMaxHp()));
   els.playerHpTrack.setAttribute("aria-valuenow", String(playerHp));
-  const hasResolvingEnemy = state.activeEnemies.some((enemy) => isEnemyAlive(enemy) && enemy.resolving);
-  els.specialButton.disabled = (
-    !state.running
-    || state.specialInProgress
-    || hasResolvingEnemy
-    || !isSpecialReady()
-    || !state.activeEnemies.some((enemy) => isEnemyAlive(enemy))
-  );
+  updateSkillHud();
   updateWeaponCharge();
   updateStatusPanel();
 }
@@ -748,8 +821,8 @@ function focusGameSurface({ userGesture = false } = {}) {
 }
 
 function focusStageSurface() {
-  const focusedStage = els.stageChoices.querySelector(".stage-choice.is-selected:not(:disabled)");
-  const firstStage = els.stageChoices.querySelector(".stage-choice:not(:disabled)");
+  const focusedStage = els.stageChoices.querySelector(".stage-choice.is-selected:not([hidden]):not(:disabled)");
+  const firstStage = els.stageChoices.querySelector(".stage-choice:not([hidden]):not(:disabled)");
   (focusedStage || firstStage || els.homeButton).focus({ preventScroll: true });
 }
 
@@ -769,6 +842,7 @@ function clearNoticeTimer() {
 function clearStartDelayTimer() {
   window.clearTimeout(state.startDelayTimerId);
   state.startDelayTimerId = 0;
+  state.battleStartsAt = 0;
 }
 
 function clearInputBufferTimer() {
@@ -782,7 +856,8 @@ function clearInputBuffer() {
 }
 
 function trimInputBuffer(now = performance.now()) {
-  const oldestQueuedAt = now - inputBufferRetentionMs;
+  const retentionMs = Math.max(inputBufferRetentionMs, state.playerAttackCooldownMs + 250);
+  const oldestQueuedAt = now - retentionMs;
 
   while (state.inputBuffer.length && state.inputBuffer[0].queuedAt < oldestQueuedAt) {
     state.inputBuffer.shift();
@@ -801,7 +876,7 @@ function scheduleBufferedInputFlush() {
 }
 
 function enqueueBufferedInput(action, value = "") {
-  if (!state.running || state.specialInProgress || isUnarmedStory() || isStoryDialogueOpen()) {
+  if (!state.running || state.guarding || state.specialInProgress || isUnarmedStory() || isStoryDialogueOpen()) {
     return;
   }
 
@@ -820,7 +895,7 @@ function enqueueBufferedInput(action, value = "") {
 }
 
 function applyBufferedInputEntry(enemy, entry) {
-  setTargetEnemy(enemy);
+  if (state.selectedEnemyId !== enemy.id) setTargetEnemy(enemy);
 
   if (entry.action === "letter") {
     applyTypedValue(enemy, enemy.typed + entry.value);
@@ -884,6 +959,9 @@ function showGameNotice(kind, kicker, title, text, options = {}) {
     const weaponName = getWeaponDefinition(treasure).name;
     els.treasureText.textContent = `${weaponName}を手に入れた！`;
     els.treasureArt.setAttribute("aria-label", `宝箱から現れた${weaponName}`);
+    els.treasureSingleSword.style.display = ["dualBlades", "swordShield"].includes(treasure) ? "none" : "";
+    els.treasureDualBlades.style.display = treasure === "dualBlades" ? "" : "none";
+    els.treasureSwordShield.style.display = treasure === "swordShield" ? "" : "none";
     els.treasureBlade.setAttribute("d", treasure === "greatsword"
       ? "M140 10L166 31V110L140 122L114 110V31Z"
       : "M140 10L151 31V110L140 122L129 110V31Z");
@@ -1000,7 +1078,7 @@ function isStageAvailable(stageId, player = state) {
 
 function getHighestAvailableStageCode(player = state) {
   return Object.entries(stageDefinitions)
-    .filter(([id]) => isStageAvailable(id, player)).at(-1)?.[1].code || "1";
+    .filter(([id]) => isStageAvailable(id, player)).at(-1)?.[1].code || stageDefinitions[defaultStageId].code;
 }
 
 function continueAfterResult() {
@@ -1019,7 +1097,20 @@ function continueAfterResult() {
   }
 }
 
+function switchStageMap(regionId) {
+  if (!Object.hasOwn(stageMapRegions, regionId)) return;
+  state.stageMapRegionId = regionId;
+  hideStageConfirm();
+}
+
 function syncStageButtons() {
+  const region = stageMapRegions[state.stageMapRegionId];
+  els.stageMapPanel.dataset.region = state.stageMapRegionId;
+  els.stageMapPanel.setAttribute("aria-label", `${region.name}の地図`);
+  if (els.stageMapImage.getAttribute("src") !== region.image) els.stageMapImage.setAttribute("src", region.image);
+  els.stageRegionSwitch.querySelectorAll("[data-region]").forEach(button => {
+    button.setAttribute("aria-pressed", String(button.dataset.region === state.stageMapRegionId));
+  });
   els.stageChoices.querySelectorAll("[data-stage]").forEach((button) => {
     const stageId = button.dataset.stage;
     const stage = stageDefinitions[stageId];
@@ -1029,6 +1120,7 @@ function syncStageButtons() {
     const name = button.querySelector(".stage-name");
     const meta = button.querySelector(".stage-meta");
 
+    button.hidden = stage?.regionId !== state.stageMapRegionId;
     button.disabled = !isEnabled;
     button.setAttribute("aria-disabled", String(!isEnabled));
     button.setAttribute("aria-controls", "stageConfirm");
@@ -1068,11 +1160,11 @@ function hideStageConfirm() {
 function cancelPendingStageSelection() {
   const selectedStageId = state.pendingStageId;
   const selectedStageButton = [...els.stageChoices.querySelectorAll(".stage-choice[data-stage]")].find(
-    (button) => button.dataset.stage === selectedStageId && !button.disabled,
+    (button) => button.dataset.stage === selectedStageId && !button.disabled && !button.hidden,
   );
 
   hideStageConfirm();
-  (selectedStageButton || els.stageChoices.querySelector(".stage-choice:not(:disabled)") || els.homeButton).focus({
+  (selectedStageButton || els.stageChoices.querySelector(".stage-choice:not([hidden]):not(:disabled)") || els.homeButton).focus({
     preventScroll: true,
   });
 }
@@ -1085,6 +1177,7 @@ function showStageConfirm(stageId) {
   }
 
   state.pendingStageId = stageId;
+  state.stageMapRegionId = stage.regionId;
   els.stageConfirmName.textContent = stage.name;
   els.stageConfirmMeta.textContent = stage.meta;
   els.stageConfirmMeta.hidden = !stage.meta;
@@ -1182,6 +1275,8 @@ function showHomeScreen() {
 }
 
 function getPendingWeaponEquipId() {
+  if (state.swordShieldEquipPending) return "swordShield";
+  if (state.dualBladesEquipPending) return "dualBlades";
   if (state.greatswordEquipPending) return "greatsword";
   return state.swordEquipPending ? "sword" : "";
 }
@@ -1201,6 +1296,8 @@ function updateWeaponEquipGuide() {
     ? `${weaponName}を装備しました` : `${weaponName}を選んで装備しよう`;
   els.weaponSwordOption.classList.toggle("is-recommended", weaponId === "sword" && !equipped);
   els.weaponGreatswordOption.classList.toggle("is-recommended", weaponId === "greatsword" && !equipped);
+  els.weaponDualBladesOption.classList.toggle("is-recommended", weaponId === "dualBlades" && !equipped);
+  els.weaponSwordShieldOption.classList.toggle("is-recommended", weaponId === "swordShield" && !equipped);
   els.weaponEquipNext.hidden = !active;
   els.weaponEquipNext.disabled = !active || !equipped;
   const nextStageId = getEquipmentNextStageId();
@@ -1211,7 +1308,9 @@ function showWeaponScreen() {
   state.weaponEquipGuideId = getPendingWeaponEquipId();
   showMenuScreen("weapons");
   const selected = els.weaponPanel.querySelector("input[name='weapon']:checked:not(:disabled)");
-  const recommended = state.weaponEquipGuideId === "greatsword" ? els.weaponGreatsword : els.weaponSword;
+  const recommended = state.weaponEquipGuideId === "swordShield" ? els.weaponSwordShield
+    : state.weaponEquipGuideId === "dualBlades" ? els.weaponDualBlades
+    : state.weaponEquipGuideId === "greatsword" ? els.weaponGreatsword : els.weaponSword;
   const focusTarget = state.weaponEquipGuideId ? recommended : selected || els.weaponHomeButton;
   focusTarget.focus({ preventScroll: true });
 }
@@ -1266,6 +1365,8 @@ function selectWeapon(weaponId) {
   state.weaponId = weaponId;
   if (weaponId === "sword") state.swordEquipPending = false;
   if (weaponId === "greatsword") state.greatswordEquipPending = false;
+  if (weaponId === "dualBlades") state.dualBladesEquipPending = false;
+  if (weaponId === "swordShield") state.swordShieldEquipPending = false;
   savePlayerProgress();
   updateHud();
   renderWord();
@@ -1327,6 +1428,7 @@ function playEnemyAnimation(enemy, animationName, options = {}) {
   enemy.frameIndex = 0;
   enemy.sprite.dataset.animation = animationName;
   updateEnemyFrame(enemy);
+  updateEnemyCharge(enemy);
 
   const prefersReducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
@@ -1370,9 +1472,9 @@ function stopEnemyWalkingAnimation(enemy) {
 }
 
 function playTypingShakeEffect(enemy) {
-  window.clearTimeout(enemy.typingShakeTimerId);
-  enemy.element.classList.remove("typing-shake");
-  void enemy.element.offsetWidth;
+  // Let the short pulse finish during rapid typing instead of forcing layout
+  // to restart the animation on every key, which delays the text's next paint.
+  if (enemy.typingShakeTimerId) return;
   enemy.element.classList.add("typing-shake");
   enemy.typingShakeTimerId = scheduleBattleTimeout(() => {
     enemy.typingShakeTimerId = 0;
@@ -1422,6 +1524,8 @@ function playGreatswordImpact(enemy) {
 }
 
 function playPlayerAttackAnimation(enemy, isPerfectGreatsword = false) {
+  const duration = getWeaponDefinition(enemy.weaponId).attackAnimationMs || playerAttackMs;
+  els.player.style.setProperty("--player-attack-duration", `${duration}ms`);
   window.clearTimeout(state.playerAttackTimerId);
   clearGreatswordImpact();
   els.player.classList.remove("is-attacking");
@@ -1436,7 +1540,7 @@ function playPlayerAttackAnimation(enemy, isPerfectGreatsword = false) {
   state.playerAttackTimerId = scheduleBattleTimeout(() => {
     state.playerAttackTimerId = 0;
     els.player.classList.remove("is-attacking", "is-perfect-release");
-  }, playerAttackMs);
+  }, duration);
 }
 
 function clearPlayerAttackAnimation() {
@@ -1495,7 +1599,7 @@ function clearBossIntro() {
 
 function renderWord() {
   syncFlickInput();
-  const selectedEnemy = getCurrentEnemy();
+  const selectedEnemy = performance.now() < state.playerAttackReadyAt ? null : getCurrentEnemy();
 
   if (!selectedEnemy) {
     els.wordTranslation.textContent = state.running ? "" : state.currentTranslation;
@@ -1625,7 +1729,8 @@ function getCurrentEnemy() {
 }
 
 function getInputEnemy() {
-  if (isStoryDialogueOpen()) return null;
+  if (isStoryDialogueOpen() || state.hp <= 0 || state.specialInProgress || state.guarding
+      || performance.now() < state.playerAttackReadyAt) return null;
   const selectedEnemy = getSelectedEnemy();
 
   if (selectedEnemy && isEnemyAlive(selectedEnemy) && !selectedEnemy.resolving) {
@@ -1663,6 +1768,7 @@ function createEnemyElement(enemy) {
   element.className = "enemy";
   element.dataset.enemyId = enemy.id;
   element.dataset.enemyType = enemy.type;
+  element.dataset.attackStyle = enemy.attackStyle;
   element.style.setProperty("--enemy-slot", String(enemy.slot));
 
   element.innerHTML = `
@@ -1670,6 +1776,11 @@ function createEnemyElement(enemy) {
       <span class="enemy-word-translation"></span>
       <span class="enemy-word-target"><span class="enemy-word-typed"></span><span class="enemy-word-remaining"></span></span>
     </div>
+    ${enemy.attackStyle === "charge" ? `
+    <div class="enemy-charge" role="meter" aria-label="キノコの攻撃準備" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+      <span class="enemy-charge-label"></span>
+      <div class="enemy-charge-track"><i></i></div>
+    </div>` : ""}
     <div class="character-hp enemy-hp">
       <span>ENEMY</span>
       <div class="character-hp-track" role="meter" aria-label="Enemy HP" aria-valuemin="0">
@@ -1686,6 +1797,11 @@ function createEnemyElement(enemy) {
   enemy.image = element.querySelector(".enemy-image");
   enemy.hpFill = element.querySelector(".character-hp-track i");
   enemy.hpTrack = element.querySelector(".character-hp-track");
+  if (enemy.attackStyle === "charge") {
+    enemy.chargeMeter = element.querySelector(".enemy-charge");
+    enemy.chargeLabel = element.querySelector(".enemy-charge-label");
+    enemy.chargeFill = element.querySelector(".enemy-charge-track i");
+  }
   enemy.wordTranslationEl = element.querySelector(".enemy-word-translation");
   enemy.wordTypedEl = element.querySelector(".enemy-word-typed");
   enemy.wordRemainingEl = element.querySelector(".enemy-word-remaining");
@@ -1741,7 +1857,9 @@ function updateEnemyWordLabel(enemy) {
 }
 
 function setEnemyProgress(enemy, progress) {
+  if (enemy.attackStyle === "charge") progress = enemy.fixedProgress;
   enemy.progress = Math.max(0, Math.min(progress, 1));
+  if (enemy.progress < 1) enemy.atBase = false;
   enemy.element.style.setProperty("--enemy-progress", enemy.progress.toFixed(3));
 }
 
@@ -1773,18 +1891,27 @@ function setNextWord(enemy) {
   enemy.translation = next.translation;
   enemy.bestLength = 0;
   enemy.typingMisses = 0;
-  enemy.chargeStartLength = 0;
+  enemy.chargeInputProgress = 0;
   enemy.typed = "";
   updateEnemyWordLabel(enemy);
 }
 
 function createEnemy(wave, index) {
+  const usedSlots = new Set(state.activeEnemies.map(enemy => enemy.slot));
+  let slot = 0;
+  while (usedSlots.has(slot)) slot++;
   const enemy = {
     id: `enemy-${state.nextEnemyId}`,
     type: getEnemyTypeForWave(wave, index),
     name: wave.name || "",
-    slot: 0,
+    slot,
     attackPower: normalizeAttackPower(wave.attackPower),
+    approachMs: wave.approachMs ?? attackMs,
+    repeatAttackMs: wave.repeatAttackMs ?? repeatAttackMs,
+    attackStyle: wave.attackStyle || "melee",
+    chargeDurationMs: Math.max(1000, wave.chargeMs ?? 6000),
+    chargeElapsedMs: 0,
+    fixedProgress: wave.fixedProgress ?? 0.15,
     boss: Boolean(wave.boss),
     experience: wave.experience ?? Math.max(1, Math.round(wave.hp * (wave.boss ? 10 : 5))),
     experienceCounted: false,
@@ -1796,7 +1923,7 @@ function createEnemy(wave, index) {
     typed: "",
     bestLength: 0,
     typingMisses: 0,
-    chargeStartLength: 0,
+    chargeInputProgress: 0,
     progress: 0,
     atBase: false,
     resolving: false,
@@ -1848,7 +1975,7 @@ function addEnemyToWave(wave, index) {
   els.enemyLayer.appendChild(enemy.element);
   scheduleBattleLayout();
   playEnemyAnimation(enemy, "idle");
-  setTargetEnemy(enemy);
+  if (!getSelectedEnemy()) setTargetEnemy(getCurrentEnemy() || enemy);
 
   if (enemy.boss) {
     playBossIntro(enemy);
@@ -1861,18 +1988,29 @@ function addEnemyToWave(wave, index) {
 function spawnNextEnemy() {
   const wave = chooseEnemyWave();
 
-  if (!state.running || isStoryDialogueOpen() || !wave) {
+  if (!state.running || state.hp <= 0 || isStoryDialogueOpen() || !wave) {
     return;
   }
 
   const index = state.currentWaveSpawned;
 
-  if (index >= wave.count) {
+  if (index >= wave.count || state.activeEnemies.length >= (wave.maxActive || 1)) {
     return;
   }
 
   state.currentWaveSpawned += 1;
   addEnemyToWave(wave, index);
+  if (wave.spawnIntervalMs && state.currentWaveSpawned < wave.count) queueEnemySpawn(wave.spawnIntervalMs);
+}
+
+function queueEnemySpawn(delay) {
+  if (!state.running || state.enemySpawnTimerId) return;
+  // Give the first enemy time to move after START before revealing the next one.
+  const startWait = Math.max(0, state.battleStartsAt - performance.now());
+  state.enemySpawnTimerId = scheduleBattleTimeout(() => {
+    state.enemySpawnTimerId = 0;
+    spawnNextEnemy();
+  }, startWait + delay);
 }
 
 function queueNextEnemy() {
@@ -1883,21 +2021,20 @@ function queueNextEnemy() {
   }
 
   if (state.currentWaveSpawned >= wave.count) {
+    if (state.activeEnemies.length) return;
     state.currentWaveIndex += 1;
     state.currentWaveSpawned = 0;
+    queueEnemySpawn(260);
+  } else {
+    queueEnemySpawn(wave.spawnIntervalMs || 260);
   }
-
-  scheduleBattleTimeout(() => {
-    if (state.running) {
-      spawnNextEnemy();
-    }
-  }, 260);
 }
 
 function removeEnemy(enemy) {
   clearEnemyAnimationTimers(enemy);
   enemy.element.remove();
   state.activeEnemies = state.activeEnemies.filter((activeEnemy) => activeEnemy.id !== enemy.id);
+  scheduleBattleLayout();
 
   if (state.selectedEnemyId === enemy.id) {
     setTargetEnemy(null);
@@ -1905,13 +2042,20 @@ function removeEnemy(enemy) {
 }
 
 function enemyLoop(now) {
-  if (!state.running || isStoryDialogueOpen()) {
+  if (!state.running || state.hp <= 0 || isStoryDialogueOpen() || now < state.battleStartsAt) {
     return;
   }
+
+  updateAttackCooldown();
 
   state.activeEnemies.forEach((enemy) => {
     if (enemy.resolving || enemy.animation === "attack") {
       enemy.lastTick = now;
+      return;
+    }
+
+    if (enemy.attackStyle === "charge") {
+      advanceEnemyCharge(enemy, now);
       return;
     }
 
@@ -1932,7 +2076,7 @@ function enemyLoop(now) {
 
     const elapsed = Math.max(0, now - enemy.lastTick);
     enemy.lastTick = now;
-    setEnemyProgress(enemy, enemy.progress + elapsed / attackMs);
+    setEnemyProgress(enemy, enemy.progress + elapsed / enemy.approachMs);
 
     if (enemy.progress >= 1) {
       enemy.atBase = true;
@@ -1954,14 +2098,26 @@ function startLoop() {
 }
 
 function enemyAttack(enemy) {
-  if (!state.running || isStoryDialogueOpen() || enemy.resolving || enemy.animation === "attack" || !isEnemyAlive(enemy)) return;
-  enemy.atBase = true;
-  enemy.nextAttackAt = performance.now() + enemyAttackRecoveryMs + repeatAttackMs;
+  if (!state.running || state.hp <= 0 || isStoryDialogueOpen() || enemy.resolving
+      || enemy.animation === "attack" || !isEnemyAlive(enemy) || !state.activeEnemies.includes(enemy)) return;
+  if (enemy.attackStyle === "charge") {
+    if (performance.now() < state.battleStartsAt || enemy.chargeElapsedMs < enemy.chargeDurationMs) return;
+    resetEnemyCharge(enemy);
+    aimEnemySpores(enemy);
+  } else if (enemy.progress < 1) return;
+  enemy.atBase = enemy.attackStyle !== "charge";
+  enemy.nextAttackAt = performance.now() + enemyAttackRecoveryMs + enemy.repeatAttackMs;
   const damage = rollAttackDamage(enemy.attackPower);
-  state.hp = Math.max(0, state.hp - damage);
-  state.combo = 0;
-  resetSuccessStreak();
-  state.perfect = false;
+  const guarded = state.guarding && canPlayerGuard();
+  const receivedDamage = guarded ? Math.round(damage * getActiveWeapon().guardDamageMultiplier) : damage;
+  state.hp = Math.max(0, state.hp - receivedDamage);
+  if (guarded) playGuardImpact();
+  if (receivedDamage > 0) {
+    window.GAME_SOUND.play("hurt");
+    state.combo = 0;
+    resetSuccessStreak();
+    state.perfect = false;
+  }
   playEnemyAnimation(enemy, "attack", { loop: false });
   enemy.element.classList.add("attack");
   // Only a fatal hit locks input; the incoming attack animation does not.
@@ -1977,31 +2133,45 @@ function enemyAttack(enemy) {
   enemy.returnTimerId = scheduleBattleTimeout(() => {
     if (state.running) {
       stopEnemyWalkingAnimation(enemy);
+      enemy.lastTick = performance.now();
+      updateEnemyCharge(enemy);
       updateHud();
     }
   }, enemyAttackRecoveryMs);
 }
 
 function damageEnemy(enemy) {
-  if (!state.running || isStoryDialogueOpen() || enemy.resolving) return;
+  if (!state.running || state.hp <= 0 || state.guarding || isStoryDialogueOpen() || !isEnemyAlive(enemy) || enemy.resolving
+      || performance.now() < state.playerAttackReadyAt) return;
+  const weapon = getWeaponDefinition(enemy.weaponId);
+  const recoveryMs = Math.min(weapon.attackRecoveryMs ?? 220, state.stageAttackCooldowns[weapon.id]);
   if (enemy.tutorial) {
     if (!recordTutorialHit(enemy)) return;
-  } else {
-    const damage = getPlayerAttackDamage(enemy);
-    enemy.hp = Math.max(0, Math.round((enemy.hp - damage) * 10) / 10);
   }
-  const isPerfectGreatsword = enemy.weaponId === "greatsword" && enemy.typingMisses === 0;
+  const targets = [enemy, ...state.activeEnemies.filter(other => other !== enemy
+    && isEnemyAlive(other) && !other.resolving && !other.tutorial)
+    .sort((a, b) => b.progress - a.progress).slice(0, (weapon.attackTargets ?? 1) - 1)];
+  const damage = getPlayerAttackDamage(enemy);
+  startPlayerAttackCooldown(enemy.weaponId);
+  const isPerfectGreatsword = enemy.weaponId === "greatsword" && getGreatswordCharge(enemy) === 1;
+  window.GAME_SOUND.play(enemy.weaponId === "greatsword" ? "heavy"
+    : ["sword", "dualBlades", "swordShield"].includes(enemy.weaponId) ? "attack" : "impact");
   playPlayerAttackAnimation(enemy, isPerfectGreatsword);
-  enemy.resolving = true;
-  enemy.atBase = false;
   state.combo += 1;
   state.score += 35 + state.combo * 10;
+  targets.forEach(target => resolveWeaponHit(target, damage, recoveryMs));
+  updateHud();
+}
+
+function resolveWeaponHit(enemy, damage, recoveryMs) {
+  if (!enemy.tutorial) enemy.hp = Math.max(0, Math.round((enemy.hp - damage) * 10) / 10);
+  enemy.resolving = true;
+  enemy.atBase = false;
   enemy.element.classList.add("hit");
   enemy.element.classList.remove("defeating", "typing-shake");
   setEnemyProgress(enemy, enemy.progress - knockbackAmount);
-  playEnemyAnimation(enemy, "damage", { duration: 220, loop: false });
+  playEnemyAnimation(enemy, "damage", { duration: recoveryMs, loop: false });
   updateEnemyHud(enemy);
-  updateHud();
 
   if (enemy.weaponId === "unarmed") {
     clearInputBuffer();
@@ -2018,7 +2188,7 @@ function damageEnemy(enemy) {
         setTargetEnemy(enemy);
         updateHud();
       }
-    }, playerAttackMs);
+    }, Math.min(playerAttackMs, state.stageAttackCooldowns.unarmed));
     return;
   }
 
@@ -2027,7 +2197,7 @@ function damageEnemy(enemy) {
       if (state.running) {
         defeatEnemy(enemy);
       }
-    }, 220);
+    }, recoveryMs);
     return;
   }
 
@@ -2036,37 +2206,41 @@ function damageEnemy(enemy) {
       enemy.element.classList.remove("hit");
       enemy.resolving = false;
       setNextWord(enemy);
-      setTargetEnemy(enemy);
+      const selected = getSelectedEnemy();
+      if (!selected || selected === enemy || !isEnemyAlive(selected)) setTargetEnemy(enemy);
       enemy.lastTick = performance.now();
       playEnemyAnimation(enemy, "idle");
       updateHud();
       flushBufferedInput();
     }
-  }, 220);
+  }, recoveryMs);
 }
 
 function useSpecialMove() {
-  if (!state.running || state.specialInProgress || !isSpecialReady() || !state.activeEnemies.length) {
+  if (!state.running || state.guarding || state.specialInProgress || !isSpecialReady() || !state.activeEnemies.length) {
     return false;
   }
 
-  const targets = state.activeEnemies.filter((enemy) => isEnemyAlive(enemy));
+  const skill = getActiveSkill();
+  if (!skill.effects.length || skill.effects.some(effect => !skillEffectHandlers[effect.type])) return false;
+  const targets = getSkillTargets(skill);
   if (!targets.length || targets.some((enemy) => enemy.resolving)) {
     updateHud();
     return false;
   }
   clearInputBuffer();
   state.specialInProgress = true;
-  const { streakCap } = getSpecialGaugeSettings();
   state.specialGauge = 0;
-  state.score += targets.length * 120 + Math.min(state.successStreak, streakCap) * 20;
+  state.score += targets.length * 120 + Math.min(state.successStreak, 16) * 20;
   setTargetEnemy(null);
   playSpecialEffect();
+  window.GAME_SOUND.play("special");
+  skill.effects.forEach(effect => skillEffectHandlers[effect.type](effect, targets));
   targets.forEach((enemy) => {
     enemy.resolving = true;
     enemy.atBase = false;
     enemy.nextAttackAt = 0;
-    enemy.hp = Math.max(0, enemy.hp - specialDamage);
+    resetEnemyCharge(enemy);
     enemy.element.classList.remove("hit", "attack", "defeating", "typing-shake");
     enemy.element.classList.add("special");
     setEnemyProgress(enemy, enemy.progress - knockbackAmount * 2.2);
@@ -2086,7 +2260,7 @@ function useSpecialMove() {
           defeatEnemy(enemy);
         });
       }
-    }, 420);
+    }, skill.durationMs);
     return true;
   }
 
@@ -2109,7 +2283,7 @@ function useSpecialMove() {
         defeatEnemy(enemy);
       });
     }
-  }, 420);
+  }, skill.durationMs);
 
   return true;
 }
@@ -2121,9 +2295,10 @@ function defeatEnemy(enemy) {
 
   enemy.resolving = true;
   if (state.selectedEnemyId === enemy.id) {
-    setTargetEnemy(null);
+    setTargetEnemy(state.activeEnemies.find(other => other !== enemy && isEnemyAlive(other)) || null);
   }
   enemy.experienceCounted = true;
+  window.GAME_SOUND.play("defeat");
   if (enemy.tutorial) {
     state.equipmentTutorialCompleted = true;
     setStoryPhase("none");
@@ -2136,6 +2311,7 @@ function defeatEnemy(enemy) {
   enemy.element.classList.add("defeating");
   playEnemyAnimation(enemy, "defeat", { loop: false });
   updateHud();
+  flushBufferedInput();
 
   if (state.cleared >= state.roundLimit) {
     scheduleBattleTimeout(() => finishGame(true), 620);
@@ -2146,9 +2322,8 @@ function defeatEnemy(enemy) {
     if (state.running) {
       removeEnemy(enemy);
       updateHud();
-      if (!state.activeEnemies.length) {
-        queueNextEnemy();
-      } else {
+      queueNextEnemy();
+      if (state.activeEnemies.length) {
         renderWord();
         flushBufferedInput();
       }
@@ -2164,6 +2339,7 @@ function finishGame(cleared) {
   setStoryPhase("none");
   const t = labels();
   const noDamageClear = state.perfect && state.hp === getMaxHp();
+  window.GAME_SOUND.play(cleared ? "clear" : "over");
   invalidateBattleGeneration();
   state.running = false;
   cancelAnimationFrame(state.rafId);
@@ -2179,6 +2355,8 @@ function finishGame(cleared) {
   const treasure = cleared && (
     (rewardWeaponId === "sword" && !state.ironSwordObtained)
     || (rewardWeaponId === "greatsword" && !state.greatswordObtained)
+    || (rewardWeaponId === "dualBlades" && !state.dualBladesObtained)
+    || (rewardWeaponId === "swordShield" && !state.swordShieldObtained)
   ) ? rewardWeaponId : "";
   let resultText = "獲得経験値 0 EXP";
   let levelUp = null;
@@ -2190,6 +2368,12 @@ function finishGame(cleared) {
     } else if (treasure === "greatsword") {
       state.greatswordEquipPending = state.weaponId !== "greatsword";
       state.greatswordObtained = true;
+    } else if (treasure === "dualBlades") {
+      state.dualBladesEquipPending = state.weaponId !== "dualBlades";
+      state.dualBladesObtained = true;
+    } else if (treasure === "swordShield") {
+      state.swordShieldEquipPending = state.weaponId !== "swordShield";
+      state.swordShieldObtained = true;
     }
     const previousLevel = state.level;
     const reward = progression.gainExperience(state, state.pendingExperience);
@@ -2290,7 +2474,11 @@ function startGame(stageId = state.stageId) {
   setStoryPhase(needsIntroduction ? "encounter" : "none");
   state.language = "ja";
   state.stageId = resolvedStageId;
+  snapshotAttackCooldowns();
+  state.stageMapRegionId = stage.regionId;
   els.arena.dataset.stage = resolvedStageId;
+  const backgroundUrl = new URL(stage.background || "src/assets/images/backgrounds/stages/crab_shore.png", document.baseURI);
+  els.arena.style.setProperty("--stage-background", `url("${backgroundUrl.href}")`);
   state.pendingStageId = "";
   state.playableEnemyWaves = buildPlayableEnemyWaves(stage.waves);
   state.roundLimit = getRoundLimit(state.playableEnemyWaves);
@@ -2330,6 +2518,7 @@ function startGame(stageId = state.stageId) {
     showStoryDialogue("encounter");
     return;
   }
+  state.battleStartsAt = performance.now() + startNoticeMs;
   showGameNotice("start", "START", t.startTitle, t.startText(stage.name), { duration: startNoticeMs });
   spawnNextEnemy();
   if (flickState.enabled) focusGameSurface({ userGesture: true });
@@ -2379,18 +2568,19 @@ function playTypingMissEffect() {
 }
 
 function recordTypingMiss(enemy) {
+  window.GAME_SOUND.play("miss");
   playTypingMissEffect();
   state.combo = 0;
   resetSuccessStreak();
   if (enemy.weaponId === "greatsword") {
     enemy.typingMisses += 1;
-    enemy.chargeStartLength = enemy.typed.length;
   }
   updateHud();
 }
 
-function applyTypedValue(enemy, value) {
-  if (!state.running || isStoryDialogueOpen() || !enemy || enemy.resolving) {
+function applyTypedValue(enemy, value, { readingProgress } = {}) {
+  if (!state.running || state.guarding || isStoryDialogueOpen() || !enemy || enemy.resolving
+      || state.specialInProgress || state.hp <= 0 || performance.now() < state.playerAttackReadyAt) {
     return;
   }
 
@@ -2404,7 +2594,7 @@ function applyTypedValue(enemy, value) {
 
   const typedMoreCharacters = nextValue.length > enemy.typed.length;
   const newSuccessfulCharacterCount = Math.max(0, nextValue.length - enemy.bestLength);
-  enemy.chargeStartLength = Math.min(enemy.chargeStartLength, nextValue.length);
+  enemy.chargeInputProgress = readingProgress ?? nextValue.length / Math.max(1, matchedWord.length);
   enemy.typed = nextValue;
   enemy.matchedWord = matchedWord;
   updateEnemyWordLabel(enemy);
@@ -2413,12 +2603,13 @@ function applyTypedValue(enemy, value) {
   if (newSuccessfulCharacterCount > 0) {
     enemy.bestLength = nextValue.length;
     addSuccessfulCharacters(newSuccessfulCharacterCount);
-    updateHud();
+    updateSkillHud();
   }
 
   if (enemy.inputs.includes(enemy.typed)) {
     damageEnemy(enemy);
   } else if (typedMoreCharacters) {
+    window.GAME_SOUND.play("typing");
     playTypingShakeEffect(enemy);
   }
 }
@@ -2487,7 +2678,10 @@ function handleTypingKeydown(event) {
 
     if (state.running) {
       event.preventDefault();
-      useSpecialMove();
+      if (!event.repeat) {
+        if (hasGuardWeapon() && !event.shiftKey) beginPlayerGuard("keyboard");
+        else useSpecialMove();
+      }
       return;
     }
 
@@ -2499,6 +2693,10 @@ function handleTypingKeydown(event) {
   }
 
   const letter = getTypingCharacterFromKey(event);
+  if (state.guarding) {
+    if (letter || event.key === "Backspace") event.preventDefault();
+    return;
+  }
 
   if (letter) {
     event.preventDefault();
@@ -2509,7 +2707,7 @@ function handleTypingKeydown(event) {
     const targetEnemy = getInputEnemy();
 
     if (targetEnemy && !state.inputBuffer.length) {
-      setTargetEnemy(targetEnemy);
+      if (state.selectedEnemyId !== targetEnemy.id) setTargetEnemy(targetEnemy);
       applyTypedValue(targetEnemy, targetEnemy.typed + letter);
     } else {
       enqueueBufferedInput("letter", letter);
@@ -2575,19 +2773,24 @@ els.resetButton.addEventListener("click", () => {
   showStageSelect();
 });
 els.noticeButton.addEventListener("click", continueAfterResult);
+els.stageRegionSwitch.addEventListener("click", (event) => {
+  const button = event.target.closest("button[data-region]");
+  if (button) switchStageMap(button.dataset.region);
+});
 els.stageChoices.addEventListener("click", (event) => {
   if (event.target.closest("#stageConfirm")) {
     return;
   }
 
   const button = event.target.closest(".stage-choice[data-stage]");
-  if (!button || button.disabled || !isStageAvailable(button.dataset.stage)) {
+  if (!button || button.hidden || button.disabled || !isStageAvailable(button.dataset.stage)) {
     return;
   }
 
   showStageConfirm(button.dataset.stage);
 });
 document.addEventListener("keydown", handleTypingKeydown);
+initializePlayerGuard();
 
 initializeFlickInput();
 initializeSaveMenu();
