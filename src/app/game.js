@@ -820,6 +820,8 @@ function updateHud() {
 }
 
 function showScreen(screen) {
+  document.querySelector("#onlineScreen").hidden = screen !== "online";
+  if (screen !== "online" && window.ONLINE_PLAY?.active) window.ONLINE_PLAY.close();
   if (screen !== "weapons") state.weaponEquipGuideId = "";
   if (screen !== "status") state.skillGuideActive = false;
   updateWeaponEquipGuide();
@@ -2721,6 +2723,7 @@ function isStartScreenVisible() {
 
 function handleTypingKeydown(event) {
   if (!assetLoadingState.ready) return;
+  if (document.documentElement.dataset.screen === "online") return;
   if (event.target === els.flickInput || event.target?.closest?.("input, textarea, [contenteditable='true']")
       || event.isComposing || event.keyCode === 229 || flickState.composing) return;
   if (event.code === "Escape") {

@@ -121,6 +121,8 @@ Scripts load in the order listed in `index.html`. They remain classic browser sc
 
 ## Current Gameplay
 
+- `オンライン対戦` creates or joins a two-player friend room using an eight-digit code. Both players ready up, then type the same sequence of prompts. Opponent typing progress is visible live. Each player has 1,000 HP and attacks deal 40 damage, with a two-second minimum per attack and a three-minute match limit. Desktop roman input and the in-game mobile flick keyboard are supported. Adventure saves are unchanged. See [online duel rules and connection requirements](docs/gameplay/online-duel.md).
+
 - The title screen offers `初めから` and `続きから`. Choose one of three slots and enter a player name (1–20 characters) for a new adventure. Slot cards show the name, level, and highest available stage. Creating a save writes it before opening the map; overwriting an occupied slot requires the explicitly labeled confirmation button. Canceling leaves the existing data untouched.
 - `続きから` opens the map with the selected player's saved growth and equipment. Battles restart when entered. The map's `タイトル` button returns to player selection.
 

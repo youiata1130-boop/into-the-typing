@@ -6,7 +6,7 @@
     <title>Into the Typing</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='52'%3E%E2%9A%94%EF%B8%8F%3C/text%3E%3C/svg%3E">
     <link rel="preload" as="image" href="src/assets/images/backgrounds/shared/typing_rpg_background.webp">
-    <link rel="stylesheet" href="src/styles/main.css?v=20261024-capture-intro-v1">
+    <link rel="stylesheet" href="src/styles/main.css?v=20261024-online-v1">
   </head>
   <body>
     <section class="loading-screen" id="loadingScreen" aria-labelledby="loadingText" aria-busy="true">
@@ -25,10 +25,59 @@
           <div class="start-actions">
             <button class="intro-start-button" id="introStartButton" type="button">初めから</button>
             <button class="intro-start-button" id="continueButton" type="button" disabled>続きから</button>
+            <button class="intro-start-button" id="onlineButton" type="button">オンライン対戦</button>
           </div>
         </div>
       </section>
 
+
+      <section class="online-screen" id="onlineScreen" aria-labelledby="onlineTitle" hidden>
+        <header class="online-head">
+          <h1 id="onlineTitle">オンライン対戦</h1>
+          <button id="onlineBack" type="button">退出</button>
+        </header>
+        <div class="online-lobby" id="onlineLobby">
+          <label for="onlineName">名前</label>
+          <input id="onlineName" maxlength="20" autocomplete="off" value="プレイヤー">
+          <div class="online-rules"><span>体力 <strong>1,000</strong></span><span>攻撃 <strong>40</strong></span></div>
+          <button id="onlineCreate" class="online-primary" type="button">部屋をつくる</button>
+          <div class="online-join">
+            <label for="onlineRoomInput">部屋番号</label>
+            <input id="onlineRoomInput" inputmode="numeric" maxlength="12" autocomplete="off" placeholder="8桁の番号">
+            <button id="onlineJoin" type="button">参加する</button>
+          </div>
+        </div>
+        <div class="online-room" id="onlineRoom" hidden><span>部屋番号</span><strong id="onlineCode"></strong><button id="onlineCopy" type="button">コピー</button></div>
+        <p class="online-status" id="onlineStatus" role="status"></p>
+        <div class="online-arena" id="onlineArena" hidden>
+          <div class="online-fighters">
+            <article class="online-fighter online-self" id="onlineSelf">
+              <img id="onlineSelfImage" alt="あなたの剣士">
+              <div><h2 id="onlineSelfName">あなた</h2><strong id="onlineSelfHp">1000 / 1000</strong><progress id="onlineSelfBar" max="1000" value="1000" aria-label="あなたの体力"></progress></div>
+            </article>
+            <article class="online-fighter online-other" id="onlineOther">
+              <img id="onlineOtherImage" alt="相手の剣士">
+              <div><h2 id="onlineOtherName">相手</h2><strong id="onlineOtherHp">1000 / 1000</strong><progress id="onlineOtherBar" max="1000" value="1000" aria-label="相手の体力"></progress></div>
+            </article>
+          </div>
+          <div class="online-opponent">
+            <div class="online-progress-head"><h2>相手の入力</h2><strong id="onlineOpponentCount">0文字</strong><time id="onlineClock" aria-label="対戦の残り時間">3:00</time></div>
+            <p class="online-word" id="onlineOpponentTarget"></p>
+            <p class="online-letters"><span id="onlineOpponentTyped" class="online-done"></span><span id="onlineOpponentRemaining"></span></p>
+            <progress id="onlineOpponentProgress" max="1" value="0" aria-label="相手の入力進捗"></progress>
+          </div>
+          <div class="online-input" id="onlineInput" tabindex="-1">
+            <h2>あなたの入力</h2>
+            <p class="online-word" id="onlineTarget"></p>
+            <p class="online-letters"><span id="onlineTyped" class="online-done"></span><span id="onlineRemaining"></span></p>
+            <div class="online-entry" id="onlineEntry" hidden><output aria-label="入力中のかな"></output><button id="onlineErase" type="button" aria-label="1文字消す">⌫</button></div>
+            <div class="online-keyboard" id="onlineKeyboard" role="group" aria-label="対戦用フリックキーボード" hidden></div>
+          </div>
+          <p class="online-banner" id="onlineBanner" role="status" hidden></p>
+        </div>
+        <button id="onlineReady" class="online-primary online-ready" type="button" hidden>準備完了にする</button>
+        <div class="game-flick-popup online-flick-popup" id="onlineFlickPopup" aria-hidden="true" hidden></div>
+      </section>
 
       <section class="menu-screen save-screen" id="saveScreen" aria-labelledby="saveTitle" hidden>
         <header class="menu-screen-head">
@@ -585,6 +634,9 @@
     <script src="src/app/enemyActionStop.js?v=20261024-dual-time-stop-v1"></script>
     <script src="src/app/attackBoost.js?v=20261024-shield-attack-boost-v1"></script>
     <script src="src/app/counter.js?v=20261024-mountain-v1"></script>
-    <script src="src/app/game.js?v=20261024-capture-intro-v1"></script>
+    <script src="src/online/duel.js?v=20261024-online-v1"></script>
+    <script src="src/online/connection.js?v=20261024-online-v1"></script>
+    <script src="src/app/game.js?v=20261024-online-v1"></script>
+    <script src="src/online/play.js?v=20261024-online-v1"></script>
   </body>
 </html>

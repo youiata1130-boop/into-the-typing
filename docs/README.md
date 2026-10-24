@@ -1,5 +1,7 @@
 # 開発資料
 
+オンライン対戦: [部屋番号・入力進捗・体力と通信の仕様](gameplay/online-duel.md)。
+
 | フォルダ | 内容 |
 | --- | --- |
 | [gameplay](gameplay/weapons.md) | 武器・クールタイム・スキルの仕様 |
