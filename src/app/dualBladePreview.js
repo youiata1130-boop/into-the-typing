@@ -21,6 +21,7 @@ function getDualBladePreviewWord() {
 function updateDualBladePreview() {
   const next = getDualBladePreviewWord();
   els.nextWordPreview.hidden = !next;
+  els.typingStatus.classList.toggle("has-next-word", Boolean(next));
   const input = next ? getWordInputs(next)[0] || next.text : "";
   const reading = next && flickState.enabled
     ? window.JAPANESE_INPUT.parse(next.text, next.reading || "")?.reading || input : input;

@@ -26,6 +26,7 @@ const weaponDefinitions = {
   dualBlades: {
     id: "dualBlades",
     name: "双剣",
+    skillId: "time_stop",
     damageMultiplier: 0.6,
     attackCooldownMs: 200,
     attackTargets: 1,

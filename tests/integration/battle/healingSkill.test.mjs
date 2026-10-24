@@ -11,9 +11,9 @@ test('iron sword charges at half speed and heals thirty percent without hurting 
  assert.equal(game.run('els.specialEffect.classList.contains("is-active")'),false);assert.equal(game.run('els.player.classList.contains("is-healing")'),true);
  assert.equal(game.run('useSpecialMove()'),false);game.advance(650);assert.equal(game.run('state.specialInProgress'),false);game.advance(250);assert.equal(game.run('els.player.classList.contains("is-healing")'),false);
 });
-for(const touch of [false,true])test('healing caps at max HP and '+(touch?'button':'Space')+' works without wasting a full-health gauge',()=>{
+for(const touch of [false,true])test('healing caps at max HP and '+(touch?'button':'Enter')+' works without wasting a full-health gauge',()=>{
  const game=battle('sword',touch);game.run('state.hp=getMaxHp();state.specialGauge=100;updateHud()');assert.equal(game.run('useSpecialMove()'),false);assert.equal(game.run('state.specialGauge'),100);assert.equal(game.run('els.specialButton.disabled'),true);
- game.run('state.hp=getMaxHp()-5;updateHud()');if(touch)game.run('els.specialButton.dispatchEvent({type:"click"})');else game.run('handleTypingKeydown({key:" ",code:"Space",preventDefault(){}})');
+ game.run('state.hp=getMaxHp()-5;updateHud()');if(touch)game.run('els.specialButton.dispatchEvent({type:"click"})');else game.run('handleTypingKeydown({key:"Enter",code:"Enter",preventDefault(){}})');
  assert.equal(game.run('state.hp'),game.run('getMaxHp()'));assert.equal(game.run('els.playerHealText.textContent'),'＋5');assert.equal(game.run('state.specialGauge'),0);
 });
 test('healing gives no invulnerability and leaving battle cancels the light and callbacks',()=>{

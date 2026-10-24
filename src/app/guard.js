@@ -99,13 +99,5 @@ function initializePlayerGuard() {
   }
   window.addEventListener("pointerup", releasePointer);
   window.addEventListener("pointercancel", releasePointer);
-  els.guardButton.addEventListener("keydown", event => {
-    if (event.key !== "Enter") return;
-    event.preventDefault();
-    if (!event.repeat) beginPlayerGuard("enter");
-  });
-  document.addEventListener("keyup", event => {
-    if (event.key === "Enter") endPlayerGuard("enter");
-  });
   els.guardButton.addEventListener("click", event => event.preventDefault());
 }

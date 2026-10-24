@@ -5872,7 +5872,7 @@ html[data-flick-input="true"] .skill-panel kbd { display: none; }
 
 .next-word-preview {
   display: block;
-  margin-top: 6px;
+  margin: 0;
   color: #246475;
   font-size: 16px;
   line-height: 1.4;
@@ -5880,6 +5880,25 @@ html[data-flick-input="true"] .skill-panel kbd { display: none; }
   overflow-wrap: anywhere;
 }
 .next-word-preview[hidden] { display: none; }
+.typing-status.has-next-word {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(110px, .65fr);
+  align-items: center;
+  gap: 16px;
+}
+.typing-status.has-next-word .typing-word-card { grid-column: 1; grid-row: 1; }
+.typing-status.has-next-word .next-word-preview {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+  padding-left: 12px;
+  border-left: 1px solid #8bafb9;
+  text-align: left;
+}
+@media (max-width: 600px) {
+  .typing-status.has-next-word { grid-template-columns: minmax(0, 1fr) minmax(110px, .8fr); gap: 10px; }
+  .typing-status.has-next-word .next-word-preview { padding-left: 10px; }
+}
 
 /* Browsing a weapon never equips it until the detail button is pressed. */
 .menu-screen .weapon-picker { width: min(860px, 100%); align-self: start; }
@@ -5919,3 +5938,23 @@ html[data-flick-input="true"] .skill-panel kbd { display: none; }
 @media (prefers-reduced-motion: reduce) {
  .player.is-healing .healing-effect, .player.is-healing .healing-effect i, .player.is-healing .healing-number { animation: none; opacity: 1; }
 }
+
+.enemy-stop-indicator { position: absolute; z-index: 20; top: 14px; left: 50%; transform: translateX(-50%); padding: 6px 14px; color: #edfbff; background: #244a79ed; border: 2px solid #a5e9ff; border-radius: 8px; box-shadow: 0 0 18px #87caff99; font-size: 18px; font-weight: 800; pointer-events: none; }
+.enemy-stop-indicator[hidden] { display: none; }
+.enemy-time-stop-mark { display: none; }
+.enemy.is-time-stopped .enemy-time-stop-mark { display: grid; place-items: center; position: absolute; z-index: 10; right: 0; top: 0; width: 30px; height: 30px; border-radius: 50%; border: 2px solid #b6edff; color: #e8fbff; background: #244a79e6; font-size: 22px; font-weight: 800; box-shadow: 0 0 12px #6bd9ff; }
+.enemy.is-time-stopped [data-animation="idle"] .enemy-image,
+.enemy.is-time-stopped [data-animation="attack"] .enemy-image { animation-play-state: paused; filter: saturate(.35) drop-shadow(0 0 12px #91ddff); }
+.enemy.is-time-stopped .enemy-sprite::before { animation: none; background: radial-gradient(ellipse, transparent 35%, #8fdcff 65%, transparent 76%); }
+
+/* Empty cooldown prompts keep the same line boxes as visible words. */
+.typing-word-card > .word-translation::after,
+.typing-word-card > .word-target::after { content: "\200b"; }
+html[data-flick-input="true"] .typing-status { min-height: 56px; }
+html[data-flick-input="true"] .typing-status[data-weapon="greatsword"] { min-height: 78px; }
+
+@media (max-width: 600px) {
+  html[data-flick-input="false"] .typing-status[data-weapon="greatsword"] { min-height: 124px; }
+}
+
+html[data-flick-input="true"][data-compact-battle="true"] .typing-status[data-weapon="dualBlades"] { min-height: 78px; }

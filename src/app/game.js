@@ -338,6 +338,7 @@ const state = {
 };
 
 function invalidateBattleGeneration() {
+  clearEnemyActionStop();
   clearPlayerDamageEffect();
   clearHealingEffect();
   clearPlayerGuard();
@@ -388,6 +389,7 @@ const els = {
   playerDamageEffect: document.querySelector("#playerDamageEffect"),
   playerDamageText: document.querySelector("#playerDamageText"),
   playerHealText: document.querySelector("#playerHealText"),
+  enemyStopIndicator: document.querySelector("#enemyStopIndicator"),
   greatswordImpact: document.querySelector("#greatswordImpact"),
   bossIntro: document.querySelector("#bossIntro"),
   bossIntroKicker: document.querySelector("#bossIntroKicker"),
@@ -605,6 +607,7 @@ function isSpecialReady() {
   return canChargeSkill() && !isUnarmedStory()
     && !state.activeEnemies.some(enemy => enemy.tutorial && isEnemyAlive(enemy))
     && (getActiveSkill().target !== "self" || state.hp < getMaxHp())
+    && (getActiveSkill().target !== "battle" || !isEnemyActionStopped())
     && state.specialGauge >= specialGaugeMax;
 }
 
@@ -1476,6 +1479,7 @@ function playEnemyAnimation(enemy, animationName, options = {}) {
         return;
       }
 
+      if (isEnemyActionStopped() && ["idle", "attack"].includes(enemy.animation)) return;
       enemy.frameIndex = (enemy.frameIndex + 1) % frames.length;
       updateEnemyFrame(enemy);
     }, enemyAnimations.settings?.[enemy.type]?.frameMs ?? enemyAnimations.frameMs);
@@ -1822,6 +1826,7 @@ function createEnemyElement(enemy) {
     </div>
     <div class="enemy-sprite" data-animation="idle" aria-hidden="true">
       <img class="enemy-image" alt="">
+      <span class="enemy-time-stop-mark" aria-hidden="true">Ⅱ</span>
     </div>
   `;
 
@@ -2014,6 +2019,7 @@ function addEnemyToWave(wave, index) {
   const enemy = createEnemy(wave, index);
   enemy.lastTick = now;
   state.activeEnemies.push(enemy);
+  markStoppedEnemy(enemy);
   els.enemyLayer.appendChild(enemy.element);
   scheduleBattleLayout();
   playEnemyAnimation(enemy, "idle");
@@ -2091,6 +2097,7 @@ function enemyLoop(now) {
   updateAttackCooldown();
 
   state.activeEnemies.forEach((enemy) => {
+    if (isEnemyActionStopped()) { enemy.lastTick = now; return; }
     if (enemy.resolving || enemy.animation === "attack") {
       enemy.lastTick = now;
       return;
@@ -2140,6 +2147,7 @@ function startLoop() {
 }
 
 function enemyAttack(enemy) {
+  if (isEnemyActionStopped()) return;
   if (!state.running || state.hp <= 0 || isStoryDialogueOpen() || enemy.resolving
       || enemy.animation === "attack" || !isEnemyAlive(enemy) || !state.activeEnemies.includes(enemy)) return;
   if (enemy.attackStyle === "charge") {
@@ -2267,6 +2275,7 @@ function useSpecialMove() {
   const skill = getActiveSkill();
   if (!skill.effects.length || skill.effects.some(effect => !skillEffectHandlers[effect.type])) return false;
   if (skill.target === "self") return useHealingSkill(skill);
+  if (skill.target === "battle") return useEnemyStopSkill(skill);
   const targets = getSkillTargets(skill);
   if (!targets.length || targets.some((enemy) => enemy.resolving)) {
     updateHud();
@@ -2725,8 +2734,7 @@ function handleTypingKeydown(event) {
     if (state.running) {
       event.preventDefault();
       if (!event.repeat) {
-        if (hasGuardWeapon() && !event.shiftKey) beginPlayerGuard("keyboard");
-        else useSpecialMove();
+        if (hasGuardWeapon()) beginPlayerGuard("keyboard");
       }
       return;
     }
@@ -2735,6 +2743,13 @@ function handleTypingKeydown(event) {
   }
 
   if (!state.running) {
+    return;
+  }
+
+  if ((event.key === "Enter" || event.code === "Enter" || event.code === "NumpadEnter")
+      && !event.altKey && !event.ctrlKey && !event.metaKey) {
+    event.preventDefault();
+    if (!event.repeat) useSpecialMove();
     return;
   }
 

@@ -15,7 +15,7 @@ function battle(weaponId = "greatsword", touch = false) {
     target.hp = target.maxHp = 100;
     target.word = target.matchedWord = "a".repeat(40);
     target.inputs = [target.word];
-    const space = (repeat = false) => handleTypingKeydown({ key: " ", code: "Space", shiftKey: hasGuardWeapon(), repeat, preventDefault() {} });
+    const enter = (repeat = false) => handleTypingKeydown({ key: "Enter", code: "Enter", repeat, preventDefault() {} });
   `);
   return game;
 }
@@ -30,7 +30,7 @@ test("correct input charges a visible capped gauge; misses and retyping cannot f
   assert.equal(game.run("state.specialGauge"), 4);
   game.run('applyTypedValue(target, "a".repeat(24))');
   assert.equal(game.run("state.specialGauge"), 96);
-  game.run("space()");
+  game.run("enter()");
   assert.equal(game.run("state.specialGauge"), 96);
   assert.equal(game.run("target.hp"), 100);
   game.run('applyTypedValue(target, "a".repeat(25))');
@@ -45,20 +45,20 @@ test("correct input charges a visible capped gauge; misses and retyping cannot f
 test("the skill shortcut spends a full gauge once and deals triple maximum weapon damage", () => {
   for (const [weapon, damage] of [["greatsword", 24]]) {
     const game = battle(weapon);
-    game.run('applyTypedValue(target, "a".repeat(25)); target.typingMisses = 5; space()');
+    game.run('applyTypedValue(target, "a".repeat(25)); target.typingMisses = 5; enter()');
     assert.equal(game.run("target.hp"), 100 - damage);
     assert.equal(game.run("state.specialGauge"), 0);
     assert.equal(game.run("state.specialInProgress"), true);
     assert.equal(game.run("els.specialButton.disabled"), true);
     assert.equal(game.run('els.specialEffect.classList.contains("is-active")'), true);
-    game.run("space(); space(true)");
+    game.run("enter(); enter(true)");
     assert.equal(game.run("target.hp"), 100 - damage);
     game.advance(420);
     assert.equal(game.run("state.specialInProgress"), false);
     assert.equal(game.run("target.resolving"), false);
-    game.run("state.specialGauge = 100; space(true)");
+    game.run("state.specialGauge = 100; enter(true)");
     assert.equal(game.run("state.specialGauge"), 100);
-    game.run("space()");
+    game.run("enter()");
     assert.equal(game.run("state.specialGauge"), 0);
   }
 });
@@ -87,7 +87,7 @@ test("a skill boss kill follows the ordinary clear and reward flow exactly once"
   const game = battle();
   game.run(`
     stageDefinitions.grassland_path.waves = [{ types: ["snake_boss"], name: "蛇の王様", hp: 24, count: 1, experience: 70, boss: true }];
-    startGame("grassland_path"); state.specialGauge = 100; space();
+    startGame("grassland_path"); state.specialGauge = 100; enter();
   `);
   assert.equal(game.run("state.activeEnemies[0].hp"), 0);
   assert.equal(game.run("state.totalExperience"), 255);
@@ -98,7 +98,7 @@ test("a skill boss kill follows the ordinary clear and reward flow exactly once"
   assert.equal(game.run("state.totalExperience"), 325);
   assert.equal(game.run("els.skillPanel.hidden"), true);
   assert.ok(game.savedProgress().clearedStages.includes("grassland_path"));
-  game.run("space(); finishGame(true)");
+  game.run("enter(); finishGame(true)");
   assert.equal(game.run("state.totalExperience"), 325);
 });
 
@@ -108,7 +108,7 @@ test("skills hit every active enemy and mixed lethal/nonlethal hits resolve safe
     target.hp = 5;
     addEnemyToWave({ types: ["snake_level_1"], hp: 50, count: 1, experience: 30 }, 0);
     const survivor = state.activeEnemies.at(-1);
-    state.specialGauge = 100; space();
+    state.specialGauge = 100; enter();
   `);
   assert.equal(game.run("target.hp"), 0);
   assert.equal(game.run("survivor.hp"), 26);
@@ -120,7 +120,7 @@ test("skills hit every active enemy and mixed lethal/nonlethal hits resolve safe
 
 test("restart cancels old skill callbacks and resets the gauge", () => {
   const game = battle();
-  game.run('state.specialGauge = 100; space(); startGame("grassland_path"); const freshEnemy = getCurrentEnemy()');
+  game.run('state.specialGauge = 100; enter(); startGame("grassland_path"); const freshEnemy = getCurrentEnemy()');
   game.advance(1000);
   assert.equal(game.run("state.specialGauge"), 0);
   assert.equal(game.run("state.specialInProgress"), false);
@@ -149,11 +149,27 @@ for (const touch of [false, true]) test('branch cannot charge or use a skill thr
   assert.equal(game.run('state.specialGauge'), 0);
   assert.equal(game.run('els.skillPanel.hidden'), true);
   assert.equal(game.run('els.specialButton.disabled'), true);
-  game.run('state.specialGauge = 100; updateHud(); space(); els.specialButton.dispatchEvent({type:"click"})');
+  game.run('state.specialGauge = 100; updateHud(); enter(); els.specialButton.dispatchEvent({type:"click"})');
   assert.equal(game.run('useSpecialMove()'), false);
   assert.equal(game.run('target.hp'), 100);
   assert.equal(game.run('state.specialInProgress'), false);
   assert.equal(game.run('state.specialGauge'), 100);
   game.run('applyTypedValue(target, target.matchedWord)');
   assert.ok(game.run('target.hp') < 100);
+});
+
+test("all skill weapons use Enter or NumpadEnter, never Space or Shift+Space", () => {
+  for (const weapon of ["sword", "greatsword", "dualBlades", "swordShield"]) {
+    const game = battle();
+    game.run(`state.weaponId="${weapon}";target.weaponId="${weapon}";state.dualBladesObtained=true;state.swordShieldObtained=true;state.hp=getMaxHp()-10;state.specialGauge=100;updateHud();
+      handleTypingKeydown({key:" ",code:"Space",shiftKey:true,preventDefault(){}});
+      document.dispatchEvent({type:"keyup",key:" ",code:"Space"});`);
+    assert.equal(game.run('state.specialGauge'), 100, weapon);
+    game.run('handleTypingKeydown({key:"Enter",code:"Enter",repeat:true,preventDefault(){}})');
+    assert.equal(game.run('state.specialGauge'), 100, weapon);
+    game.run('handleTypingKeydown({key:"Enter",code:"NumpadEnter",preventDefault(){}})');
+    assert.equal(game.run('state.specialGauge'), 0, weapon);
+    assert.equal(game.run('els.specialShortcut.textContent'), 'Enter');
+    assert.equal(game.run('els.specialButton.getAttribute("aria-keyshortcuts")'), 'Enter');
+  }
 });

@@ -40,6 +40,7 @@ function getSkillDamage(effect) {
 
 // New effect types belong here; gauge consumption and battle timing stay shared.
 const skillEffectHandlers = {
+  stopActions(effect) { startEnemyActionStop(effect.durationMs); },
   heal(effect) {
     const before = state.hp;
     state.hp = Math.min(getMaxHp(), state.hp + Math.ceil(getMaxHp() * effect.fraction));
@@ -69,7 +70,7 @@ function updateSkillHud() {
   els.skillGaugeValue.textContent = `${percent}％`;
   els.skillName.textContent = skill.name;
   els.specialButton.setAttribute("aria-label", `${skill.name}を発動`);
-  const shortcut = hasGuardWeapon() ? "Shift+Space" : "Space";
+  const shortcut = "Enter";
   els.specialShortcut.textContent = shortcut;
   els.specialButton.setAttribute("aria-keyshortcuts", shortcut);
 }

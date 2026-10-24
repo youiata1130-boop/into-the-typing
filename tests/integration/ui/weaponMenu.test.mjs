@@ -7,7 +7,7 @@ test('browsing changes the image and features while only the equip button change
  const game=createGame(saved());game.run('showWeaponScreen()');const before=game.savedProgress();
  game.run('previewWeapon("dualBlades")');assert.equal(game.run('state.weaponId'),'sword');assert.deepEqual(game.savedProgress(),before);
  assert.equal(game.run('els.weaponPreviewName.textContent'),'双剣');assert.match(game.run('els.weaponPreviewImage.getAttribute("src")'),/dual_blades/);
- assert.ok(game.snapshot('weaponFeatures.dualBlades').includes('次の単語を予告'));
+ assert.ok(game.snapshot('weaponFeatures.dualBlades').some(text=>text.includes('次の単語を予告')));
  assert.equal(game.run('els.weaponEquipButton.disabled'),false);game.run('els.weaponEquipButton.dispatchEvent({type:"click"})');
  assert.equal(game.savedProgress().weaponId,'dualBlades');assert.equal(game.run('els.weaponEquipButton.textContent'),'装備中');assert.equal(game.run('els.weaponEquipButton.disabled'),true);
  game.run('previewWeapon("greatsword");showHomeScreen();showWeaponScreen()');assert.equal(game.run('weaponMenuState.selectedId'),'dualBlades');

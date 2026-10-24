@@ -51,7 +51,7 @@ const languageLabels = {
     bossKicker: "WARNING",
     bossTitle: "Boss Appeared",
     bossText: "A powerful enemy has arrived.",
-    specialKeyHint: "Press Space to use Special",
+    specialKeyHint: "Press Enter to use Special",
   },
   ja: {
     languageName: "日本語",
@@ -105,6 +105,6 @@ const languageLabels = {
     bossKicker: "WARNING",
     bossTitle: "ボス出現",
     bossText: "強敵があらわれました。",
-    specialKeyHint: "Spaceキーで必殺技を使えます",
+    specialKeyHint: "Enterキーでスキルを使えます",
   },
 };

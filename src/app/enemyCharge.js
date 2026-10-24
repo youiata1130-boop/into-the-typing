@@ -25,6 +25,7 @@ function updateEnemyCharge(enemy) {
 }
 
 function advanceEnemyCharge(enemy, now) {
+  if (isEnemyActionStopped()) { enemy.lastTick = now; return; }
   const elapsed = Math.max(0, now - enemy.lastTick);
   enemy.lastTick = now;
   enemy.chargeElapsedMs = Math.min(enemy.chargeDurationMs, enemy.chargeElapsedMs + elapsed);

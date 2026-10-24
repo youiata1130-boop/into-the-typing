@@ -17,6 +17,7 @@ function battle({ weaponId = "swordShield", stage = "mushroom_forest", touch = f
     const pressSpace = (shiftKey = false, repeat = false) => handleTypingKeydown({
       key: " ", code: "Space", shiftKey, repeat, preventDefault() {},
     });
+    const pressEnter = () => handleTypingKeydown({key:"Enter",code:"Enter",preventDefault(){}});
     const releaseSpace = () => document.dispatchEvent({ type: "keyup", key: " ", code: "Space" });
     const attack = () => {
       if (enemy.attackStyle === "charge") enemy.chargeElapsedMs = enemy.chargeDurationMs;
@@ -109,13 +110,13 @@ test("guard cancels queued typing and attack animation without shortening the st
   assert.equal(game.run("state.combo"), 1);
 });
 
-test("sword and shield reserves Space for guard and Shift+Space for the existing skill", () => {
+test("sword and shield reserves Space for guard and Enter for the existing skill", () => {
   const game = battle();
   game.run("state.specialGauge = 100; pressSpace(); pressSpace(false, true)");
   assert.equal(game.run("state.specialInProgress"), false);
   assert.equal(game.run("state.guarding"), true);
-  assert.equal(game.run("els.specialShortcut.textContent"), "Shift+Space");
-  game.run("releaseSpace(); pressSpace(true)");
+  assert.equal(game.run("els.specialShortcut.textContent"), "Enter");
+  game.run("releaseSpace(); pressEnter()");
   assert.equal(game.run("state.specialGauge"), 0);
   assert.equal(game.run("state.specialInProgress"), true);
   assert.equal(game.run("state.guarding"), false);
@@ -123,11 +124,11 @@ test("sword and shield reserves Space for guard and Shift+Space for the existing
   assert.equal(game.run("state.guarding"), false);
   for (const weaponId of ["dualBlades"]) {
     const other = battle({ weaponId });
-    other.run("state.specialGauge = 100; pressSpace()");
-    assert.equal(other.run("state.specialInProgress"), true);
+    other.run("state.specialGauge = 100; pressEnter()");
+    assert.equal(other.run("isEnemyActionStopped()"), true);
     assert.equal(other.run("state.guarding"), false);
     assert.equal(other.run("els.guardButton.hidden"), true);
-    assert.equal(other.run("els.specialShortcut.textContent"), "Space");
+    assert.equal(other.run("els.specialShortcut.textContent"), "Enter");
   }
 });
 
@@ -162,11 +163,9 @@ test("hiding the page, leaving battle, restarting and losing clear the guard and
   }
 });
 
-test("Enter on the guard button and Space release independently", () => {
+test("Enter does not latch guard on the guard button", () => {
   const game = battle();
-  game.run(`pressSpace(); els.guardButton.dispatchEvent({ type: "keydown", key: "Enter", preventDefault() {} }); releaseSpace()`);
-  assert.equal(game.run("state.guarding"), true);
-  game.run('document.dispatchEvent({ type: "keyup", key: "Enter" })');
+  game.run('pressSpace(); els.guardButton.dispatchEvent({type:"keydown",key:"Enter",preventDefault(){}}); releaseSpace()');
   assert.equal(game.run("state.guarding"), false);
 });
 
@@ -176,12 +175,12 @@ test("greatsword blocks quarter damage with its blade while its word is empty", 
   assert.equal(game.run("state.hp"), game.run("getMaxHp()") - 6);
   assert.equal(game.run("state.guarding"), true);
   assert.equal(game.run("els.guardButton.hidden"), false);
-  assert.equal(game.run("els.specialShortcut.textContent"), "Shift+Space");
+  assert.equal(game.run("els.specialShortcut.textContent"), "Enter");
   assert.equal(game.run('els.player.getAttribute("aria-label")'), "大剣でガードする主人公");
   assert.match(game.run("els.playerFrameGuard.src"), /greatsword\/guard\//);
   assert.equal(game.run("canUseGameFlickKeyboard()"), false);
   game.run("releaseSpace()"); game.advance(360);
-  game.run("state.specialGauge = 100; pressSpace(true)");
+  game.run("state.specialGauge = 100; pressEnter()");
   assert.equal(game.run("state.specialInProgress"), true);
   assert.equal(game.run("state.guarding"), false);
 });
