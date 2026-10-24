@@ -6,7 +6,7 @@
     <title>Into the Typing</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='52'%3E%E2%9A%94%EF%B8%8F%3C/text%3E%3C/svg%3E">
     <link rel="preload" as="image" href="src/assets/images/backgrounds/shared/typing_rpg_background.webp">
-    <link rel="stylesheet" href="src/styles/main.css?v=20261024-stable-prompt-v1">
+    <link rel="stylesheet" href="src/styles/main.css?v=20261024-shield-attack-boost-v1">
   </head>
   <body>
     <section class="loading-screen" id="loadingScreen" aria-labelledby="loadingText" aria-busy="true">
@@ -287,6 +287,7 @@
           </section>
         </header>
         <section class="arena" aria-label="戦闘エリア">
+        <div class="attack-boost-indicator" id="attackBoostIndicator" role="status" hidden>攻撃力1.5倍</div>
         <div class="enemy-stop-indicator" id="enemyStopIndicator" role="status" hidden>時止め中</div>
         <div class="sky">
           <div class="cloud cloud-a"></div>
@@ -333,6 +334,7 @@
               <i class="guard-spark" style="--spark-angle:125deg"></i>
               <strong class="guard-success-label">ガード成功</strong>
             </span>
+            <span class="attack-boost-aura" aria-hidden="true"></span>
             <span class="healing-effect" aria-hidden="true"><i></i><i></i><i></i><span class="healing-number" id="playerHealText"></span></span>
             <span class="player-damage-text" id="playerDamageText" aria-hidden="true"></span>
           </div>
@@ -528,9 +530,9 @@
 
     <script src="src/data/words.js?v=20261024-thorn-depths-v1"></script>
     <script src="src/data/labels.js?v=20261024-enter-skill-v1"></script>
-    <script src="src/config/weapons.js?v=20261024-dual-time-stop-v1"></script>
+    <script src="src/config/weapons.js?v=20261024-shield-attack-boost-v1"></script>
     <script src="src/config/stages.js?v=20261024-fairy-difficulty-v1"></script>
-    <script src="src/config/skills.js?v=20261024-dual-time-stop-v1"></script>
+    <script src="src/config/skills.js?v=20261024-shield-attack-boost-v1"></script>
     <script src="src/config/enemyAnimations.js?v=20261024-thorn-depths-v1"></script>
     <script src="src/config/playerProgression.js?v=20261024-thorn-depths-v1"></script>
     <script src="src/config/saveSlots.js?v=20261024-thorn-depths-v1"></script>
@@ -540,14 +542,15 @@
     <script src="src/input/mobile.js?v=20261024-thorn-depths-v1"></script>
     <script src="src/input/flickKeyboard.js?v=20261024-thorn-depths-v1"></script>
     <script src="src/app/loading.js?v=20261024-thorn-depths-v1"></script>
-    <script src="src/app/sound.js?v=20261024-dual-time-stop-v1"></script>
-    <script src="src/app/skills.js?v=20261024-enter-skill-v1"></script>
+    <script src="src/app/sound.js?v=20261024-shield-attack-boost-v1"></script>
+    <script src="src/app/skills.js?v=20261024-shield-attack-boost-v1"></script>
     <script src="src/app/enemyCharge.js?v=20261024-dual-time-stop-v1"></script>
     <script src="src/app/battleFeedback.js?v=20261024-healing-sword-v1"></script>
-    <script src="src/app/guard.js?v=20261024-enter-skill-v1"></script>
+    <script src="src/app/guard.js?v=20261024-down-guard-v1"></script>
     <script src="src/app/dualBladePreview.js?v=20261024-preview-right-v1"></script>
-    <script src="src/ui/weaponMenu.js?v=20261024-dual-time-stop-v1"></script>
+    <script src="src/ui/weaponMenu.js?v=20261024-shield-attack-boost-v1"></script>
     <script src="src/app/enemyActionStop.js?v=20261024-dual-time-stop-v1"></script>
-    <script src="src/app/game.js?v=20261024-enter-skill-v1"></script>
+    <script src="src/app/attackBoost.js?v=20261024-shield-attack-boost-v1"></script>
+    <script src="src/app/game.js?v=20261024-down-guard-v1"></script>
   </body>
 </html>

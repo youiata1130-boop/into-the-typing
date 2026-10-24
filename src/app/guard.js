@@ -81,6 +81,7 @@ function playGuardImpact() {
 function initializePlayerGuard() {
   document.addEventListener("keyup", event => {
     if (event.code === "Space" || event.key === " " || event.key === "Spacebar") endPlayerGuard("keyboard");
+    if (event.code === "ArrowDown" || event.key === "ArrowDown") endPlayerGuard("arrowDown");
   });
   const releaseOnBlur = () => { clearPlayerGuard(); updateHud(); };
   window.addEventListener("blur", releaseOnBlur);

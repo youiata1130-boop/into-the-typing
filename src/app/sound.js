@@ -36,6 +36,7 @@ window.GAME_SOUND = (() => {
 
   // Tone tuples: frequency, duration, delay, waveform, end frequency, volume.
   const effects = {
+    attack_boost: { tones: [[220,.17,0,"triangle",440,.4],[440,.22,.09,"triangle",880,.3],[880,.2,.18,"sine",1100,.2]] },
     time_stop: { tones: [[950,.16,0,"sine",250,.35],[480,.28,.08,"triangle",120,.25]] },
     heal: { tones: [[523, .22, 0, "sine", 659, .3], [659, .25, .12, "sine", 784, .3], [1047, .3, .24, "sine", 1319, .22]] },
     guard: { tones: [[1100, 0.14, 0, "triangle", 550, 0.45], [1750, 0.1, 0, "sine", 1300, 0.2]],

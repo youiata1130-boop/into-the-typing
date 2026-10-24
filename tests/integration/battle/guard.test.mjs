@@ -118,10 +118,11 @@ test("sword and shield reserves Space for guard and Enter for the existing skill
   assert.equal(game.run("els.specialShortcut.textContent"), "Enter");
   game.run("releaseSpace(); pressEnter()");
   assert.equal(game.run("state.specialGauge"), 0);
-  assert.equal(game.run("state.specialInProgress"), true);
+  assert.equal(game.run("isPlayerAttackBoosted()"), true);
+  assert.equal(game.run("state.specialInProgress"), false);
   assert.equal(game.run("state.guarding"), false);
   game.run("pressSpace()");
-  assert.equal(game.run("state.guarding"), false);
+  assert.equal(game.run("state.guarding"), true);
   for (const weaponId of ["dualBlades"]) {
     const other = battle({ weaponId });
     other.run("state.specialGauge = 100; pressEnter()");
@@ -250,4 +251,22 @@ test("switching greatsword targets cannot hide a partially typed word from the g
   game.run('applyTypedValue(enemy, enemy.matchedWord.slice(0, 1)); setTargetEnemy(state.activeEnemies[1]); pressSpace()');
   assert.equal(game.run("state.guarding"), false);
   assert.equal(game.run("els.guardButton.disabled"), true);
+});
+
+for (const weaponId of ["swordShield", "greatsword"]) test(weaponId + ': ArrowDown holds guard independently of Space', () => {
+  const game = battle({ weaponId });
+  game.run('const down = () => handleTypingKeydown({key:"ArrowDown",code:"ArrowDown",preventDefault(){}}); const up = () => document.dispatchEvent({type:"keyup",key:"ArrowDown",code:"ArrowDown"}); down()');
+  assert.equal(game.run('state.guarding'), true);
+  game.run('pressSpace();up()'); assert.equal(game.run('state.guarding'), true);
+  game.run('down();releaseSpace()'); assert.equal(game.run('state.guarding'), true);
+  game.run('up()'); assert.equal(game.run('state.guarding'), false);
+  game.run('down();showStageSelect()'); assert.equal(game.run('state.guarding'), false);
+});
+test('ArrowDown respects greatsword partial input and cannot guard with an unsupported weapon', () => {
+  const game = battle({ weaponId: 'greatsword' });
+  game.run('applyTypedValue(enemy,enemy.matchedWord[0]);handleTypingKeydown({key:"ArrowDown",code:"ArrowDown",preventDefault(){}})');
+  assert.equal(game.run('state.guarding'), false);
+  const other = battle({weaponId:'dualBlades'});
+  other.run('handleTypingKeydown({key:"ArrowDown",code:"ArrowDown",preventDefault(){}})');
+  assert.equal(other.run('state.guarding'), false);
 });

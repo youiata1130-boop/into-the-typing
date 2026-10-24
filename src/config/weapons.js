@@ -18,6 +18,7 @@ const weaponDefinitions = {
   swordShield: {
     id: "swordShield",
     name: "片手剣",
+    skillId: "battle_spirit",
     damageMultiplier: 1,
     attackCooldownMs: 700,
     guardDamageMultiplier: 0.25,

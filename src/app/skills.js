@@ -40,6 +40,7 @@ function getSkillDamage(effect) {
 
 // New effect types belong here; gauge consumption and battle timing stay shared.
 const skillEffectHandlers = {
+  attackBoost(effect) { startPlayerAttackBoost(effect); },
   stopActions(effect) { startEnemyActionStop(effect.durationMs); },
   heal(effect) {
     const before = state.hp;

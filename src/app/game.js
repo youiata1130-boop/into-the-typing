@@ -338,6 +338,7 @@ const state = {
 };
 
 function invalidateBattleGeneration() {
+  clearPlayerAttackBoost();
   clearEnemyActionStop();
   clearPlayerDamageEffect();
   clearHealingEffect();
@@ -390,6 +391,7 @@ const els = {
   playerDamageText: document.querySelector("#playerDamageText"),
   playerHealText: document.querySelector("#playerHealText"),
   enemyStopIndicator: document.querySelector("#enemyStopIndicator"),
+  attackBoostIndicator: document.querySelector("#attackBoostIndicator"),
   greatswordImpact: document.querySelector("#greatswordImpact"),
   bossIntro: document.querySelector("#bossIntro"),
   bossIntroKicker: document.querySelector("#bossIntroKicker"),
@@ -579,7 +581,8 @@ function getWeaponDamageMultiplier(enemy = null) {
 function getPlayerAttackDamage(enemy = null) {
   const weaponId = enemy?.weaponId || getBattleWeaponId();
   if (weaponId === unarmedWeapon.id) return unarmedWeapon.damage;
-  const damage = getStatValue("attack") * getWeaponDamageMultiplier(enemy);
+  const boost = weaponId === "swordShield" ? playerAttackBoost.multiplier : 1;
+  const damage = getStatValue("attack") * getWeaponDamageMultiplier(enemy) * boost;
   return weaponId === "branch" || weaponId === "greatsword"
     ? Math.round(damage * 10) / 10 : Math.max(1, Math.round(damage));
 }
@@ -608,6 +611,7 @@ function isSpecialReady() {
     && !state.activeEnemies.some(enemy => enemy.tutorial && isEnemyAlive(enemy))
     && (getActiveSkill().target !== "self" || state.hp < getMaxHp())
     && (getActiveSkill().target !== "battle" || !isEnemyActionStopped())
+    && (getActiveSkill().target !== "playerBuff" || !isPlayerAttackBoosted())
     && state.specialGauge >= specialGaugeMax;
 }
 
@@ -2276,6 +2280,7 @@ function useSpecialMove() {
   if (!skill.effects.length || skill.effects.some(effect => !skillEffectHandlers[effect.type])) return false;
   if (skill.target === "self") return useHealingSkill(skill);
   if (skill.target === "battle") return useEnemyStopSkill(skill);
+  if (skill.target === "playerBuff") return useAttackBoostSkill(skill);
   const targets = getSkillTargets(skill);
   if (!targets.length || targets.some((enemy) => enemy.resolving)) {
     updateHud();
@@ -2743,6 +2748,15 @@ function handleTypingKeydown(event) {
   }
 
   if (!state.running) {
+    return;
+  }
+
+  if ((event.key === "ArrowDown" || event.code === "ArrowDown")
+      && !event.altKey && !event.ctrlKey && !event.metaKey) {
+    if (hasGuardWeapon()) {
+      event.preventDefault();
+      if (!event.repeat) beginPlayerGuard("arrowDown");
+    }
     return;
   }
 
