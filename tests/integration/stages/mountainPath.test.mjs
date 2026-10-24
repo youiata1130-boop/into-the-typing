@@ -4,13 +4,16 @@ import { existsSync } from "node:fs";
 import { createGame } from "../../helpers/game.mjs";
 
 const cleared = ["forest_path", "mist_road", "sky_castle", "storm_cove", "grassland_path", "flower_meadow", "swarm_meadow", "mushroom_forest", "spore_path", "fairy_forest", "thorn_depths"];
-function battle({ touch = false, weaponId = "swordShield", unlocked = true } = {}) {
+const passageIds = ['kusamakura_hibari', 'kusamakura_birdsong', 'kusamakura_nanohana', 'kusamakura_kokoro', 'kusamakura_spring'];
+function battle({ touch = false, weaponId = "swordShield", unlocked = true, passageId = 'kusamakura_hibari', savedItems = {} } = {}) {
   const game = createGame({ "into-the-typing.player.v2": JSON.stringify({
     version: 2, totalExperience: 2850, stats: { attack: 7, agility: 3 }, weaponId,
     introCompleted: true, equipmentTutorialCompleted: true, ironSwordObtained: true,
     greatswordObtained: true, dualBladesObtained: true, swordShieldObtained: true,
     skillTutorialCompleted: true, clearedStages: unlocked ? cleared : cleared.slice(0, -1),
-  }) }, { touch });
+  }), ...savedItems }, { touch });
+  // Keep unrelated battle assertions deterministic; cycle tests use the real five-item pool.
+  if (passageId) game.run(`getStageDefinition("mountain_path").capture.passageIds = [${JSON.stringify(passageId)}]`);
   game.run('startGame("mountain_path")');
   game.advance(1600);
   return game;
@@ -78,14 +81,18 @@ for (const weaponId of ['sword', 'greatsword', 'dualBlades', 'swordShield']) {
   });
 }
 
-for (const touch of [false, true]) test(`${touch ? 'flick' : 'keyboard'} passage completion escapes once, resumes the next wave and saves 460 EXP on clear`, () => {
-  const game = battle({ touch });
+for (const passageId of passageIds) for (const touch of [false, true]) test(`${passageId}: ${touch ? 'flick' : 'keyboard'} completion escapes once, resumes the next wave and saves 460 EXP on clear`, () => {
+  const game = battle({ touch, passageId });
   capture(game);
+  const passage = game.snapshot(`capturePassages[${JSON.stringify(passageId)}]`);
+  assert.ok(passage.translation.length >= 18 && passage.translation.length <= 24);
+  assert.equal(game.run('getInputEnemy().translation'), passage.translation);
+  assert.equal(game.run('captureUi.source.getAttribute("href")'), passage.source);
   const hp = game.run('state.hp');
   const gauge = game.run('state.specialGauge');
   if (touch) {
     const reading = game.run('getFlickReading(getInputEnemy()).reading');
-    assert.equal(reading, 'たちまちあしのしたでひばりのこえがしだした');
+    assert.equal(reading, passage.reading);
     for (let length = 1; length <= reading.length; length++) {
       game.run(`els.flickInput.value = ${JSON.stringify(reading.slice(0, length))}; handleFlickInput({isComposing:false})`);
       game.advance(100);
@@ -115,6 +122,60 @@ for (const touch of [false, true]) test(`${touch ? 'flick' : 'keyboard'} passage
   assert.ok(game.savedProgress().clearedStages.includes('mountain_path'));
   game.advance(31000);
   assert.equal(game.savedProgress().totalExperience, 3310);
+});
+
+test("all five passages appear once per shuffled cycle without consecutive repeats across retries", () => {
+  const game = battle({ passageId: null });
+  assert.deepEqual(game.snapshot('getStageDefinition("mountain_path").capture.passageIds'), passageIds);
+  const seen = [];
+  for (let attempt = 0; attempt < 15; attempt++) {
+    if (attempt) {
+      game.run('interruptGame(); startGame("mountain_path")');
+      game.advance(1600);
+    }
+    // Changing the shuffle makes the next cycle want to start with the last item.
+    game.run(`Math.random = () => ${attempt < 5 ? 0 : 0.999999}`);
+    capture(game);
+    const id = game.run('getInputEnemy().passageId');
+    assert.notEqual(id, seen.at(-1));
+    seen.push(id);
+    game.run('renderWord(); updateHud(); tryStartMountainCapture()');
+    assert.equal(game.run('getInputEnemy().passageId'), id);
+  }
+  for (let start = 0; start < seen.length; start += 5) {
+    assert.deepEqual([...new Set(seen.slice(start, start + 5))].sort(), [...passageIds].sort());
+  }
+});
+
+test("reloading after a timeout preserves the remaining passage cycle", () => {
+  let game = battle({ passageId: null });
+  const seen = [];
+  for (let attempt = 0; attempt < 6; attempt++) {
+    capture(game);
+    const id = game.run('getInputEnemy().passageId');
+    assert.notEqual(id, seen.at(-1));
+    seen.push(id);
+    game.advance(30000);
+    assert.equal(game.run('state.running'), false);
+    game = battle({ passageId: null, savedItems: game.saved() });
+  }
+  assert.equal(new Set(seen.slice(0, 5)).size, 5);
+});
+
+test("damaged or unavailable passage storage does not prevent capture and variety", () => {
+  for (const saved of ['{broken', '{"remaining":["missing",null],"lastId":123}', '{"remaining":"wrong"}']) {
+    const game = battle({ passageId: null, savedItems: { 'into-the-typing.capture-passages.v1': saved } });
+    capture(game);
+    assert.ok(passageIds.includes(game.run('getInputEnemy().passageId')));
+  }
+  const game = battle({ passageId: null });
+  game.run('window.localStorage.setItem = () => { throw new Error("storage unavailable") }');
+  capture(game);
+  const previous = game.run('getInputEnemy().passageId');
+  game.run('interruptGame(); startGame("mountain_path")');
+  game.advance(1600);
+  capture(game);
+  assert.notEqual(game.run('getInputEnemy().passageId'), previous);
 });
 
 test("an unfinished passage fails at exactly 30 seconds and grants no partial EXP", () => {

@@ -2,6 +2,43 @@ const mountainCapture = {
   active: false, completed: false, prompt: null,
   deadline: 0, durationMs: 0, timerId: 0, escapeTimerId: 0,
 };
+const capturePassageStorageKey = "into-the-typing.capture-passages.v1";
+const capturePassageCycle = loadCapturePassageCycle();
+
+function loadCapturePassageCycle() {
+  try {
+    const saved = JSON.parse(window.localStorage.getItem(capturePassageStorageKey));
+    return {
+      remaining: Array.isArray(saved?.remaining)
+        ? [...new Set(saved.remaining)].filter(id => Object.hasOwn(capturePassages, id)) : [],
+      lastId: typeof saved?.lastId === "string" ? saved.lastId : "",
+    };
+  } catch { return { remaining: [], lastId: "" }; }
+}
+
+function chooseCapturePassage(passageIds) {
+  const ids = [...new Set(passageIds)].filter(id => Object.hasOwn(capturePassages, id));
+  if (!ids.length) return null;
+  capturePassageCycle.remaining = capturePassageCycle.remaining
+    .filter(id => ids.includes(id) && id !== capturePassageCycle.lastId);
+  if (!capturePassageCycle.remaining.length) {
+    const shuffled = [...ids];
+    for (let index = shuffled.length - 1; index > 0; index--) {
+      const other = Math.floor(Math.random() * (index + 1));
+      [shuffled[index], shuffled[other]] = [shuffled[other], shuffled[index]];
+    }
+    if (shuffled.length > 1 && shuffled[0] === capturePassageCycle.lastId) {
+      [shuffled[0], shuffled[1]] = [shuffled[1], shuffled[0]];
+    }
+    capturePassageCycle.remaining = shuffled;
+  }
+  const id = capturePassageCycle.remaining.shift();
+  capturePassageCycle.lastId = id;
+  // Keep the cycle across retries and reloads, even when an attempt times out.
+  try { window.localStorage.setItem(capturePassageStorageKey, JSON.stringify(capturePassageCycle)); } catch {}
+  return { id, passage: capturePassages[id] };
+}
+
 const captureUi = {
   scene: document.querySelector("#captureScene"),
   bird: document.querySelector("#captureBird"),
@@ -53,7 +90,9 @@ function tryStartMountainCapture() {
   const config = getStageDefinition(state.stageId).capture;
   if (!state.running || !config || mountainCapture.completed || state.activeEnemies.length
       || state.cleared !== config.afterDefeats) return false;
-  const passage = capturePassages[config.passageId];
+  const selection = chooseCapturePassage(config.passageIds);
+  if (!selection) return false;
+  const { id: passageId, passage } = selection;
   clearInputBuffer();
   clearPlayerGuard();
   clearPlayerCounter();
@@ -67,7 +106,7 @@ function tryStartMountainCapture() {
   mountainCapture.deadline = performance.now() + config.durationMs;
   const inputs = getWordInputs(passage);
   mountainCapture.prompt = {
-    id: "mountain-capture", inputRevision: 1, weaponId: getBattleWeaponId(),
+    id: "mountain-capture", passageId, inputRevision: 1, weaponId: getBattleWeaponId(),
     word: passage.text, readingOverride: passage.reading, flickRoman: "",
     inputs, matchedWord: inputs[0], translation: passage.translation,
     typed: "", bestLength: 0, typingMisses: 0, chargeInputProgress: 0, resolving: false,
