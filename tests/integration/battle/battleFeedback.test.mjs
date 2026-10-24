@@ -15,7 +15,7 @@ test('unguarded damage shows a red impact and its actual amount without a typing
  assert.equal(game.run('els.player.classList.contains("is-guard-hit")'),false);
  game.advance(650);assert.equal(game.run('els.playerDamageText.textContent'),'');assert.equal(game.run('els.playerDamageEffect.classList.contains("is-active")'),false);
 });
-test('guard impact uses shield sparks and a blue chip-damage amount without a red flash',()=>{
+test('just guard keeps its burst visible for 720ms and uses a blue damage amount without a red flash',()=>{
  const game=battle();const hp=game.run('state.hp');game.run('beginPlayerGuard("keyboard")');assert.equal(game.run('els.player.classList.contains("is-guard-hit")'),false);
  game.run('incoming()');assert.equal(game.run('state.hp'),hp-8);
  assert.equal(game.run('els.player.classList.contains("is-guard-hit")'),true);
@@ -23,6 +23,11 @@ test('guard impact uses shield sparks and a blue chip-damage amount without a re
  assert.equal(game.run('els.playerDamageText.textContent'),'−8');
  assert.equal(game.run('els.playerDamageEffect.classList.contains("is-active")'),false);
  assert.equal(game.run('els.typingMissEffect.classList.contains("is-active")'),false);
+ assert.equal(game.run('els.player.classList.contains("is-just-guard-hit")'),true);
+ game.advance(719);assert.equal(game.run('els.player.classList.contains("is-guard-hit")'),true);
+ game.advance(1);assert.equal(game.run('els.player.classList.contains("is-guard-hit")'),false);
+ assert.equal(game.run('els.player.classList.contains("is-just-guard-hit")'),false);
+ game.run('incoming()');assert.equal(game.run('els.player.classList.contains("is-just-guard-hit")'),false);
  game.advance(479);assert.equal(game.run('els.player.classList.contains("is-guard-hit")'),true);
  game.advance(1);assert.equal(game.run('els.player.classList.contains("is-guard-hit")'),false);
 });

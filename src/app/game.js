@@ -338,6 +338,7 @@ const state = {
 };
 
 function invalidateBattleGeneration() {
+  clearMountainCapture();
   clearPlayerCounter();
   clearPlayerAttackBoost();
   clearEnemyActionStop();
@@ -380,7 +381,6 @@ const els = {
   specialShortcut: document.querySelector("#specialShortcut"),
   guardButton: document.querySelector("#guardButton"),
   guardButtonText: document.querySelector("#guardButtonText"),
-  guardSuccessLabel: document.querySelector("#guardSuccessLabel"),
   counterButton: document.querySelector("#counterButton"),
   counterDamage: document.querySelector("#counterDamage"),
   skillPanel: document.querySelector("#skillPanel"),
@@ -699,7 +699,7 @@ function syncPlayerWeaponArt(weapon, chargePose = 0) {
 function updateWeaponCharge() {
   const selectedEnemy = getCurrentEnemy();
   const weapon = getWeaponDefinition(selectedEnemy?.weaponId || getBattleWeaponId());
-  const isGreatsword = weapon.id === "greatsword";
+  const isGreatsword = weapon.id === "greatsword" && !isMountainCaptureActive();
   const chargeProgress = isGreatsword ? getGreatswordCharge(selectedEnemy) : 0;
   const chargePercent = Math.round(chargeProgress * 1000) / 10;
   const chargeLevel = chargeProgress > 0 ? Math.min(4, Math.ceil(chargeProgress * 4)) : 0;
@@ -1775,12 +1775,16 @@ function getSelectedEnemy() {
 }
 
 function getCurrentEnemy() {
+  if (isMountainCaptureActive()) return mountainCapture.prompt;
   const selectedEnemy = getSelectedEnemy();
 
   return selectedEnemy || state.activeEnemies.find((enemy) => isEnemyAlive(enemy)) || null;
 }
 
 function getInputEnemy() {
+  if (isMountainCaptureActive()) {
+    return state.running && !mountainCapture.prompt.resolving ? mountainCapture.prompt : null;
+  }
   if (isStoryDialogueOpen() || state.hp <= 0 || state.specialInProgress || state.guarding
       || performance.now() < state.playerAttackReadyAt) return null;
   const selectedEnemy = getSelectedEnemy();
@@ -2072,6 +2076,7 @@ function queueEnemySpawn(delay) {
 }
 
 function queueNextEnemy() {
+  if (isMountainCaptureActive() || tryStartMountainCapture()) return;
   const wave = chooseEnemyWave();
 
   if (!wave) {
@@ -2281,7 +2286,7 @@ function resolveWeaponHit(enemy, damage, recoveryMs) {
 }
 
 function useSpecialMove() {
-  if (!state.running || state.guarding || state.specialInProgress || !isSpecialReady() || !state.activeEnemies.length) {
+  if (!state.running || isMountainCaptureActive() || state.guarding || state.specialInProgress || !isSpecialReady() || !state.activeEnemies.length) {
     return false;
   }
 
@@ -2398,7 +2403,7 @@ function defeatEnemy(enemy) {
   }, 620);
 }
 
-function finishGame(cleared) {
+function finishGame(cleared, failureReason = "") {
   if (!state.running || (cleared && state.cleared < state.roundLimit)) {
     return;
   }
@@ -2463,7 +2468,7 @@ function finishGame(cleared) {
   updateHud();
 
   if (!cleared) {
-    showGameNotice("over", "GAME OVER", t.gameOverTitle, resultText, { persistent: true });
+    showGameNotice("over", "GAME OVER", failureReason || t.gameOverTitle, resultText, { persistent: true });
   } else {
     showGameNotice(
       "clear",
@@ -2648,6 +2653,10 @@ function recordTypingMiss(enemy) {
 }
 
 function applyTypedValue(enemy, value, { readingProgress } = {}) {
+  if (isMountainCaptureActive()) {
+    if (enemy === mountainCapture.prompt) applyCaptureTypedValue(value);
+    return;
+  }
   if (!state.running || state.guarding || isStoryDialogueOpen() || !enemy || enemy.resolving
       || state.specialInProgress || state.hp <= 0 || performance.now() < state.playerAttackReadyAt) {
     return;

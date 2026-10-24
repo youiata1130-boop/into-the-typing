@@ -11,7 +11,7 @@ function hasGuardWeapon() {
 }
 
 function canPlayerGuard() {
-  return state.running && state.hp > 0 && hasGuardWeapon()
+  return state.running && !isMountainCaptureActive() && state.hp > 0 && hasGuardWeapon()
     && !state.specialInProgress && !isStoryDialogueOpen()
     && (!getActiveWeapon().guardRequiresEmptyInput || !hasPlayerGuardBlockingInput());
 }
@@ -75,9 +75,33 @@ function updateGuardHud() {
   els.player.setAttribute("aria-label", state.guarding ? getPlayerGuardLabel() : "主人公");
 }
 
+function positionGuardImpact(justGuard) {
+  const arena = els.arena.getBoundingClientRect();
+  const player = els.player.getBoundingClientRect();
+  const padding = 8;
+  // Keep feedback readable even when a short viewport shrinks the character.
+  const size = Math.max(0, Math.min(
+    justGuard ? 440 : 340,
+    Math.max(justGuard ? 156 : 120, player.width * (justGuard ? 2.2 : 1.7)),
+    arena.width - padding * 2,
+    (arena.height - padding * 2) * (justGuard ? .94 : .76),
+  ));
+  const desiredLeft = arena.height < 180
+    ? Math.max(player.left, els.resetButton.getBoundingClientRect().right + padding)
+    : player.left - (justGuard ? player.width * .05 : 0);
+  const desiredTop = player.top + player.height * (justGuard ? .3 : .46) - size / 2;
+  const left = Math.max(arena.left + padding, Math.min(desiredLeft, arena.right - padding - size));
+  const top = Math.max(arena.top + padding, Math.min(desiredTop, arena.bottom - padding - size));
+  els.player.style.setProperty("--guard-effect-size", `${size}px`);
+  els.player.style.setProperty("--guard-effect-left", `${left - player.left}px`);
+  els.player.style.setProperty("--guard-effect-top", `${top - player.top}px`);
+}
+
 function playGuardImpact(justGuard = false) {
   window.GAME_SOUND?.play(justGuard ? "just_guard" : "guard");
-  els.guardSuccessLabel.textContent = justGuard ? "ジャストガード" : "ガード成功";
+  const duration = justGuard ? 720 : 480;
+  positionGuardImpact(justGuard);
+  els.player.style.setProperty("--guard-impact-duration", `${duration}ms`);
   window.clearTimeout(playerGuardInput.hitTimerId);
   els.player.classList.remove("is-guard-hit", "is-just-guard-hit");
   void els.player.offsetWidth;
@@ -86,7 +110,7 @@ function playGuardImpact(justGuard = false) {
   playerGuardInput.hitTimerId = scheduleBattleTimeout(() => {
     els.player.classList.remove("is-guard-hit", "is-just-guard-hit");
     playerGuardInput.hitTimerId = 0;
-  }, 480);
+  }, duration);
 }
 
 function initializePlayerGuard() {

@@ -1,5 +1,7 @@
 # Greatsword Player Art
 
+Historical generation record. The five active sprites were replaced on 2026-10-24; see [the current hero design and prompts](greatsword-appearance-unification.md). The archived equipped sprite below remains unused.
+
 All sprites documented below were created with the built-in ImageGen tool in `stylized-concept` mode. No existing project image was sent to the image-generation service; each frame was generated from text only.
 
 ## `src/assets/images/player/greatsword/idle/frame_01.webp`

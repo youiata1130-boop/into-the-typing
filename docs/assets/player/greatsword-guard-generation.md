@@ -1,5 +1,7 @@
 # 大剣のガード画像
 
+以下は旧画像の制作記録。2026-10-24に主人公のデザインを統一した現行画像へ置換。[現行画像と生成プロンプト](greatsword-appearance-unification.md)を参照。
+
 組み込みの `image_gen` ツールで既存の大剣士を参照して編集。透過PNGを加工せず `src/assets/images/player/greatsword/guard/frame_01.webp` に保存した。
 
 参照: `src/assets/images/player/greatsword/charge/frame_01.webp`。`transparent_background: true`。

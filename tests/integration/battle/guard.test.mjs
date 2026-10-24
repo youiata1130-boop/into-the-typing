@@ -277,7 +277,6 @@ for (const weaponId of ["swordShield", "greatsword"]) test(weaponId + ': just gu
     const hp=game.run('state.hp');game.run('enemy.attackPower={min:40,max:40};pressSpace()');game.advance(elapsed);game.run('attack()');
     assert.equal(game.run('state.hp'),hp-expected);
     assert.equal(game.run('els.player.classList.contains("is-just-guard-hit")'),elapsed<=200);
-    assert.equal(game.run('els.guardSuccessLabel.textContent'),elapsed<=200?'ジャストガード':'ガード成功');
   }
 });
 test('adding another held key or pointer cannot renew the just-guard window; releasing and guarding again can',()=>{

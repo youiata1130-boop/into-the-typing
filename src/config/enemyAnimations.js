@@ -9,10 +9,17 @@ window.ENEMY_ANIMATIONS = {
   defaultEnemy: "goblin_level_1",
   frameMs: 140,
   settings: {
+    mountain_bird_level_1: { frameMs: 220 },
     medaka_level_1: { frameMs: 70, idleWhileStopped: true },
     medaka_boss: { frameMs: 70, idleWhileStopped: true },
   },
   enemies: {
+    mountain_bird_level_1: {
+      idle: [enemyFrame("mountain_bird", "level_1", "idle", 1), enemyFrame("mountain_bird", "level_1", "idle", 2)],
+      attack: [enemyFrame("mountain_bird", "level_1", "idle", 2)],
+      damage: [enemyFrame("mountain_bird", "level_1", "idle", 1)],
+      defeat: [enemyFrame("mountain_bird", "level_1", "idle", 2)],
+    },
     thorn_stag_boss: {
       idle: [enemyFrame("thorn_stag", "boss", "idle", 1)],
       windup: [enemyFrame("thorn_stag", "boss", "windup", 1)],

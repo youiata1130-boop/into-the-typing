@@ -8,6 +8,7 @@ const stageMapRegions = {
   coast: { name: "1 海辺", image: "src/assets/images/backgrounds/stage_map/coast.jpg" },
   grassland: { name: "2 草原", image: "src/assets/images/backgrounds/stage_map/grassland.jpg" },
   forest: { name: "3 森", image: "src/assets/images/backgrounds/stage_map/forest.webp" },
+  mountain: { name: "4 山道", image: "src/assets/images/backgrounds/stage_map/mountain.webp" },
 };
 const stageDefinitions = {
   forest_path: {
@@ -203,6 +204,7 @@ const stageDefinitions = {
   thorn_depths: {
     regionId: "forest", code: "3-4", name: "荊の深森", meta: "激ムズ",
     enabled: true, requiresTutorial: true, requiresStage: "fairy_forest",
+    nextStageId: "mountain_path",
     background: "src/assets/images/backgrounds/stages/forest.webp",
     wordLength: { normalMin: 0 },
     waves: [
@@ -215,6 +217,26 @@ const stageDefinitions = {
       { types: ["thorn_stag_boss"], name: "荊冠の魔鹿", hp: 144,
         attackPower: { min: 64, max: 76 }, count: 1, experience: 600, boss: true,
         attackStyle: "charge", chargeMs: 2200, fixedProgress: 0.15, chargeAttackLabel: "荊角の奔流！" },
+    ],
+  },
+  mountain_path: {
+    regionId: "mountain", code: "4-1", name: "鳥たちの山道", meta: "",
+    enabled: true, requiresTutorial: true, requiresStage: "thorn_depths",
+    background: "src/assets/images/backgrounds/stages/mountain.webp",
+    wordLength: { normalMin: 0 },
+    capture: {
+      afterDefeats: 2,
+      durationMs: 30000,
+      passageId: "kusamakura_hibari",
+      birdImage: "src/assets/images/enemies/mountain_eagle/capture/frame_01.webp",
+    },
+    waves: [
+      { types: ["mountain_bird_level_1"], name: "山道の青い鳥", hp: 30,
+        attackPower: { min: 22, max: 28 }, count: 2, experience: 80,
+        approachMs: 10000, repeatAttackMs: 1900 },
+      { types: ["mountain_bird_level_1"], name: "尾根の青い鳥", hp: 36,
+        attackPower: { min: 26, max: 32 }, count: 3, experience: 100,
+        approachMs: 8500, repeatAttackMs: 1700 },
     ],
   },
 };

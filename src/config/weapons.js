@@ -57,7 +57,7 @@ const weaponDefinitions = {
 };
 const unarmedWeapon = { id: "unarmed", name: "素手", damage: 0.1, attackCooldownMs: 480 };
 const playerAssetVersion = "branch-intro-v1";
-const greatswordPoseVersion = "greatsword-poses-v4";
+const greatswordPoseVersion = "greatsword-hero-v5";
 const playerWeaponAssets = {
   swordShield: {
     idle: "src/assets/images/player/sword_shield/idle/frame_01.webp",
@@ -87,13 +87,13 @@ const playerWeaponAssets = {
   },
   greatsword: {
     idle: `src/assets/images/player/greatsword/charge/frame_01.webp?v=${greatswordPoseVersion}`,
-    guard: "src/assets/images/player/greatsword/guard/frame_01.webp",
+    guard: `src/assets/images/player/greatsword/guard/frame_01.webp?v=${greatswordPoseVersion}`,
     charge: [
       `src/assets/images/player/greatsword/charge/frame_01.webp?v=${greatswordPoseVersion}`,
       `src/assets/images/player/greatsword/idle/frame_01.webp?v=${greatswordPoseVersion}`,
-      `src/assets/images/player/greatsword/attack/frame_01.webp?v=${playerAssetVersion}`,
+      `src/assets/images/player/greatsword/attack/frame_01.webp?v=${greatswordPoseVersion}`,
     ],
-    windup: `src/assets/images/player/greatsword/attack/frame_01.webp?v=${playerAssetVersion}`,
-    strike: `src/assets/images/player/greatsword/attack/frame_02.webp?v=${playerAssetVersion}`,
+    windup: `src/assets/images/player/greatsword/attack/frame_01.webp?v=${greatswordPoseVersion}`,
+    strike: `src/assets/images/player/greatsword/attack/frame_02.webp?v=${greatswordPoseVersion}`,
   },
 };

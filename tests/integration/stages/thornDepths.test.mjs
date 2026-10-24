@@ -37,7 +37,7 @@ for(const touch of [false,true])test('expert '+(touch?'touch':'keyboard')+' play
  for(const seed of [1,12,33]){const game=battle({touch,seed});simulate(game,touch?200:120,touch);
  assert.equal(game.run('state.cleared'),5);assert.ok(game.run('state.hp')>0);assert.ok(game.run('guards')>0);assert.ok(game.run('skills')>0);
  assert.deepEqual(game.snapshot('[...seen]'),['mushroom_level_1','tree_fairy_boss','thorn_stag_boss']);assert.equal(game.savedProgress().totalExperience,2850);
- game.run('finishGame(true);continueAfterResult()');assert.equal(game.savedProgress().totalExperience,2850);assert.equal(game.run('document.documentElement.dataset.screen'),'stage');
+ game.run('finishGame(true);continueAfterResult()');assert.equal(game.savedProgress().totalExperience,2850);assert.equal(game.run('document.documentElement.dataset.screen'),'battle');assert.equal(game.run('state.stageId'),'mountain_path');
  assert.ok(createGame(game.saved()).savedProgress().clearedStages.includes('thorn_depths'));}
 });
 test("slower play with unspent upgrades loses without saving partial rewards",()=>{

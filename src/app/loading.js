@@ -33,6 +33,7 @@ function collectStageImageSources(stageId) {
   const types = new Set(stage.waves.flatMap(getWaveEnemyTypes));
   return imageSources([
     stage.background || "src/assets/images/backgrounds/stages/crab_shore.webp",
+    stage.capture?.birdImage,
     weaponDefinitions[stage.rewardWeaponId]?.itemImage,
     [...weapons].map(id => Object.values(getPlayerWeaponAssets(id))),
     [...types].map(type => Object.values(enemyAnimations.enemies[type] || {})),
@@ -50,6 +51,7 @@ function collectGameImageSources() {
     Object.values(playerWeaponAssets).map(weapon => Object.values(weapon)),
     Object.values(weaponDefinitions).map(weapon => weapon.itemImage),
     Object.values(stageDefinitions).filter(stage => stage.enabled).map(stage => stage.background),
+    Object.values(stageDefinitions).filter(stage => stage.enabled).map(stage => stage.capture?.birdImage),
     Object.values(stageMapRegions).map(region => region.image),
     Object.values(stageDefinitions).filter(stage => stage.enabled).flatMap(stage => stage.waves.flatMap(getWaveEnemyTypes))
       .map(type => Object.values(enemyAnimations.enemies[type] || {})),

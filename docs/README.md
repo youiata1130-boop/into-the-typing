@@ -23,3 +23,5 @@
 画像の段階読み込み: [起動・地図・ステージごとの読み込み](testing/stage-loading.md)。
 
 森の最難関: [3-4 荊の深森](stages/thorn-depths.md)、[荊冠の魔鹿の素材・プロンプト](assets/enemies/thorn-stag-generation.md)。
+
+山道エリア: [4-1 鳥たちの山道・捕獲イベントと文章の出典](stages/mountain-path.md)、[山道と鳥の素材・プロンプト](assets/enemies/mountain-birds-generation.md)。

@@ -5549,98 +5549,130 @@ html[data-flick-input="true"] .skill-panel kbd { display: none; }
 .player.is-guarding .player-frame { opacity: 0; animation: none; }
 .player.is-guarding .player-frame-guard { opacity: 1; }
 .guard-impact {
+  --guard-light: #bdfaff;
+  --guard-color: #20c8ff;
   position: absolute;
-  z-index: 6;
-  top: 4%;
-  right: -20%;
-  width: 95%;
-  height: 95%;
+  z-index: 8;
+  top: var(--guard-effect-top, 0px);
+  left: var(--guard-effect-left, 0px);
+  width: var(--guard-effect-size, 170%);
+  max-width: 340px;
+  aspect-ratio: 1;
   opacity: 0;
   pointer-events: none;
 }
 .guard-shield-flash {
   position: absolute;
-  inset: 10% 10% 16%;
-  clip-path: polygon(50% 0, 94% 17%, 86% 68%, 50% 100%, 14% 68%, 6% 17%);
-  background: linear-gradient(135deg, #ffffffed, #7ee8ff8c 35%, #2986d535 65%, #d7fbffcc);
-  box-shadow: inset 0 0 22px 8px #c1f6ff;
+  inset: 17% 23%;
+  width: 54%;
+  height: 66%;
+  overflow: visible;
+  filter: drop-shadow(0 0 6px #0784c2) drop-shadow(0 0 14px #40dfff);
   opacity: 0;
 }
+.guard-shield-face { fill: #32b9e630; stroke: #dbfdff; stroke-width: 7; stroke-linejoin: round; }
+.guard-shield-edge { fill: none; stroke: #28c9ff; stroke-width: 3; }
 .guard-shockwave {
   position: absolute;
-  inset: 16% 4% 20%;
-  border: 4px solid #e7fdff;
+  inset: 12%;
+  border: 6px solid var(--guard-light);
   border-radius: 50%;
-  box-shadow: 0 0 16px #5cdcff, inset 0 0 12px #a0eeff;
+  box-shadow: 0 0 0 2px var(--guard-color), 0 0 20px var(--guard-color), inset 0 0 16px var(--guard-color);
   opacity: 0;
 }
-.guard-shockwave-outer { border: 2px solid #ffdf85; box-shadow: 0 0 14px #ffd563; }
+.guard-shockwave-outer { display: none; inset: 3%; border-width: 3px; }
 .guard-spark {
   position: absolute;
   left: 50%;
-  top: 44%;
-  width: 36%;
-  height: 4px;
+  top: 50%;
+  width: 22%;
+  height: 5px;
   border-radius: 50%;
-  background: linear-gradient(90deg, #fff, #ffe39a 55%, transparent);
-  box-shadow: 0 0 7px #ffd46e;
+  background: linear-gradient(90deg, #fff, var(--guard-light) 55%, transparent);
+  box-shadow: 0 0 8px var(--guard-color);
   transform-origin: left center;
   opacity: 0;
 }
-.guard-success-label {
+.guard-spark-perfect,
+.guard-perfect-rays,
+.guard-perfect-star { display: none; }
+.guard-perfect-rays {
   position: absolute;
-  left: max(50%, 52px);
-  bottom: 4%;
-  padding: 3px 8px;
-  border: 1px solid #abf1ff;
-  border-radius: 6px;
-  color: #f3fdff;
-  background: #124d78ed;
-  box-shadow: 0 0 12px #72dbff88;
-  font-size: 18px;
-  line-height: 1.3;
-  white-space: nowrap;
-  text-shadow: 0 1px 2px #112d49;
-  transform: translateX(-50%);
+  inset: 0;
+  background: repeating-conic-gradient(from 8deg, transparent 0deg 21deg, #fff5c2 23deg, #ffc641 25deg, transparent 28deg 30deg);
+  mask-image: radial-gradient(circle, transparent 20%, #000 32% 45%, transparent 69%);
   opacity: 0;
 }
-.player.is-guard-hit .guard-impact { animation: guardImpact 480ms ease-out both; }
-.player.is-guard-hit .guard-shield-flash { animation: guardShieldFlash 360ms ease-out both; }
-.player.is-guard-hit .guard-shockwave { animation: guardShockwave 400ms ease-out both; }
-.player.is-guard-hit .guard-shockwave-outer { animation-delay: 65ms; }
-.player.is-guard-hit .guard-spark { animation: guardSparks 420ms cubic-bezier(.12,.7,.22,1) both; }
-.player.is-guard-hit .guard-success-label { animation: guardSuccessLabel 480ms ease-out both; }
-.player.is-guard-hit .player-frame-guard { filter: brightness(1.15) drop-shadow(0 0 8px #83e8ff); }
+.guard-perfect-star {
+  position: absolute;
+  inset: 18%;
+  background: radial-gradient(circle, #fff 0 9%, #fff9c9 19%, #ffd34e 40%, #ffae24 70%);
+  clip-path: polygon(50% 0, 57% 34%, 85% 15%, 66% 43%, 100% 50%, 66% 57%, 85% 85%, 57% 66%, 50% 100%, 43% 66%, 15% 85%, 34% 57%, 0 50%, 34% 43%, 15% 15%, 43% 34%);
+  opacity: 0;
+}
+.player.is-guard-hit .guard-impact { animation: guardImpact var(--guard-impact-duration, 480ms) ease-out both; }
+.player.is-guard-hit .guard-shield-flash { animation: guardShieldFlash var(--guard-impact-duration, 480ms) ease-out both; }
+.player.is-guard-hit .guard-shockwave { animation: guardShockwave var(--guard-impact-duration, 480ms) cubic-bezier(.12,.7,.22,1) both; }
+.player.is-guard-hit .guard-spark { animation: guardSparks var(--guard-impact-duration, 480ms) cubic-bezier(.12,.7,.22,1) both; }
+.player.is-guard-hit .player-frame-guard { filter: brightness(1.15) drop-shadow(0 0 10px #83e8ff); }
+.player.is-just-guard-hit .guard-impact {
+  --guard-light: #fff7c4;
+  --guard-color: #ffbc32;
+  max-width: 440px;
+}
+.player.is-just-guard-hit .guard-shield-flash { display: none; }
+.player.is-just-guard-hit .guard-shockwave { border-width: 8px; animation-name: justGuardShockwave; }
+.player.is-just-guard-hit .guard-shockwave-outer { display: block; border-width: 4px; animation-delay: 60ms; }
+.player.is-just-guard-hit .guard-spark-perfect,
+.player.is-just-guard-hit .guard-perfect-rays,
+.player.is-just-guard-hit .guard-perfect-star { display: block; }
+.player.is-just-guard-hit .guard-spark { height: 7px; }
+.player.is-just-guard-hit .guard-perfect-rays { animation: justGuardRays var(--guard-impact-duration) ease-out both; }
+.player.is-just-guard-hit .guard-perfect-star { animation: justGuardStar var(--guard-impact-duration) cubic-bezier(.12,.7,.22,1) both; }
+.player.is-just-guard-hit .player-frame-guard { filter: brightness(1.25) drop-shadow(0 0 18px #ffe77d); }
 @keyframes guardImpact {
-  0%, 65% { opacity: 1; }
+  0%, 70% { opacity: 1; }
   100% { opacity: 0; }
 }
 @keyframes guardShieldFlash {
-  0% { opacity: .95; transform: scale(.7); }
-  25% { opacity: .75; transform: scale(1.03); }
-  100% { opacity: 0; transform: scale(1.13); }
+  0% { opacity: 1; transform: scale(.75); }
+  20%, 65% { opacity: .95; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.08); }
 }
 @keyframes guardShockwave {
-  0% { opacity: 1; transform: scale(.45); }
-  35% { opacity: .95; }
-  100% { opacity: 0; transform: scale(1.6); }
+  0% { opacity: 1; transform: scale(.4); }
+  30% { opacity: .95; }
+  100% { opacity: 0; transform: scale(1.08); }
 }
 @keyframes guardSparks {
-  0% { opacity: 1; transform: rotate(var(--spark-angle)) translateX(8px) scaleX(.4); }
-  25% { opacity: 1; }
-  100% { opacity: 0; transform: rotate(var(--spark-angle)) translateX(68px) scaleX(.15); }
+  0% { opacity: 1; transform: rotate(var(--spark-angle)) translateX(35%) scaleX(.4); }
+  20%, 40% { opacity: 1; }
+  100% { opacity: 0; transform: rotate(var(--spark-angle)) translateX(190%) scaleX(.2); }
 }
-@keyframes guardSuccessLabel {
-  0% { opacity: 0; transform: translate(-50%, 6px) scale(.85); }
-  20%, 75% { opacity: 1; transform: translate(-50%, 0) scale(1); }
-  100% { opacity: 0; transform: translate(-50%, -4px); }
+@keyframes justGuardShockwave {
+  0% { opacity: 1; transform: scale(.25); }
+  25% { opacity: 1; transform: scale(.85); }
+  70% { opacity: .7; }
+  100% { opacity: 0; transform: scale(1.12); }
+}
+@keyframes justGuardRays {
+  0% { opacity: .9; transform: scale(.45) rotate(-12deg); }
+  18%, 48% { opacity: 1; }
+  100% { opacity: 0; transform: scale(1.12) rotate(8deg); }
+}
+@keyframes justGuardStar {
+  0% { opacity: 1; transform: scale(.35) rotate(-15deg); }
+  20% { opacity: 1; transform: scale(1.05) rotate(0deg); }
+  55% { opacity: .8; }
+  100% { opacity: 0; transform: scale(.8) rotate(10deg); }
 }
 @media (prefers-reduced-motion: reduce) {
   .player.is-guard-hit .guard-impact,
-  .player.is-guard-hit .guard-shockwave,
-  .player.is-guard-hit .guard-success-label { animation: none; opacity: 1; }
-  .player.is-guard-hit .guard-shield-flash { animation: none; opacity: .35; }
-  .player.is-guard-hit .guard-spark { animation: none; opacity: .8; transform: rotate(var(--spark-angle)) translateX(22px) scaleX(.5); }
+  .player.is-guard-hit .guard-shockwave { animation: none; opacity: 1; }
+  .player.is-guard-hit .guard-shield-flash { animation: none; opacity: .9; }
+  .player.is-guard-hit .guard-spark { animation: none; opacity: .8; transform: rotate(var(--spark-angle)) translateX(120%) scaleX(.5); }
+  .player.is-just-guard-hit .guard-perfect-rays { animation: none; opacity: .75; }
+  .player.is-just-guard-hit .guard-perfect-star { animation: none; opacity: .9; }
 }
 
 /* Regional parchment maps share the same coordinates and crop on narrow screens. */
@@ -5666,6 +5698,7 @@ html[data-flick-input="true"] .skill-panel kbd { display: none; }
 .stage-choice[data-stage="spore_path"] { --map-x: 62%; --map-y: 60%; }
 .stage-choice[data-stage="fairy_forest"] { --map-x: 38%; --map-y: 42%; }
 .stage-choice[data-stage="thorn_depths"] { --map-x: 62%; --map-y: 24%; }
+.stage-choice[data-stage="mountain_path"] { --map-x: 48%; --map-y: 62%; }
 @media (orientation: portrait) {
   .stage-choice[data-stage="mushroom_forest"] { --map-y: 78%; }
   .stage-choice[data-stage="spore_path"] { --map-y: 62%; }
@@ -5731,11 +5764,75 @@ html[data-flick-input="true"] .skill-panel kbd { display: none; }
   .stage-choice[data-stage="grassland_path"] { --map-x: 46%; }
   .stage-choice[data-stage="flower_meadow"] { --map-x: 58%; }
 }
-@media (max-width: 420px), (max-height: 520px) {
+@media (max-width: 650px), (max-height: 520px) {
   .stage-region-switch { bottom: 10px; gap: 6px; width: calc(100% - 16px); }
   .stage-region-switch button { min-width: 0; flex: 1; min-height: 44px; padding: 6px; font-size: 16px; gap: 6px; }
   .region-seal { width: 26px; height: 26px; font-size: 16px; }
   .stage-map-panel .stage-confirm { bottom: 66px; }
+}
+
+@media (max-width: 420px) {
+  .stage-region-switch { display: grid; grid-template-columns: repeat(2, 1fr); }
+  .stage-map-panel .stage-confirm { bottom: 116px; }
+}
+
+/* Flying birds use their whole wide frame while following the normal approach path. */
+.arena .enemy[data-enemy-type="mountain_bird_level_1"] .enemy-sprite {
+  width: 100%;
+  transform: none;
+}
+.enemy-sprite[data-enemy-type="mountain_bird_level_1"][data-animation="idle"] .enemy-image {
+  animation: mountainBirdHover 1s ease-in-out infinite alternate;
+}
+@keyframes mountainBirdHover { to { transform: translateY(-7px); } }
+
+/* The captured hero hangs beneath the eagle's talons, above the mountain trail. */
+.capture-scene {
+  position: absolute;
+  inset: 8px 0 22px;
+  z-index: 6;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  overflow: hidden;
+  container-type: size;
+  background: linear-gradient(0deg, #d6edf850, transparent 50%);
+}
+.capture-scene[hidden], .capture-hud[hidden], .capture-source[hidden] { display: none; }
+.capture-carrier {
+  position: relative;
+  width: min(92cqw, 94cqh, 540px);
+  aspect-ratio: 1;
+  animation: captureHover 1.8s ease-in-out infinite alternate;
+}
+.capture-bird { position: absolute; width: 100%; top: 0; left: 0; z-index: 2; }
+.capture-hero { position: absolute; width: 25%; height: 46%; top: 45%; left: 25%; object-fit: contain; z-index: 1; transform: rotate(8deg); }
+.is-captured .lane { visibility: hidden; }
+.is-captured .skill-panel { display: none; }
+.capture-hud { display: grid; gap: 6px; width: 100%; padding-bottom: 6px; }
+.capture-heading { display: flex; justify-content: space-between; gap: 12px; color: #6d431a; font-size: 20px; }
+#captureTime { font-variant-numeric: tabular-nums; }
+.capture-meter { height: 12px; overflow: hidden; border: 2px solid #ae793d; border-radius: 99px; background: #f5e5cf; }
+.capture-meter i { display: block; width: 100%; height: 100%; background: linear-gradient(90deg, #de9b28, #f6cf57); transition: width .1s linear; }
+.capture-hud[data-urgent="true"] .capture-heading { color: #b72a26; }
+.capture-hud[data-urgent="true"] .capture-meter i { background: #e55436; }
+.capture-source { position: absolute; right: 8px; bottom: 6px; z-index: 7; padding: 2px 6px; border-radius: 4px; color: #354839; background: #ffffffe8; font-size: 16px; line-height: 1.4; }
+.is-captured .word-translation { line-height: 1.4; overflow-wrap: anywhere; }
+.is-captured .typing-status .word-target { font-size: 24px; line-height: 1.35; }
+.is-escaping .capture-carrier { animation: captureEscape .65s ease-in both; }
+.is-escaping .capture-hero { animation: captureHeroEscape .65s ease-in both; }
+@keyframes captureHover { from { transform: translateY(4px) rotate(-2deg); } to { transform: translateY(-8px) rotate(2deg); } }
+@keyframes captureEscape { to { transform: translateY(-90%); opacity: 0; } }
+@keyframes captureHeroEscape { to { transform: translateY(200%) rotate(-8deg); } }
+html[data-flick-input="true"] .capture-heading { font-size: 18px; }
+html[data-flick-input="true"] .is-captured .typing-status .word-target { font-size: 18px; }
+html[data-flick-input="true"] .is-captured .typing-box { grid-template-columns: minmax(0, 1fr); }
+html[data-flick-input="true"] .is-captured .game-flick-entry { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  .enemy-sprite[data-enemy-type="mountain_bird_level_1"][data-animation="idle"] .enemy-image,
+  .capture-carrier, .is-escaping .capture-carrier, .is-escaping .capture-hero { animation: none; }
+  .capture-meter i { transition: none; }
+  .is-escaping .capture-scene { opacity: .3; }
 }
 
 /* Each bee has its own row and the same arrival point beside the player. */
@@ -5969,11 +6066,6 @@ html[data-flick-input="true"][data-compact-battle="true"] .typing-status[data-we
 .player.is-attack-boosted .attack-boost-aura { animation: attackBoostGlow 1s ease-in-out infinite alternate; }
 @keyframes attackBoostGlow { from { opacity: .65; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .player.is-attack-boosted .attack-boost-aura { animation: none; opacity: .85; } }
-
-.player.is-just-guard-hit .guard-shield-flash { background: linear-gradient(135deg, #fff, #fff3a5aa 35%, #ffc34c55 65%, #fff9d8); box-shadow: inset 0 0 24px 10px #fff2b1; }
-.player.is-just-guard-hit .guard-shockwave { border-color: #fff9cf; box-shadow: 0 0 24px #ffd34d, inset 0 0 18px #fff4ad; }
-.player.is-just-guard-hit .guard-success-label { color: #fffde5; background: #775111f5; border-color: #ffe48d; box-shadow: 0 0 18px #ffd45eaa; }
-.player.is-just-guard-hit .player-frame-guard { filter: brightness(1.25) drop-shadow(0 0 12px #ffe77d); }
 
 .skill-panel #counterButton { display: flex; align-items: center; justify-content: center; gap: 10px; min-width: 132px; min-height: 44px; padding: 0 14px; font-size: 16px; color: #fff5da; background: #945728; border-color: #6e3a19; touch-action: manipulation; }
 .skill-panel #counterButton[hidden] { display: none; }
