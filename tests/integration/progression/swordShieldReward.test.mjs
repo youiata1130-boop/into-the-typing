@@ -38,10 +38,12 @@ test("3-1 first clear saves sword and shield, shows the treasure, and guides man
   assert.equal(game.run("document.activeElement === els.weaponSwordShield"), true);
   assert.equal(game.run("els.weaponEquipGuide.textContent"), "片手剣を選んで装備しよう");
   assert.equal(game.run("els.weaponEquipNext.disabled"), true);
+  assert.equal(game.run("els.weaponEquipNext.hidden"), true);
   game.run('selectWeapon("swordShield")');
   assert.equal(game.savedProgress().swordShieldEquipPending, false);
   assert.equal(game.savedProgress().weaponId, "swordShield");
-  assert.equal(game.run("els.weaponEquipNext.textContent"), "ステージ3-2へ");
+  assert.equal(game.run("els.weaponEquipNext.textContent"), "");
+  assert.equal(game.run("els.weaponEquipNext.hidden"), true);
   game.run("continueAfterWeaponEquip()");
   assert.equal(game.run("document.documentElement.dataset.screen"), "battle");
   assert.equal(game.run("state.stageId"), "spore_path");

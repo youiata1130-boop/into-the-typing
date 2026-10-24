@@ -1,4 +1,10 @@
-const playerGuardInput = { keys: new Set(), pointerId: null, hitTimerId: 0 };
+const playerGuardInput = { keys: new Set(), pointerId: null, hitTimerId: 0, startedAt: null };
+const justGuardWindowMs = 200;
+
+function isJustGuard() {
+  const elapsed = performance.now() - playerGuardInput.startedAt;
+  return state.guarding && playerGuardInput.startedAt !== null && elapsed >= 0 && elapsed <= justGuardWindowMs;
+}
 
 function hasGuardWeapon() {
   return typeof getActiveWeapon().guardDamageMultiplier === "number";
@@ -31,6 +37,7 @@ function beginPlayerGuard(source, pointerId = null) {
   else playerGuardInput.keys.add(source);
   if (state.guarding) return true;
   state.guarding = true;
+  playerGuardInput.startedAt = performance.now();
   clearInputBuffer();
   clearPlayerAttackAnimation();
   updateHud();
@@ -44,6 +51,7 @@ function endPlayerGuard(source, pointerId = null) {
   } else if (!playerGuardInput.keys.delete(source)) return;
   state.guarding = canPlayerGuard()
     && (playerGuardInput.keys.size > 0 || playerGuardInput.pointerId !== null);
+  if (!state.guarding) playerGuardInput.startedAt = null;
   updateHud();
 }
 
@@ -53,7 +61,8 @@ function clearPlayerGuard() {
   window.clearTimeout(playerGuardInput.hitTimerId);
   playerGuardInput.hitTimerId = 0;
   state.guarding = false;
-  els.player.classList.remove("is-guarding", "is-guard-hit");
+  playerGuardInput.startedAt = null;
+  els.player.classList.remove("is-guarding", "is-guard-hit", "is-just-guard-hit");
   updateGuardHud();
 }
 
@@ -66,14 +75,16 @@ function updateGuardHud() {
   els.player.setAttribute("aria-label", state.guarding ? getPlayerGuardLabel() : "主人公");
 }
 
-function playGuardImpact() {
-  window.GAME_SOUND?.play("guard");
+function playGuardImpact(justGuard = false) {
+  window.GAME_SOUND?.play(justGuard ? "just_guard" : "guard");
+  els.guardSuccessLabel.textContent = justGuard ? "ジャストガード" : "ガード成功";
   window.clearTimeout(playerGuardInput.hitTimerId);
-  els.player.classList.remove("is-guard-hit");
+  els.player.classList.remove("is-guard-hit", "is-just-guard-hit");
   void els.player.offsetWidth;
   els.player.classList.add("is-guard-hit");
+  els.player.classList.toggle("is-just-guard-hit", justGuard);
   playerGuardInput.hitTimerId = scheduleBattleTimeout(() => {
-    els.player.classList.remove("is-guard-hit");
+    els.player.classList.remove("is-guard-hit", "is-just-guard-hit");
     playerGuardInput.hitTimerId = 0;
   }, 480);
 }

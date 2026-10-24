@@ -32,7 +32,7 @@ function reachFairy(game) {
   assert.equal(game.run("fairy.type"), "tree_fairy_boss");
 }
 
-test("3-3 ends with the tree fairy, a visible wind-up and a quarter-damage guardable leaf attack", () => {
+test("3-3 ends with the tree fairy, a visible wind-up and a half-damage guardable leaf attack", () => {
   const game = battle();
   reachFairy(game);
   assert.equal(game.run("els.bossIntroTitle.textContent"), "木の妖精");
@@ -48,14 +48,14 @@ test("3-3 ends with the tree fairy, a visible wind-up and a quarter-damage guard
   const hp = game.run("state.hp");
   game.run('fairy.attackPower = { min: 32, max: 32 }; beginPlayerGuard("keyboard")');
   tick(game, 1050);
-  assert.equal(game.run("state.hp"), hp - 8);
+  assert.equal(game.run("state.hp"), hp - 16);
   assert.equal(game.run("fairy.progress"), .15);
   assert.equal(game.run("fairy.element.dataset.chargePhase"), "attack");
   game.run('endPlayerGuard("keyboard")');
   tick(game, 360);
   assert.match(game.run("fairy.image.src"), /tree_fairy\/boss\/idle/);
   tick(game, 4200);
-  assert.equal(game.run("state.hp"), hp - 8 - 32);
+  assert.equal(game.run("state.hp"), hp - 16 - 32);
 });
 
 for (const touch of [false, true]) {
@@ -69,7 +69,7 @@ for (const touch of [false, true]) {
         if (enemy) seen.add(enemy.type);
         maxActive = Math.max(maxActive, state.activeEnemies.length);
         if (state.guarding && (!enemy || enemy.chargeElapsedMs === 0)) endPlayerGuard("keyboard");
-        if (enemy && !enemy.resolving && enemy.chargeDurationMs - enemy.chargeElapsedMs <= 250 && !state.guarding) {
+        if (enemy && !enemy.resolving && enemy.chargeDurationMs - enemy.chargeElapsedMs <= 180 && !state.guarding) {
           if (beginPlayerGuard("keyboard")) guarded++;
         }
         if (state.specialGauge === 100) useSpecialMove();

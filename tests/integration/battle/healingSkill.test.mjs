@@ -2,10 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createGame } from '../../helpers/game.mjs';
 function battle(weaponId='sword',touch=false){const game=createGame({'into-the-typing.player.v2':JSON.stringify({version:2,totalExperience:255,stats:{attack:2,agility:1},weaponId,introCompleted:true,equipmentTutorialCompleted:true,ironSwordObtained:true,greatswordObtained:true,skillTutorialCompleted:true,clearedStages:['forest_path','mist_road','sky_castle','storm_cove']})},{touch});game.run('startGame("grassland_path");const enemy=getCurrentEnemy();enemy.hp=enemy.maxHp=100;enemy.word=enemy.matchedWord="a".repeat(64);enemy.inputs=[enemy.word];state.hp=50');game.advance(850);return game;}
-test('iron sword charges at half speed and heals thirty percent without hurting or resetting enemies',()=>{
- const game=battle();game.run('applyTypedValue(enemy,"a".repeat(25))');assert.equal(game.run('state.specialGauge'),50);
+test('iron sword charges faster than before but slower than other skills and heals thirty percent without hurting or resetting enemies',()=>{
+ const game=battle();game.run('applyTypedValue(enemy,"a".repeat(25))');assert.equal(game.run('state.specialGauge'),75);
  const other=battle('greatsword');other.run('applyTypedValue(enemy,"a".repeat(25))');assert.equal(other.run('state.specialGauge'),100);
- game.run('applyTypedValue(enemy,"a".repeat(50));const before={hp:enemy.hp,word:enemy.word,typed:enemy.typed,charge:enemy.chargeElapsedMs,progress:enemy.progress};useSpecialMove()');
+ game.run('applyTypedValue(enemy,"a".repeat(33))');assert.equal(game.run('state.specialGauge'),99);
+ game.run('applyTypedValue(enemy,"a".repeat(34));const before={hp:enemy.hp,word:enemy.word,typed:enemy.typed,charge:enemy.chargeElapsedMs,progress:enemy.progress};useSpecialMove()');
  assert.equal(game.run('state.hp'),89);assert.equal(game.run('state.specialGauge'),0);assert.equal(game.run('els.skillName.textContent'),'癒しの光');assert.equal(game.run('els.playerHealText.textContent'),'＋39');
  assert.deepEqual(game.snapshot('({hp:enemy.hp,word:enemy.word,typed:enemy.typed,charge:enemy.chargeElapsedMs,progress:enemy.progress})'),game.snapshot('before'));
  assert.equal(game.run('els.specialEffect.classList.contains("is-active")'),false);assert.equal(game.run('els.player.classList.contains("is-healing")'),true);

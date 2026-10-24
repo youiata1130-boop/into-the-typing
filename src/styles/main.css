@@ -5969,3 +5969,20 @@ html[data-flick-input="true"][data-compact-battle="true"] .typing-status[data-we
 .player.is-attack-boosted .attack-boost-aura { animation: attackBoostGlow 1s ease-in-out infinite alternate; }
 @keyframes attackBoostGlow { from { opacity: .65; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .player.is-attack-boosted .attack-boost-aura { animation: none; opacity: .85; } }
+
+.player.is-just-guard-hit .guard-shield-flash { background: linear-gradient(135deg, #fff, #fff3a5aa 35%, #ffc34c55 65%, #fff9d8); box-shadow: inset 0 0 24px 10px #fff2b1; }
+.player.is-just-guard-hit .guard-shockwave { border-color: #fff9cf; box-shadow: 0 0 24px #ffd34d, inset 0 0 18px #fff4ad; }
+.player.is-just-guard-hit .guard-success-label { color: #fffde5; background: #775111f5; border-color: #ffe48d; box-shadow: 0 0 18px #ffd45eaa; }
+.player.is-just-guard-hit .player-frame-guard { filter: brightness(1.25) drop-shadow(0 0 12px #ffe77d); }
+
+.skill-panel #counterButton { display: flex; align-items: center; justify-content: center; gap: 10px; min-width: 132px; min-height: 44px; padding: 0 14px; font-size: 16px; color: #fff5da; background: #945728; border-color: #6e3a19; touch-action: manipulation; }
+.skill-panel #counterButton[hidden] { display: none; }
+.skill-panel #counterButton:disabled { opacity: .5; }
+html[data-flick-input="true"] .skill-panel #counterButton { min-width: 80px; padding: 0 8px; }
+.player.is-counter-ready .player-frame-idle { filter: brightness(1.3) drop-shadow(0 0 9px #ffdd7c); }
+.counter-impact { position: absolute; z-index: 9; inset: 5% -30% 5% -10%; opacity: 0; pointer-events: none; }
+.counter-impact::before { content: ""; position: absolute; inset: 20% -5% 20% 5%; background: linear-gradient(135deg, transparent 40%, #ffce6f 45%, #fff 49% 51%, #ffce6f 55%, transparent 60%); filter: drop-shadow(0 0 10px #ffb43b); }
+.counter-impact span { position: absolute; left: max(50%, 110px); bottom: 0; transform: translateX(-50%); white-space: nowrap; padding: 4px 7px; border: 1px solid #ffe19a; border-radius: 6px; background: #83380ee8; color: #fff7d0; font-size: 18px; font-weight: 800; }
+.player.is-counter-hit .counter-impact { animation: counterBurst 650ms ease-out both; }
+@keyframes counterBurst { 0% { opacity: 1; transform: scale(.8); } 20%,65% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1.1); } }
+@media (prefers-reduced-motion: reduce) { .player.is-counter-hit .counter-impact { animation: none; opacity: 1; } }

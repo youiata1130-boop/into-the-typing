@@ -29,7 +29,7 @@ function battle({ weaponId = "swordShield", stage = "mushroom_forest", touch = f
 }
 
 for (const stage of ["mushroom_forest", "grassland_path"]) {
-  test(`${stage}: holding Space quarters damage, counts as a hit and releases for full damage`, () => {
+  test(`${stage}: a fresh Space guard quarters damage, counts as a hit and releases for full damage`, () => {
     const game = battle({ stage });
     game.run("enemy.attackPower = { min: 21, max: 21 }; state.combo = 4; state.successStreak = 3; state.specialGauge = 100; pressSpace(); attack()");
     assert.equal(game.run("state.hp"), game.run("getMaxHp()") - 6);
@@ -54,7 +54,7 @@ for (const stage of ["mushroom_forest", "grassland_path"]) {
   });
 }
 
-test("guard rounds quarter damage up, always inflicts at least one HP and can be fatal", () => {
+test("just guard rounds quarter damage up, always inflicts at least one HP and can be fatal", () => {
   for (const weaponId of ["swordShield", "greatsword"]) for (const [damage, received] of [[28, 7], [26, 7], [21, 6], [5, 2], [4, 1], [1, 1]]) {
     const game = battle({ weaponId });
     game.run(`enemy.attackPower = { min: ${damage}, max: ${damage} }; pressSpace(); attack()`);
@@ -170,7 +170,7 @@ test("Enter does not latch guard on the guard button", () => {
   assert.equal(game.run("state.guarding"), false);
 });
 
-test("greatsword blocks quarter damage with its blade while its word is empty", () => {
+test("greatsword just guard blocks quarter damage with its blade while its word is empty", () => {
   const game = battle({ weaponId: "greatsword" });
   game.run("enemy.attackPower = { min: 21, max: 21 }; pressSpace(); attack()");
   assert.equal(game.run("state.hp"), game.run("getMaxHp()") - 6);
@@ -269,4 +269,21 @@ test('ArrowDown respects greatsword partial input and cannot guard with an unsup
   const other = battle({weaponId:'dualBlades'});
   other.run('handleTypingKeydown({key:"ArrowDown",code:"ArrowDown",preventDefault(){}})');
   assert.equal(other.run('state.guarding'), false);
+});
+
+for (const weaponId of ["swordShield", "greatsword"]) test(weaponId + ': just guard includes 200ms, ordinary guard halves damage after it', () => {
+  for (const [elapsed, expected] of [[0,10],[199,10],[200,10],[201,20],[1000,20]]) {
+    const game = battle({weaponId});
+    const hp=game.run('state.hp');game.run('enemy.attackPower={min:40,max:40};pressSpace()');game.advance(elapsed);game.run('attack()');
+    assert.equal(game.run('state.hp'),hp-expected);
+    assert.equal(game.run('els.player.classList.contains("is-just-guard-hit")'),elapsed<=200);
+    assert.equal(game.run('els.guardSuccessLabel.textContent'),elapsed<=200?'ジャストガード':'ガード成功');
+  }
+});
+test('adding another held key or pointer cannot renew the just-guard window; releasing and guarding again can',()=>{
+ const game=battle();const hp=game.run('state.hp');game.run('enemy.attackPower={min:40,max:40};pressSpace()');game.advance(250);
+ game.run('beginPlayerGuard("arrowDown");beginPlayerGuard("pointer",8);pressSpace(false,true);attack()');assert.equal(game.run('state.hp'),hp-20);
+ game.run('releaseSpace();endPlayerGuard("arrowDown");endPlayerGuard("pointer",8)');assert.equal(game.run('playerGuardInput.startedAt'),null);game.advance(360);
+ game.run('beginPlayerGuard("arrowDown");attack()');assert.equal(game.run('state.hp'),hp-30);
+ game.run('showStageSelect()');assert.equal(game.run('playerGuardInput.startedAt'),null);assert.equal(game.run('els.player.classList.contains("is-just-guard-hit")'),false);
 });

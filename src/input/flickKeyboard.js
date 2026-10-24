@@ -184,7 +184,7 @@ function endGameFlickGesture(event) {
 // Keep the whole panel, including gaps and disabled keys, inside the input surface.
 function isGameFlickSurface(target) {
   // A regular button needs its native touch click to activate the skill.
-  if (target?.closest?.("#specialButton")) return false;
+  if (target?.closest?.("#specialButton") || target?.closest?.("#counterButton")) return false;
   return target === gameFlickUi.surface || target === gameFlickUi.keyboard
     || target === gameFlickUi.entry || Boolean(target?.closest?.(".control-panel"));
 }

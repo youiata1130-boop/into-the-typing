@@ -21,7 +21,8 @@ const weaponDefinitions = {
     skillId: "battle_spirit",
     damageMultiplier: 1,
     attackCooldownMs: 700,
-    guardDamageMultiplier: 0.25,
+    guardDamageMultiplier: 0.5,
+    justGuardDamageMultiplier: 0.25,
     itemImage: "src/assets/images/items/weapons/sword_shield.webp",
   },
   dualBlades: {
@@ -40,7 +41,8 @@ const weaponDefinitions = {
     id: "greatsword",
     name: "大剣",
     attackCooldownMs: 1500,
-    guardDamageMultiplier: 0.25,
+    guardDamageMultiplier: 0.5,
+    justGuardDamageMultiplier: 0.25,
     guardRequiresEmptyInput: true,
     wordLength: {
       normalMin: 12,

@@ -51,8 +51,8 @@ test("four mushrooms followed by their king warn before firing and can be guarde
     assert.equal(game.run("getCurrentEnemy().animation"), "attack");
     assert.equal(game.run("getCurrentEnemy().chargeElapsedMs"), 0);
     assert.equal(game.run("getCurrentEnemy().progress"), .15);
-    assert.ok(game.run("state.hp") <= hpBefore - Math.ceil(attackPower.min / 4));
-    assert.ok(game.run("state.hp") >= hpBefore - Math.ceil(attackPower.max / 4));
+    assert.ok(game.run("state.hp") <= hpBefore - Math.ceil(attackPower.min / 2));
+    assert.ok(game.run("state.hp") >= hpBefore - Math.ceil(attackPower.max / 2));
     game.run('endPlayerGuard("keyboard")');
     tick(game, 360);
     assert.match(game.run("getCurrentEnemy().image.src"), /\/idle\//);
@@ -79,7 +79,7 @@ for (const touch of [false, true]) {
         maxActive = Math.max(maxActive, state.activeEnemies.length);
         const current = getCurrentEnemy();
         if (state.guarding && (!current || current.chargeElapsedMs === 0)) endPlayerGuard("keyboard");
-        if (current && !current.resolving && current.chargeDurationMs - current.chargeElapsedMs <= 250 && !state.guarding) {
+        if (current && !current.resolving && current.chargeDurationMs - current.chargeElapsedMs <= 180 && !state.guarding) {
           if (beginPlayerGuard("keyboard")) guards++;
         }
         if (state.specialGauge === 100) useSpecialMove();

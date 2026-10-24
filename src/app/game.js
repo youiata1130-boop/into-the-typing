@@ -338,6 +338,7 @@ const state = {
 };
 
 function invalidateBattleGeneration() {
+  clearPlayerCounter();
   clearPlayerAttackBoost();
   clearEnemyActionStop();
   clearPlayerDamageEffect();
@@ -379,6 +380,9 @@ const els = {
   specialShortcut: document.querySelector("#specialShortcut"),
   guardButton: document.querySelector("#guardButton"),
   guardButtonText: document.querySelector("#guardButtonText"),
+  guardSuccessLabel: document.querySelector("#guardSuccessLabel"),
+  counterButton: document.querySelector("#counterButton"),
+  counterDamage: document.querySelector("#counterDamage"),
   skillPanel: document.querySelector("#skillPanel"),
   skillName: document.querySelector("#skillName"),
   skillGauge: document.querySelector("#skillGauge"),
@@ -799,6 +803,7 @@ function startPlayerAttackCooldown(weaponId) {
 }
 
 function updateHud() {
+  updatePlayerCounterHud();
   updateDualBladePreview();
   updateGuardHud();
   syncGameFlickKeyboard();
@@ -1334,10 +1339,11 @@ function updateWeaponEquipGuide() {
   els.weaponGreatswordOption.classList.toggle("is-recommended", weaponId === "greatsword" && !equipped);
   els.weaponDualBladesOption.classList.toggle("is-recommended", weaponId === "dualBlades" && !equipped);
   els.weaponSwordShieldOption.classList.toggle("is-recommended", weaponId === "swordShield" && !equipped);
-  els.weaponEquipNext.hidden = !active;
+  els.weaponEquipNext.hidden = !active || weaponId === "swordShield";
   els.weaponEquipNext.disabled = !active || !equipped;
   const nextStageId = getEquipmentNextStageId();
-  els.weaponEquipNext.textContent = nextStageId ? `ステージ${stageDefinitions[nextStageId].code}へ` : labels().stageSelect;
+  els.weaponEquipNext.textContent = weaponId === "swordShield" ? ""
+    : nextStageId ? `ステージ${stageDefinitions[nextStageId].code}へ` : labels().stageSelect;
 }
 
 function showWeaponScreen() {
@@ -2159,13 +2165,16 @@ function enemyAttack(enemy) {
     resetEnemyCharge(enemy);
     aimEnemySpores(enemy);
   } else if (enemy.progress < 1) return;
+  if (tryPlayerCounter(enemy)) return;
   enemy.atBase = enemy.attackStyle !== "charge";
   enemy.nextAttackAt = performance.now() + enemyAttackRecoveryMs + randomizeEnemyAttackMs(enemy.repeatAttackMs);
   const damage = rollAttackDamage(enemy.attackPower);
   const guarded = state.guarding && canPlayerGuard();
-  const receivedDamage = guarded ? Math.ceil(damage * getActiveWeapon().guardDamageMultiplier) : damage;
+  const justGuard = guarded && isJustGuard();
+  const guardMultiplier = justGuard ? getActiveWeapon().justGuardDamageMultiplier : getActiveWeapon().guardDamageMultiplier;
+  const receivedDamage = guarded ? Math.ceil(damage * guardMultiplier) : damage;
   state.hp = Math.max(0, state.hp - receivedDamage);
-  if (guarded) playGuardImpact();
+  if (guarded) playGuardImpact(justGuard);
   if (receivedDamage > 0) {
     if (!guarded) window.GAME_SOUND.play("hurt");
     playPlayerDamageEffect(receivedDamage, guarded);
@@ -2739,7 +2748,8 @@ function handleTypingKeydown(event) {
     if (state.running) {
       event.preventDefault();
       if (!event.repeat) {
-        if (hasGuardWeapon()) beginPlayerGuard("keyboard");
+        if (getBattleWeaponId() === "sword") beginPlayerCounter();
+        else if (hasGuardWeapon()) beginPlayerGuard("keyboard");
       }
       return;
     }
@@ -2875,6 +2885,7 @@ els.stageChoices.addEventListener("click", (event) => {
 });
 document.addEventListener("keydown", handleTypingKeydown);
 initializePlayerGuard();
+initializePlayerCounter();
 
 initializeFlickInput();
 initializeSaveMenu();
