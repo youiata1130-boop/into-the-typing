@@ -30,6 +30,8 @@ function capture(game) {
     } else game.advance(900);
   }
   assert.equal(game.run('isMountainCaptureActive()'), true);
+  assert.equal(game.run('captureUi.time.textContent'), '残り25秒');
+  assert.equal(game.run('captureUi.meter.getAttribute("aria-valuemax")'), '25');
   assert.equal(game.run('state.running'), true);
   assert.equal(game.run('state.cleared'), 5);
   assert.equal(game.run('state.pendingExperience'), 460);
@@ -119,7 +121,7 @@ for (const weaponId of ['sword', 'greatsword', 'dualBlades', 'swordShield']) {
     assert.equal(game.run('getInputEnemy().typed'), 't');
     assert.equal(game.run('mountainCapture.deadline'), deadline);
     game.advance(1000);
-    assert.equal(game.run('captureUi.time.textContent'), '残り29秒');
+    assert.equal(game.run('captureUi.time.textContent'), '残り24秒');
   });
 }
 
@@ -162,7 +164,7 @@ for (const passageId of passageIds) for (const touch of [false, true]) test(`${p
   assert.equal(game.savedProgress().totalExperience, 3310);
   assert.ok(game.savedProgress().clearedStages.includes('mountain_path'));
   game.run('finishGame(true)');
-  game.advance(31000);
+  game.advance(26000);
   assert.equal(game.savedProgress().totalExperience, 3310);
 });
 
@@ -197,7 +199,7 @@ test("reloading after a timeout preserves the remaining passage cycle", () => {
     const id = game.run('getInputEnemy().passageId');
     assert.notEqual(id, seen.at(-1));
     seen.push(id);
-    game.advance(30000);
+    game.advance(25000);
     assert.equal(game.run('state.running'), false);
     game = battle({ passageId: null, savedItems: game.saved() });
   }
@@ -220,11 +222,11 @@ test("damaged or unavailable passage storage does not prevent capture and variet
   assert.notEqual(game.run('getInputEnemy().passageId'), previous);
 });
 
-test("an unfinished final passage fails at exactly 30 seconds without granting a clear or EXP", () => {
+test("an unfinished final passage fails at exactly 25 seconds without granting a clear or EXP", () => {
   const game = battle();
   capture(game);
   game.run('applyTypedValue(getInputEnemy(), "ta")');
-  game.advance(29999);
+  game.advance(24999);
   assert.equal(game.run('state.running'), true);
   game.advance(1);
   assert.equal(game.run('state.running'), false);
@@ -242,7 +244,7 @@ test("late input cannot beat an expired deadline, while input just before it can
   assert.equal(late.run('state.running'), false);
   const timely = battle();
   capture(timely);
-  timely.advance(29999);
+  timely.advance(24999);
   timely.run('applyTypedValue(getInputEnemy(), getInputEnemy().matchedWord)');
   timely.advance(1000);
   assert.equal(timely.run('state.running'), false);
@@ -257,11 +259,11 @@ test("leaving and restarting clears capture, input and old deadline callbacks", 
   assert.equal(game.run('isMountainCaptureActive()'), false);
   assert.equal(game.run('mountainCapture.completed'), false);
   assert.equal(game.run('captureUi.hud.hidden'), true);
-  game.advance(31000);
+  game.advance(26000);
   assert.equal(game.run('state.running'), true);
   capture(game);
   assert.equal(game.run('getInputEnemy().typed'), '');
-  assert.equal(game.run('captureUi.time.textContent'), '残り30秒');
+  assert.equal(game.run('captureUi.time.textContent'), '残り25秒');
 });
 
 test("leaving during the final escape animation cannot award rewards to a restarted battle", () => {
