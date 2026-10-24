@@ -1,6 +1,6 @@
 const mountainCapture = {
-  active: false, completed: false, prompt: null,
-  deadline: 0, durationMs: 0, timerId: 0, escapeTimerId: 0,
+  active: false, introActive: false, completed: false, prompt: null,
+  deadline: 0, durationMs: 0, timerId: 0, introTimerId: 0, escapeTimerId: 0,
 };
 const capturePassageStorageKey = "into-the-typing.capture-passages.v1";
 const capturePassageCycle = loadCapturePassageCycle();
@@ -40,6 +40,8 @@ function chooseCapturePassage(passageIds) {
 }
 
 const captureUi = {
+  intro: document.querySelector("#captureIntro"),
+  introImage: document.querySelector("#captureIntroImage"),
   scene: document.querySelector("#captureScene"),
   bird: document.querySelector("#captureBird"),
   hero: document.querySelector("#captureHero"),
@@ -57,18 +59,20 @@ function isMountainCaptureActive() {
 
 function clearMountainCapture(resetProgress = true) {
   window.clearTimeout(mountainCapture.timerId);
+  window.clearTimeout(mountainCapture.introTimerId);
   window.clearTimeout(mountainCapture.escapeTimerId);
-  mountainCapture.timerId = mountainCapture.escapeTimerId = 0;
+  mountainCapture.timerId = mountainCapture.introTimerId = mountainCapture.escapeTimerId = 0;
   mountainCapture.active = false;
+  mountainCapture.introActive = false;
   mountainCapture.prompt = null;
   mountainCapture.deadline = 0;
   if (resetProgress) mountainCapture.completed = false;
-  captureUi.scene.hidden = captureUi.hud.hidden = captureUi.source.hidden = true;
-  els.battleScreen.classList.remove("is-captured", "is-escaping");
+  captureUi.intro.hidden = captureUi.scene.hidden = captureUi.hud.hidden = captureUi.source.hidden = true;
+  els.battleScreen.classList.remove("is-captured", "is-capture-intro", "is-escaping");
 }
 
 function failMountainCapture() {
-  if (!mountainCapture.active || mountainCapture.prompt.resolving) return;
+  if (!mountainCapture.active || mountainCapture.introActive || mountainCapture.prompt.resolving) return;
   mountainCapture.prompt.resolving = true;
   state.hp = 0;
   finishGame(false, "時間切れ：大鳥から脱出できなかった");
@@ -76,7 +80,7 @@ function failMountainCapture() {
 
 function tickMountainCapture() {
   mountainCapture.timerId = 0;
-  if (!mountainCapture.active || mountainCapture.prompt.resolving) return;
+  if (!mountainCapture.active || mountainCapture.introActive || mountainCapture.prompt.resolving) return;
   const remaining = Math.max(0, mountainCapture.deadline - performance.now());
   captureUi.time.textContent = `残り${Math.ceil(remaining / 1000)}秒`;
   captureUi.meter.setAttribute("aria-valuenow", String(Math.ceil(remaining / 1000)));
@@ -103,7 +107,7 @@ function tryStartMountainCapture() {
   hideGameNotice();
   mountainCapture.active = true;
   mountainCapture.durationMs = config.durationMs;
-  mountainCapture.deadline = performance.now() + config.durationMs;
+  mountainCapture.deadline = 0;
   const inputs = getWordInputs(passage);
   mountainCapture.prompt = {
     id: "mountain-capture", passageId, inputRevision: 1, weaponId: getBattleWeaponId(),
@@ -113,19 +117,40 @@ function tryStartMountainCapture() {
   };
   captureUi.bird.src = config.birdImage;
   captureUi.hero.src = getPlayerWeaponAssets(getBattleWeaponId()).idle;
-  captureUi.scene.hidden = captureUi.hud.hidden = captureUi.source.hidden = false;
   captureUi.heading.textContent = "入力して脱出！";
   captureUi.meter.setAttribute("aria-valuemax", String(config.durationMs / 1000));
   captureUi.source.textContent = `${passage.author}『${passage.title}』`;
   captureUi.source.setAttribute("href", passage.source);
   els.battleScreen.classList.add("is-captured");
   window.GAME_SOUND.play("impact");
+  if (config.introImage) {
+    mountainCapture.introActive = true;
+    captureUi.introImage.src = config.introImage;
+    captureUi.intro.style.setProperty("--capture-intro-image", `url("${new URL(config.introImage, document.baseURI).href}")`);
+    captureUi.intro.hidden = false;
+    els.battleScreen.classList.add("is-capture-intro");
+    updateHud();
+    renderWord();
+    mountainCapture.introTimerId = scheduleBattleTimeout(beginMountainCaptureChallenge, config.introDurationMs);
+  } else beginMountainCaptureChallenge();
+  return true;
+}
+
+function beginMountainCaptureChallenge() {
+  mountainCapture.introTimerId = 0;
+  if (!state.running || !mountainCapture.active) return;
+  mountainCapture.introActive = false;
+  captureUi.intro.hidden = true;
+  els.battleScreen.classList.remove("is-capture-intro");
+  clearInputBuffer();
+  // Give the player the full limit after the illustration has finished.
+  mountainCapture.deadline = performance.now() + mountainCapture.durationMs;
+  captureUi.scene.hidden = captureUi.hud.hidden = captureUi.source.hidden = false;
   tickMountainCapture();
   updateHud();
   renderWord();
   scheduleBattleLayout();
   focusGameSurface();
-  return true;
 }
 
 function escapeMountainCapture() {
@@ -149,7 +174,7 @@ function escapeMountainCapture() {
 
 function applyCaptureTypedValue(value) {
   const prompt = mountainCapture.prompt;
-  if (!state.running || !mountainCapture.active || prompt.resolving) return;
+  if (!state.running || !mountainCapture.active || mountainCapture.introActive || prompt.resolving) return;
   // An input event cannot beat an expired deadline when background timers are delayed.
   if (performance.now() >= mountainCapture.deadline) { failMountainCapture(); return; }
   const normalized = normalizeTypedValue(value);

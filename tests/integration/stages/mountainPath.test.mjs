@@ -18,7 +18,7 @@ function battle({ touch = false, weaponId = "swordShield", unlocked = true, pass
   game.advance(1600);
   return game;
 }
-function capture(game) {
+function capture(game, { waitForIntro = true } = {}) {
   // Capture must wait for every enemy, including the final removal animation.
   for (let index = 0; index < 5; index++) {
     assert.equal(game.run('isMountainCaptureActive()'), false);
@@ -30,13 +30,21 @@ function capture(game) {
     } else game.advance(900);
   }
   assert.equal(game.run('isMountainCaptureActive()'), true);
-  assert.equal(game.run('captureUi.time.textContent'), '残り25秒');
-  assert.equal(game.run('captureUi.meter.getAttribute("aria-valuemax")'), '25');
+  assert.equal(game.run('mountainCapture.introActive'), true);
+  assert.equal(game.run('captureUi.intro.hidden'), false);
+  assert.equal(game.run('mountainCapture.deadline'), 0);
   assert.equal(game.run('state.running'), true);
   assert.equal(game.run('state.cleared'), 5);
   assert.equal(game.run('state.pendingExperience'), 460);
   assert.equal(game.savedProgress().totalExperience, 2850);
   assert.ok(!game.savedProgress().clearedStages.includes('mountain_path'));
+  if (waitForIntro) {
+    game.advance(3000);
+    assert.equal(game.run('mountainCapture.introActive'), false);
+    assert.equal(game.run('captureUi.intro.hidden'), true);
+    assert.equal(game.run('captureUi.time.textContent'), '残り25秒');
+    assert.equal(game.run('captureUi.meter.getAttribute("aria-valuemax")'), '25');
+  }
 }
 
 test("4-1 unlocks after 3-4 with its own mountain map, birds and stage-only capture artwork", () => {
@@ -50,7 +58,9 @@ test("4-1 unlocks after 3-4 with its own mountain map, birds and stage-only capt
   const sources = game.snapshot('collectStageImageSources("mountain_path")');
   for (const source of sources) assert.ok(existsSync(new URL(source).pathname.slice(1)), source);
   assert.ok(sources.some(src => src.includes('/mountain_eagle/')));
+  assert.ok(sources.some(src => src.includes('/events/mountain_capture/arrival.webp')));
   assert.ok(!game.snapshot('collectStageImageSources("thorn_depths")').some(src => src.includes('/mountain_eagle/')));
+  assert.ok(!game.snapshot('collectStageImageSources("thorn_depths")').some(src => src.includes('/events/mountain_capture/')));
 });
 
 test("birds approach the player and attack on arrival rather than charging in place", () => {
@@ -88,10 +98,12 @@ for (const [method, weaponId] of [['attack', 'swordShield'], ['counter', 'sword'
     game.advance(1200);
     assert.equal(game.run('state.cleared'), 5);
     assert.equal(game.run('isMountainCaptureActive()'), true);
+    assert.equal(game.run('mountainCapture.introActive'), true);
     game.run('finishGame(true)');
     assert.equal(game.run('state.running'), true);
     assert.equal(game.savedProgress().totalExperience, 2850);
     assert.ok(!game.savedProgress().clearedStages.includes('mountain_path'));
+    game.advance(3000);
     game.run('applyTypedValue(getInputEnemy(), getInputEnemy().matchedWord)');
     game.advance(650);
     assert.equal(game.run('state.running'), false);
@@ -166,6 +178,58 @@ for (const passageId of passageIds) for (const touch of [false, true]) test(`${p
   game.run('finishGame(true)');
   game.advance(26000);
   assert.equal(game.savedProgress().totalExperience, 3310);
+});
+
+for (const touch of [false, true]) test(`${touch ? 'flick' : 'keyboard'} capture illustration blocks input for three seconds before starting the full timer`, () => {
+  const game = battle({ touch });
+  capture(game, { waitForIntro: false });
+  assert.equal(game.run('getInputEnemy()'), null);
+  assert.equal(game.run('captureUi.scene.hidden'), true);
+  assert.equal(game.run('captureUi.hud.hidden'), true);
+  assert.equal(game.run('mountainCapture.timerId'), 0);
+  game.run('state.specialGauge = 100');
+  for (const key of ['t', 'a', 'Backspace', ' ', 'Enter']) {
+    game.run(`handleTypingKeydown({key:${JSON.stringify(key)},code:${JSON.stringify(key === ' ' ? 'Space' : key)},preventDefault(){}})`);
+  }
+  if (touch) game.run('els.flickInput.value = "たちまち"; handleFlickInput({isComposing:false})');
+  game.run('applyTypedValue(mountainCapture.prompt, mountainCapture.prompt.matchedWord); tickMountainCapture(); finishGame(true)');
+  assert.equal(game.run('state.running'), true);
+  assert.equal(game.run('state.specialGauge'), 100);
+  assert.equal(game.run('state.inputBuffer.length'), 0);
+  assert.equal(game.run('mountainCapture.prompt.typed'), '');
+  game.advance(2999);
+  assert.equal(game.run('captureUi.intro.hidden'), false);
+  assert.equal(game.run('mountainCapture.deadline'), 0);
+  game.advance(1);
+  assert.equal(game.run('captureUi.intro.hidden'), true);
+  assert.equal(game.run('captureUi.hud.hidden'), false);
+  assert.equal(game.run('captureUi.time.textContent'), '残り25秒');
+  assert.equal(game.run('mountainCapture.deadline - performance.now()'), 25000);
+  assert.equal(game.run('getInputEnemy().typed'), '');
+  assert.equal(game.run('els.flickInput.value'), '');
+  game.advance(24999);
+  assert.equal(game.run('state.running'), true);
+  game.advance(1);
+  assert.equal(game.run('state.running'), false);
+  assert.equal(game.savedProgress().totalExperience, 2850);
+});
+
+test("leaving during the illustration cancels its delayed challenge in the next battle", () => {
+  const game = battle();
+  capture(game, { waitForIntro: false });
+  game.advance(1000);
+  game.run('interruptGame(); startGame("mountain_path")');
+  game.advance(4000);
+  assert.equal(game.run('state.running'), true);
+  assert.equal(game.run('state.cleared'), 0);
+  assert.equal(game.run('isMountainCaptureActive()'), false);
+  assert.equal(game.run('mountainCapture.introActive'), false);
+  assert.equal(game.run('mountainCapture.introTimerId'), 0);
+  assert.equal(game.run('mountainCapture.deadline'), 0);
+  assert.equal(game.run('captureUi.intro.hidden'), true);
+  assert.equal(game.run('captureUi.hud.hidden'), true);
+  assert.equal(game.run('els.battleScreen.classList.contains("is-capture-intro")'), false);
+  capture(game);
 });
 
 test("all five passages appear once per shuffled cycle without consecutive repeats across retries", () => {

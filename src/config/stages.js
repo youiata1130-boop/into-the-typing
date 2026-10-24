@@ -225,6 +225,8 @@ const stageDefinitions = {
     background: "src/assets/images/backgrounds/stages/mountain.webp",
     wordLength: { normalMin: 0 },
     capture: {
+      introImage: "src/assets/images/events/mountain_capture/arrival.webp",
+      introDurationMs: 3000,
       durationMs: 25000,
       passageIds: ["kusamakura_hibari", "kusamakura_birdsong", "kusamakura_nanohana", "kusamakura_kokoro", "kusamakura_spring"],
       birdImage: "src/assets/images/enemies/mountain_eagle/capture/frame_01.webp",

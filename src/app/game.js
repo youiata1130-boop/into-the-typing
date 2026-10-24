@@ -907,7 +907,7 @@ function scheduleBufferedInputFlush() {
 }
 
 function enqueueBufferedInput(action, value = "") {
-  if (!state.running || state.guarding || state.specialInProgress || isUnarmedStory() || isStoryDialogueOpen()) {
+  if (!state.running || mountainCapture.introActive || state.guarding || state.specialInProgress || isUnarmedStory() || isStoryDialogueOpen()) {
     return;
   }
 
@@ -1775,7 +1775,7 @@ function getSelectedEnemy() {
 }
 
 function getCurrentEnemy() {
-  if (isMountainCaptureActive()) return mountainCapture.prompt;
+  if (isMountainCaptureActive()) return mountainCapture.introActive ? null : mountainCapture.prompt;
   const selectedEnemy = getSelectedEnemy();
 
   return selectedEnemy || state.activeEnemies.find((enemy) => isEnemyAlive(enemy)) || null;
@@ -1783,7 +1783,7 @@ function getCurrentEnemy() {
 
 function getInputEnemy() {
   if (isMountainCaptureActive()) {
-    return state.running && !mountainCapture.prompt.resolving ? mountainCapture.prompt : null;
+    return state.running && !mountainCapture.introActive && !mountainCapture.prompt.resolving ? mountainCapture.prompt : null;
   }
   if (isStoryDialogueOpen() || state.hp <= 0 || state.specialInProgress || state.guarding
       || performance.now() < state.playerAttackReadyAt) return null;

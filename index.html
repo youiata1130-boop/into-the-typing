@@ -6,7 +6,7 @@
     <title>Into the Typing</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='52'%3E%E2%9A%94%EF%B8%8F%3C/text%3E%3C/svg%3E">
     <link rel="preload" as="image" href="src/assets/images/backgrounds/shared/typing_rpg_background.webp">
-    <link rel="stylesheet" href="src/styles/main.css?v=20261024-mountain-v1">
+    <link rel="stylesheet" href="src/styles/main.css?v=20261024-capture-intro-v1">
   </head>
   <body>
     <section class="loading-screen" id="loadingScreen" aria-labelledby="loadingText" aria-busy="true">
@@ -356,6 +356,9 @@
           </div>
           <div class="enemy-layer" id="enemyLayer" aria-label="敵"></div>
         </div>
+        <div class="capture-intro" id="captureIntro" role="img" aria-label="山道に大鳥が飛来し、主人公をつかんで空へさらう" hidden>
+          <img id="captureIntroImage" alt="">
+        </div>
         <div class="capture-scene" id="captureScene" role="img" aria-label="大鳥に捕まり空中へ連れ去られる主人公" hidden>
           <div class="capture-carrier">
             <img class="capture-hero" id="captureHero" alt="">
@@ -560,7 +563,7 @@
     <script src="src/data/capturePassages.js?v=20261024-passages-v2"></script>
     <script src="src/data/labels.js?v=20261024-enter-skill-v1"></script>
     <script src="src/config/weapons.js?v=20261024-greatsword-hero-v1"></script>
-    <script src="src/config/stages.js?v=20261024-capture-25s-v4"></script>
+    <script src="src/config/stages.js?v=20261024-capture-intro-v1"></script>
     <script src="src/config/skills.js?v=20261024-faster-heal-gauge-v1"></script>
     <script src="src/config/enemyAnimations.js?v=20261024-mountain-v1"></script>
     <script src="src/config/playerProgression.js?v=20261024-thorn-depths-v1"></script>
@@ -570,18 +573,18 @@
     <script src="src/ui/battleLayout.js?v=20261024-thorn-depths-v1"></script>
     <script src="src/input/mobile.js?v=20261024-thorn-depths-v1"></script>
     <script src="src/input/flickKeyboard.js?v=20261024-sword-counter-v1"></script>
-    <script src="src/app/loading.js?v=20261024-mountain-v1"></script>
+    <script src="src/app/loading.js?v=20261024-capture-intro-v1"></script>
     <script src="src/app/sound.js?v=20261024-sword-counter-v1"></script>
     <script src="src/app/skills.js?v=20261024-shield-attack-boost-v1"></script>
     <script src="src/app/enemyCharge.js?v=20261024-dual-time-stop-v1"></script>
     <script src="src/app/battleFeedback.js?v=20261024-healing-sword-v1"></script>
-    <script src="src/app/mountainCapture.js?v=20261024-final-capture-v3"></script>
+    <script src="src/app/mountainCapture.js?v=20261024-capture-intro-v1"></script>
     <script src="src/app/guard.js?v=20261024-mountain-v1"></script>
     <script src="src/app/dualBladePreview.js?v=20261024-mountain-v1"></script>
     <script src="src/ui/weaponMenu.js?v=20261024-sword-counter-v1"></script>
     <script src="src/app/enemyActionStop.js?v=20261024-dual-time-stop-v1"></script>
     <script src="src/app/attackBoost.js?v=20261024-shield-attack-boost-v1"></script>
     <script src="src/app/counter.js?v=20261024-mountain-v1"></script>
-    <script src="src/app/game.js?v=20261024-final-capture-v3"></script>
+    <script src="src/app/game.js?v=20261024-capture-intro-v1"></script>
   </body>
 </html>
