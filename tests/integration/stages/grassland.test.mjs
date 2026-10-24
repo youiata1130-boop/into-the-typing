@@ -101,10 +101,10 @@ test("snake sprites and grassland background preload and the beach returns on st
       }
     }
   }
-  assert.ok(urls.some(url => url.endsWith("/stages/grassland.png")));
-  assert.ok(existsSync(new URL("../../../src/assets/images/backgrounds/stages/grassland.png", import.meta.url)));
+  assert.ok(urls.some(url => url.endsWith("/stages/grassland.webp")));
+  assert.ok(existsSync(new URL("../../../src/assets/images/backgrounds/stages/grassland.webp", import.meta.url)));
   game.run('const arenaStyles = {}; els.arena.style.setProperty = (name, value) => { arenaStyles[name] = value; }; startGame("grassland_path")');
-  assert.match(game.run('arenaStyles["--stage-background"]'), /grassland\.png/);
+  assert.match(game.run('arenaStyles["--stage-background"]'), /grassland\.webp/);
   game.run('startGame("storm_cove")');
-  assert.match(game.run('arenaStyles["--stage-background"]'), /crab_shore\.png/);
+  assert.match(game.run('arenaStyles["--stage-background"]'), /crab_shore\.webp/);
 });

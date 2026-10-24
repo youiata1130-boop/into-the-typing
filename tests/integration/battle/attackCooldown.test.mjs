@@ -48,7 +48,7 @@ for (const [weaponId, cooldown, reaction] of [["greatsword", 1500, 220], ["sword
   });
 }
 
-test("early keyboard input survives the full greatsword cooldown and attacks only once per interval", () => {
+test("keys pressed while the next word is hidden never carry into that word", () => {
   const game = battle();
   game.run(`
     setNextWord = enemy => {
@@ -62,15 +62,14 @@ test("early keyboard input survives the full greatsword cooldown and attacks onl
   game.advance(1499);
   assert.equal(game.run("state.combo"), 1);
   assert.equal(game.run("target.typed"), "");
-  game.advance(1);
-  assert.equal(game.run("state.combo"), 2);
   assert.equal(game.run("state.inputBuffer.length"), 0);
+  game.advance(1);
+  assert.equal(game.run("state.combo"), 1);
+  assert.equal(game.run("target.typed"), "");
+  assert.equal(game.run("els.typingMissEffect.classList.contains('is-active')"), false);
   game.run('[..."neko"].forEach(type)');
-  game.advance(1499);
   assert.equal(game.run("state.combo"), 2);
-  game.advance(1);
-  assert.equal(game.run("state.combo"), 3);
-  assert.equal(game.run("state.inputBuffer.length"), 0);
+  assert.equal(game.run("target.typingMisses"), 0);
 });
 
 test("killing a target, switching targets and new spawns cannot bypass cooldown", () => {

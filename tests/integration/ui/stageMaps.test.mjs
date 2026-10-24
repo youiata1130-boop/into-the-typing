@@ -48,14 +48,14 @@ test("new players see the seaside and previewing grassland does not unlock its s
 test("forest preview stays locked until 2-3 is cleared and old clears open 3-1", () => {
   const locked = setup();
   locked.run('switchStageMap("forest"); showStageConfirm("mushroom_forest"); startConfirmedStage()');
-  assert.deepEqual(visibleStages(locked), ["mushroom_forest", "spore_path"]);
+  assert.deepEqual(visibleStages(locked), ["mushroom_forest", "spore_path", "fairy_forest", "thorn_depths"]);
   assert.equal(locked.run("state.running"), false);
   assert.equal(locked.run('mapButtons.find(button => button.dataset.stage === "mushroom_forest").disabled'), true);
   const game = setup({ "into-the-typing.player.v2": JSON.stringify({
     ...progress, clearedStages: [...progress.clearedStages, "grassland_path", "flower_meadow", "swarm_meadow"],
   }) });
   assert.equal(game.run("state.stageMapRegionId"), "forest");
-  assert.deepEqual(visibleStages(game), ["mushroom_forest", "spore_path"]);
+  assert.deepEqual(visibleStages(game), ["mushroom_forest", "spore_path", "fairy_forest", "thorn_depths"]);
   assert.equal(game.run("getHighestAvailableStageCode()"), "3-1");
   game.run('startGame("swarm_meadow"); state.cleared = state.roundLimit; finishGame(true)');
   assert.equal(game.run("els.noticeButton.textContent"), "ステージ3-1へ");
@@ -92,6 +92,23 @@ test("entering grassland selects its map and replaying a coastal stage returns t
   game.run('switchStageMap("coast"); showStageConfirm("mist_road"); startConfirmedStage(); showStageSelect()');
   assert.equal(game.run("els.stageMapPanel.dataset.region"), "coast");
   assert.deepEqual(visibleStages(game), progress.clearedStages);
+});
+
+test("3-3 requires 3-2, opens for older saved clears, and is reachable from the result", () => {
+  const stages = [...progress.clearedStages, "grassland_path", "flower_meadow", "swarm_meadow", "mushroom_forest"];
+  const game = setup({ "into-the-typing.player.v2": JSON.stringify({ ...progress, swordShieldObtained: true, clearedStages: stages }) });
+  game.run('showStageConfirm("fairy_forest"); startConfirmedStage(); startGame("fairy_forest")');
+  assert.equal(game.run("state.running"), false);
+  assert.equal(game.run('mapButtons.find(button => button.dataset.stage === "fairy_forest").disabled'), true);
+  game.run('startGame("spore_path"); state.cleared = state.roundLimit; finishGame(true)');
+  assert.equal(game.run("els.noticeButton.textContent"), "ステージ3-3へ");
+  game.run("continueAfterResult()");
+  assert.equal(game.run("state.stageId"), "fairy_forest");
+  const reloaded = setup(game.saved());
+  assert.equal(reloaded.run("getHighestAvailableStageCode()"), "3-3");
+  assert.equal(reloaded.run('mapButtons.find(button => button.dataset.stage === "fairy_forest").disabled'), false);
+  reloaded.run('showStageConfirm("fairy_forest"); startConfirmedStage()');
+  assert.equal(reloaded.run("state.running"), true);
 });
 
 test("map selection is restored from each save's progression without leaking between players", () => {

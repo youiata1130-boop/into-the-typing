@@ -36,6 +36,7 @@ window.GAME_SOUND = (() => {
 
   // Tone tuples: frequency, duration, delay, waveform, end frequency, volume.
   const effects = {
+    heal: { tones: [[523, .22, 0, "sine", 659, .3], [659, .25, .12, "sine", 784, .3], [1047, .3, .24, "sine", 1319, .22]] },
     guard: { tones: [[1100, 0.14, 0, "triangle", 550, 0.45], [1750, 0.1, 0, "sine", 1300, 0.2]],
       noise: [{ from: 4500, to: 1800, duration: 0.06, volume: 0.5, filter: "highpass" }] },
     typing: { tones: [[760, 0.035, 0, "sine", 520]] },

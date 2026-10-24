@@ -21,7 +21,7 @@ This is a static site, so it can be published without a backend.
 2. In the repository settings, enable GitHub Pages with GitHub Actions.
 3. Push to the `main` branch.
 
-The workflow in `.github/workflows/pages.yml` deploys the current files.
+The workflow in `.github/workflows/pages.yml` builds `dist/` and deploys only the game files.
 
 ### Other Static Hosts
 
@@ -48,7 +48,8 @@ into-the-typing/
 │       ├── player/         # Player frames by weapon and state
 │       ├── items/          # Weapon illustrations for story scenes
 │       └── enemies/        # Enemy frames by type, level, and state
-├── scripts/                # Local server and syntax checking
+├── dist/                   # Generated publish files (Git-ignored)
+├── scripts/                # Build, local server and syntax checking
 │   └── assets/             # Asset-generation utilities
 ├── tests/
 │   ├── unit/               # Progression, sound, and layout rules
@@ -94,8 +95,8 @@ into-the-typing/
 
 Scripts load in the order listed in `index.html`. They remain classic browser scripts so opening `index.html` directly still works without a build step. The integration-test helper follows that same script order.
 
-- Player images: `src/assets/images/player/{weapon}/{state}/frame_{nn}.png`.
-- Enemy images: `src/assets/images/enemies/{enemy}/level_{n}/{state}/frame_{nn}.png`.
+- Player images: `src/assets/images/player/{weapon}/{state}/frame_{nn}.webp`.
+- Enemy images: `src/assets/images/enemies/{enemy}/level_{n}/{state}/frame_{nn}.webp`.
 - Backgrounds: `src/assets/images/backgrounds/{shared,status,stage_map}`.
 - Art records: [greatsword](docs/assets/player/greatsword-generation.md), [unarmed](docs/assets/player/unarmed-generation.md), and [wooden branch](docs/assets/player/branch-generation.md).
 - Legacy images: see the [archive guide](archive/README.md).
@@ -105,8 +106,8 @@ Scripts load in the order listed in `index.html`. They remain classic browser sc
 
 ## Asset Notes
 
-- Startup waits for all playable enemy frames, weapon frames, page images, and map variants to download and decode. A progress screen blocks play until everything is ready; failed or timed-out loads offer a retry. Successfully loaded assets are retained for retry.
-- CSS-only backgrounds are declared as image preload links in `index.html`; keep those links in sync when adding backgrounds. Images already referenced by the page or responsive map are collected automatically.
+- Startup downloads only the shared background. Each stage waits for its own background, enemy frames, equipped weapon, reward art and required story images before starting. Maps and the menu background load when opened. Failed or timed-out loads offer a retry; decoded images are reused across stages and restarts.
+- Register stage assets through the stage, weapon and enemy configuration. `src/app/loading.js` builds each screen’s image list. Hidden HTML images have no initial source, and only the shared background has an initial preload.
 
 - Add enemy frames under `src/assets/images/enemies/{enemy}/level_{n}`.
 - Register new enemy frames in `src/config/enemyAnimations.js`.
@@ -123,9 +124,9 @@ Scripts load in the order listed in `index.html`. They remain classic browser sc
 - The title screen offers `初めから` and `続きから`. Choose one of three slots and enter a player name (1–20 characters) for a new adventure. Slot cards show the name, level, and highest available stage. Creating a save writes it before opening the map; overwriting an occupied slot requires the explicitly labeled confirmation button. Canceling leaves the existing data untouched.
 - `続きから` opens the map with the selected player's saved growth and equipment. Battles restart when entered. The map's `タイトル` button returns to player selection.
 
-- Coastal stages use the ocean-and-sandy-beach battle background; stages 2-1 through 2-3 use grassland, and 3-1 through 3-2 use forest. Map tabs switch between the seaside, grassland, and forest regions.
+- Coastal stages use the ocean-and-sandy-beach battle background; stages 2-1 through 2-3 use grassland, and 3-1 through 3-3 use forest. Map tabs switch between the seaside, grassland, and forest regions.
 - The start screen opens an old map on a desk. Only circular quest markers are shown at first; selecting one reveals its name and start controls. A portrait map is used on portrait screens.
-- Stage `1-1 旅の始まり` contains only the equipment lesson against a single medaka. Its three punches and four branch attacks finish the stage and award no EXP, so replaying stage 1-1 cannot cause a level-up. The result shows a treasure chest and `鉄の剣を手に入れた！`, saves ownership of the sword, and offers an `装備画面へ` button on first acquisition. The equipment screen asks the player to select the iron sword; selecting it equips and saves it, then enables `ステージ1-2へ`. An unfinished equipment prompt resumes when continuing that save, while completed and older saves keep the normal menu flow. Failed or interrupted attempts do not grant the sword.
+- Stage `1-1 旅の始まり` contains only the equipment lesson against a single medaka. Its three punches and four branch attacks finish the stage and award no EXP, so replaying stage 1-1 cannot cause a level-up. The result shows a treasure chest and `鉄の剣を手に入れた！`, saves ownership of the sword, and offers an `装備画面へ` button on first acquisition. The equipment screen asks the player to select the iron sword; selecting it previews its illustration and traits; pressing the equip button equips and saves it, then enables `ステージ1-2へ`. An unfinished equipment prompt resumes when continuing that save, while completed and older saves keep the normal menu flow. Failed or interrupted attempts do not grant the sword.
 - The equipment tutorial opens with `敵が現れた！`; `次へ` reveals the first medaka. This enemy has no HP fields: it is defeated by three successful unarmed prompts followed by four successful wooden-branch prompts, independently of attack stats. The unarmed prompts are `あ`, `木` (`き` / `ki`), and `手` (`て` / `te`), in that order; each takes one kana on mobile. Mistakes and duplicate input events do not advance the lesson.
 - Three punches reduce the displayed enemy gauge to 99%, 98%, and 97%. The branch illustration and `これを使って！` then appear; `装備する` equips the branch against the same medaka. The four branch attacks reduce the gauge to 72.75%, 48.5%, 24.25%, and 0%. Dialogue pauses combat, and special moves are blocked throughout this first encounter.
 - Defeating the tutorial medaka saves `equipmentTutorialCompleted` and unlocks stage 1-2; receiving the branch alone does not unlock it. An unfinished lesson restarts on retry or reload, and stage 1-1 can always be replayed as the full lesson. Existing completed saves immediately unlock stage 1-2 without resetting EXP, level, stats, or equipment. `introCompleted` continues to record receipt of the branch.
@@ -138,15 +139,17 @@ Scripts load in the order listed in `index.html`. They remain classic browser sc
 - The wooden branch is the initial weapon. It uses complete prompts with 2–3 roman letters for normal enemies and bosses and deals 0.2 damage at base attack outside the tutorial. Agility can shorten these prompts to 2 letters. Home → Weapons unlocks the iron sword after the stage 1-1 treasure reward; equipment lists only owned weapons. The greatsword requires its own `greatswordObtained` save flag and is not awarded by the opening lesson. Older saves with the greatsword equipped retain ownership; newer saves retain the explicit acquisition flag even when another weapon is equipped. Older version-2 saves without `ironSwordObtained` retain their previous sword access if the branch was already received. Equipment persists across retries and reloads.
 - At base agility, the iron sword uses short words, ×1 damage and a 0.7-second cooldown. The greatsword cooldown is 1.5 seconds. Cooldowns are shortened using the weapon's configured word-length range and agility, then fixed at stage start. The next prompt appears when the cooldown ends; the individual word never changes its duration.
 - Stage 2-1 grants no weapon. Stage 2-2 is a small encounter of five bees, at most two simultaneously, intended for the already owned iron sword. Clearing it grants dual blades and opens stage 2-3.
-- Clearing 2-3 opens [3-1 キノコの森](docs/stages/mushroom-forest.md). Three mushrooms appear one at a time and attack from a fixed position after charging for six seconds. A meter and countdown show when they will attack; the final 1.5 seconds turn red and glow. Clearing all three awards 135 EXP.
-- Clearing 3-1 grants the sword and shield (片手剣) and opens [3-2 胞子の小道](docs/stages/spore-path.md). Equip it to continue to four mushrooms with 5.5-second charges in the first half and 5-second charges in the second half. Clearing 3-2 awards 220 EXP.
-- With the sword and shield equipped, hold Space or the mobile guard button to block damage. Guarding pauses typing, preserves partial input, and ends when released. Its special move uses Shift+Space or the skill button. Existing 3-1 clears receive the weapon without changing their saved stats or current equipment.
+- Clearing 2-3 opens [3-1 キノコの森](docs/stages/mushroom-forest.md). Three mushrooms appear one at a time and attack from a fixed position after charging for six seconds. A meter and state label telegraph the attack without displaying seconds. In the final 25%, the meter turns red and the enemy switches to its dedicated wind-up illustration; both ordinary mushrooms and the king have this pose. Clearing all three awards 135 EXP.
+- Clearing 3-1 grants the sword and shield (片手剣) and opens [3-2 胞子の小道](docs/stages/spore-path.md). Four mushrooms charge for 5.5 seconds in the first half and 5 seconds in the second half, then the Mushroom King boss appears with 40 HP and a 4.5-second charge. All spore attacks can be guarded. Clearing 3-2 awards 380 EXP after defeating the boss.
+- Clearing 3-2 opens [3-3 妖精の森](docs/stages/fairy-forest.md). Four mushrooms are followed by the Tree Fairy boss, with 48 HP and a 5-second charge. It raises its branch arms before a leaf-magic attack; the meter and pose telegraph the attack without seconds. Guard halves its damage. Clearing the stage awards 480 EXP.
+- With the sword and shield equipped, hold Space or the mobile guard button to halve incoming damage, rounded up (minimum 1). Guarded hits still reset the combo, success streak and no-damage clear status. Guarding pauses typing, preserves partial input, and ends when released. Its special move uses Shift+Space or the skill button. Existing 3-1 clears receive the weapon without changing their saved stats or current equipment.
+- The greatsword also guards for quarter damage with Space or the guard button, using a dedicated blade-blocking pose. It cannot guard while any word is partially typed, including pending kana and queued letters. It can guard before typing or after finishing an attack, without shortening the cooldown. Its special move uses Shift+Space or the skill button.
 - At base agility, dual blades use 2–4 letters and a 0.2-second cooldown, dealing ×0.6 damage (rounded, minimum 1) to one target per attack. Stage 2-3 has 12 bees with up to four present, followed by the Bee Queen boss. See [weapon rules](docs/gameplay/weapons.md) and [stage 2-3](docs/stages/swarm-meadow.md).
-- Retired dagger saves return to the owned iron sword. Existing stage 2-2 clears receive dual blades without changing EXP or progress. The new [weapon and player illustrations](docs/assets/player/dual-blades-generation.md) are preloaded for the treasure reward and battle. Equipment choices display weapon names only.
+- Retired dagger saves return to the owned iron sword. Existing stage 2-2 clears receive dual blades without changing EXP or progress. The new [weapon and player illustrations](docs/assets/player/dual-blades-generation.md) are preloaded for the treasure reward and battle. Equipment choices open a visual detail panel; its equip button confirms the selection.
 - At base agility, the greatsword uses long prompts (at least 12 input characters for normal enemies and bosses). A no-miss completion deals ×4 attack damage. Each mistype multiplies that word's attainable charge by 0.75, with a minimum damage multiplier of ×1.
 - Correct greatsword input progresses through low guard, raised blade and overhead wind-up at 40% and 80% charge. The bar sits above the player's head without percentage text. Misses and Backspace reduce the displayed charge; each new prompt starts from low guard. A perfect completion plays the overhead attack and impact effects.
 
-- The battle input panel displays the Japanese prompt and romanized typing text. Use the upper-left Back button to return to the stage map. Space activates the charged special move except with the sword and shield, which uses Space for guard and Shift+Space for the special move.
+- The battle input panel displays the Japanese prompt and romanized typing text. Use the upper-left Back button to return to the stage map. Space activates the charged special move except with the sword and shield or greatsword, which use Space for guard and Shift+Space for the special move.
 
 ## Player Progression
 
@@ -175,3 +178,7 @@ On a phone or tablet, battles use an in-game hiragana flick keyboard. The system
 - The keyboard hides during dialogue and outside battle. Portrait layouts keep the battle above the keys; short landscape layouts put them side by side. Desktop hardware romaji input remains available.
 - Input files: `src/input/flickKeyboard.js` manages keys and gestures; `src/input/mobile.js` manages the shared kana matcher, input reset, and viewport; `src/input/japanese.js` parses readings. The internal textarea is hidden and readonly. Battle controls focus the non-editable prompt.
 - Validation covers all 223 playable prompts using the shared modifier key, miss recovery, guide timing and cancellation, scoped browser-event prevention, and the existing battle/save flows. Browser checks use actual touch events and verify the viewport scale and scroll position during swipes, pinches, and repeated taps. Physical iPhone Safari behavior still requires device verification.
+
+## Image storage
+
+Runtime and archived images use lossless WebP with their original pixel data, resolution and transparency. Only game files are copied into `dist/`; archive, documentation, tests and local verification files are excluded.

@@ -3,7 +3,7 @@
 - 作成日: 2026-09-16
 - 生成方式: 組み込み ImageGen。既存のカニを目視し、同じ画風の別キャラクターとして新規生成。
 - 原本: C:/Users/youia/.codex/generated_images/01a09f73-1ec4-7702-bddf-65dac5fca912/exec-7000ace9-0b48-4657-9dad-a0c0829d899b.png
-- 保存先: src/assets/images/enemies/crab/boss/idle/frame_01.png
+- 保存先: src/assets/images/enemies/crab/boss/idle/frame_01.webp
 - 1536 × 1024 px、RGBA、透過背景。原本を加工せずコピー。
 - デザイン: 滑らかな赤橙色の甲羅、大きなハサミ、少し鋭い目、ルビー付きの金の王冠、紫のマント。
 - 登場順: 通常のカニ２体（各HP5、攻撃10〜15）→ カニの王様１体（HP8、攻撃14〜20）。

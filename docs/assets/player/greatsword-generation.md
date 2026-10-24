@@ -2,7 +2,7 @@
 
 All sprites documented below were created with the built-in ImageGen tool in `stylized-concept` mode. No existing project image was sent to the image-generation service; each frame was generated from text only.
 
-## `src/assets/images/player/greatsword/idle/frame_01.png`
+## `src/assets/images/player/greatsword/idle/frame_01.webp`
 
 ```text
 Use case: stylized-concept
@@ -19,7 +19,7 @@ Constraints: exactly one character, exactly one greatsword, exactly two arms, ex
 Avoid: aura, glow, charging effect, attack effect, impact effect, motion lines, scenery, room, sky, floor, platform, pedestal, background color, cast shadow outside the character, text, letters, numbers, logo, watermark, extra character, companion, extra weapon, sheath, shield, extra limbs, duplicated hands, malformed anatomy, cropped sword tip.
 ```
 
-## `src/assets/images/player/greatsword/attack/frame_01.png`
+## `src/assets/images/player/greatsword/attack/frame_01.webp`
 
 ```text
 TRUE ALPHA TRANSPARENCY, EMPTY TRANSPARENT BACKDROP, DO NOT DRAW A CHECKERBOARD.
@@ -34,7 +34,7 @@ Constraints: exactly one character, one greatsword, two arms, two hands, and two
 Avoid: checkerboard pattern, transparency-grid drawing, white background, gray background, black background, colored fill, gradient, scenery, floor, cast-shadow field, pedestal, aura, charging effect, glow, energy, impact, slash arc, motion trail, particles, text, label, logo, watermark, extra weapon, duplicate blade, extra limbs, missing limbs, cropped sword tip, cropped feet.
 ```
 
-## `src/assets/images/player/greatsword/attack/frame_02.png`
+## `src/assets/images/player/greatsword/attack/frame_02.webp`
 
 ```text
 Use case: stylized-concept
@@ -50,7 +50,7 @@ Constraints: Exactly one character and exactly one greatsword; complete anatomy;
 Avoid: baked-in impact effect, aura, glow, energy, sword trail, speed lines, particles, dust, debris, text, letters, UI, logo, watermark, background, extra weapon, duplicate blade, scabbard, shield, extra limb, missing limb, malformed hands, cropped character, cropped blade, opaque or semi-opaque background.
 ```
 
-## `archive/assets/images/player/greatsword/equipped/frame_01.png`
+## `archive/assets/images/player/greatsword/equipped/frame_01.webp`
 
 Archived because this alternate equipped pose is not currently loaded by the game.
 
@@ -68,7 +68,7 @@ Constraints: exactly one character, exactly one greatsword, exactly two arms, tw
 Avoid: attack pose, raised-overhead strike, swing follow-through, aura, charging effect, glow, impact effect, sword trail, speed lines, particles, text, letters, logo, watermark, extra character, extra weapon, shield, sheath, duplicate blade, extra limbs, malformed hands, cropped sword tip, opaque background.
 ```
 
-## `src/assets/images/player/greatsword/charge/frame_01.png`
+## `src/assets/images/player/greatsword/charge/frame_01.webp`
 
 ```text
 Use case: stylized-concept

@@ -1,24 +1,27 @@
+// Sample once per attack cycle; keep the configured base to avoid timing drift.
+function randomizeEnemyAttackMs(baseMs) {
+  return Math.round(baseMs * (0.9 + Math.random() * 0.2));
+}
+
 // Stationary enemies share the battle clock, including hit and attack recovery.
+function isEnemyWindingUp(enemy) {
+  return enemy.attackStyle === "charge" && isEnemyAlive(enemy)
+    && enemy.chargeElapsedMs >= enemy.chargeDurationMs * 0.75;
+}
+
 function updateEnemyCharge(enemy) {
-  if (enemy.attackStyle !== "charge" || !enemy.chargeMeter) return;
+  if (enemy.attackStyle !== "charge") return;
+  const alive = isEnemyAlive(enemy);
   const attacking = enemy.animation === "attack";
-  const remaining = Math.max(0, enemy.chargeDurationMs - enemy.chargeElapsedMs);
-  const progress = Math.min(1, enemy.chargeElapsedMs / enemy.chargeDurationMs);
-  const phase = attacking ? "attack" : progress >= 0.75 ? "warning" : "charging";
+  const progress = attacking ? 1 : Math.max(0, Math.min(1, enemy.chargeElapsedMs / enemy.chargeDurationMs));
+  const phase = !alive ? "defeated" : attacking ? "attack" : progress >= 0.75 ? "warning" : "charging";
+  const phaseChanged = enemy.element.dataset.chargePhase !== phase;
   enemy.element.dataset.chargePhase = phase;
+  if (phaseChanged && enemy.animation === "idle") updateEnemyFrame(enemy);
   enemy.element.style.setProperty("--enemy-charge", progress.toFixed(3));
-  enemy.chargeFill.style.width = `${progress * 100}%`;
-  const percent = Math.floor(progress * 100);
-  if (enemy.chargeMeter.getAttribute("aria-valuenow") !== String(percent)) {
-    enemy.chargeMeter.setAttribute("aria-valuenow", String(percent));
-  }
-  const seconds = (Math.ceil(remaining / 100) / 10).toFixed(1);
-  const label = attacking ? "胞子攻撃！" : `攻撃まで ${seconds}秒`;
-  if (enemy.chargeLabel.textContent !== label) {
-    enemy.chargeLabel.textContent = label;
-    enemy.chargeMeter.setAttribute("aria-valuetext", label);
-  }
-  enemy.chargeMeter.hidden = !isEnemyAlive(enemy);
+  enemy.element.style.setProperty("--enemy-aura-color", `hsl(${Math.round(100 * (1 - progress))} 90% 64%)`);
+  const label = !alive ? "撃破" : attacking ? enemy.chargeAttackLabel : phase === "warning" ? "攻撃準備" : "溜め中";
+  enemy.element.setAttribute("aria-label", `${enemy.name || "敵"}、${label}`);
 }
 
 function advanceEnemyCharge(enemy, now) {
@@ -31,6 +34,7 @@ function advanceEnemyCharge(enemy, now) {
 
 function resetEnemyCharge(enemy) {
   if (enemy.attackStyle !== "charge") return;
+  enemy.chargeDurationMs = randomizeEnemyAttackMs(enemy.baseChargeDurationMs);
   enemy.chargeElapsedMs = 0;
   enemy.lastTick = performance.now();
   updateEnemyCharge(enemy);

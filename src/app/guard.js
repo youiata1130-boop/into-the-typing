@@ -6,7 +6,23 @@ function hasGuardWeapon() {
 
 function canPlayerGuard() {
   return state.running && state.hp > 0 && hasGuardWeapon()
-    && !state.specialInProgress && !isStoryDialogueOpen();
+    && !state.specialInProgress && !isStoryDialogueOpen()
+    && (!getActiveWeapon().guardRequiresEmptyInput || !hasPlayerGuardBlockingInput());
+}
+
+function hasPlayerGuardBlockingInput() {
+  const partialWord = state.activeEnemies.some(enemy => isEnemyAlive(enemy)
+    && enemy.typed.length > 0 && !enemy.inputs.includes(enemy.typed));
+  const current = getCurrentEnemy();
+  const pendingKana = flickState.enabled && current && isEnemyAlive(current)
+    && els.flickInput.value.length > 0 && !current.inputs.includes(current.typed);
+  const queuedWord = state.inputBuffer.reduce((value, entry) =>
+    entry.action === "letter" ? value + entry.value : value.slice(0, -1), "");
+  return partialWord || pendingKana || queuedWord.length > 0;
+}
+
+function getPlayerGuardLabel() {
+  return getActiveWeapon().id === "greatsword" ? "大剣でガードする主人公" : "盾でガードする主人公";
 }
 
 function beginPlayerGuard(source, pointerId = null) {
@@ -47,7 +63,7 @@ function updateGuardHud() {
   els.guardButton.setAttribute("aria-pressed", String(state.guarding));
   els.guardButtonText.textContent = state.guarding ? "ガード中" : "ガード";
   els.player.classList.toggle("is-guarding", state.guarding);
-  els.player.setAttribute("aria-label", state.guarding ? "盾でガードする主人公" : "主人公");
+  els.player.setAttribute("aria-label", state.guarding ? getPlayerGuardLabel() : "主人公");
 }
 
 function playGuardImpact() {
@@ -59,7 +75,7 @@ function playGuardImpact() {
   playerGuardInput.hitTimerId = scheduleBattleTimeout(() => {
     els.player.classList.remove("is-guard-hit");
     playerGuardInput.hitTimerId = 0;
-  }, 300);
+  }, 480);
 }
 
 function initializePlayerGuard() {

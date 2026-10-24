@@ -37,6 +37,7 @@ function clearFlickInput() {
   els.flickInput.setSelectionRange?.(0, 0);
   els.flickInput.setAttribute("aria-invalid", "false");
   refreshGameFlickText();
+  updateGuardHud();
 }
 
 function finishFlickInput(value, key) {
@@ -235,6 +236,7 @@ function applyFlickValue(value, key = flickPromptKey(), { composing = false, inp
   if (flickState.composing && enemy.inputs.includes(roman)) flickState.compositionConsumed = true;
   applyTypedValue(enemy, roman, { readingProgress: getFlickChargeProgress(flickState.acceptedValue, parsed) });
   if (enemy.resolving) finishFlickInput(value, key);
+  updateGuardHud();
 }
 
 function queueFlickInput(key = flickPromptKey()) {

@@ -7,7 +7,7 @@ const defaultStageId = "forest_path";
 const stageMapRegions = {
   coast: { name: "1 海辺", image: "src/assets/images/backgrounds/stage_map/coast.jpg" },
   grassland: { name: "2 草原", image: "src/assets/images/backgrounds/stage_map/grassland.jpg" },
-  forest: { name: "3 森", image: "src/assets/images/backgrounds/stage_map/forest.png" },
+  forest: { name: "3 森", image: "src/assets/images/backgrounds/stage_map/forest.webp" },
 };
 const stageDefinitions = {
   forest_path: {
@@ -82,7 +82,7 @@ const stageDefinitions = {
     requiresTutorial: true,
     requiresStage: "storm_cove",
     nextStageId: "flower_meadow",
-    background: "src/assets/images/backgrounds/stages/grassland.png",
+    background: "src/assets/images/backgrounds/stages/grassland.webp",
     wordLength: { normalMin: 0 },
     waves: [
       { types: ["snake_level_1"], name: "草原の蛇", hp: 14, attackPower: { min: 14, max: 20 }, count: 3, experience: 30 },
@@ -99,7 +99,7 @@ const stageDefinitions = {
     requiresStage: "grassland_path",
     rewardWeaponId: "dualBlades",
     nextStageId: "swarm_meadow",
-    background: "src/assets/images/backgrounds/stages/grassland.png",
+    background: "src/assets/images/backgrounds/stages/grassland.webp",
     wordLength: { normalMin: 0 },
     waves: [
       { types: ["bee_level_1"], name: "草原の蜂", hp: 1, attackPower: { min: 4, max: 6 }, count: 5, experience: 20, maxActive: 2, spawnIntervalMs: 2400, approachMs: 10000 },
@@ -114,7 +114,7 @@ const stageDefinitions = {
     requiresTutorial: true,
     requiresStage: "flower_meadow",
     nextStageId: "mushroom_forest",
-    background: "src/assets/images/backgrounds/stages/grassland.png",
+    background: "src/assets/images/backgrounds/stages/grassland.webp",
     wordLength: { normalMin: 0 },
     waves: [
       { types: ["bee_level_1"], name: "群れの蜂", hp: 1, attackPower: { min: 4, max: 6 }, count: 12, experience: 10, maxActive: 4, spawnIntervalMs: 600, approachMs: 10000, repeatAttackMs: 900 },
@@ -131,7 +131,7 @@ const stageDefinitions = {
     requiresStage: "swarm_meadow",
     rewardWeaponId: "swordShield",
     nextStageId: "spore_path",
-    background: "src/assets/images/backgrounds/stages/forest.png",
+    background: "src/assets/images/backgrounds/stages/forest.webp",
     wordLength: { normalMin: 0 },
     waves: [
       {
@@ -149,7 +149,8 @@ const stageDefinitions = {
     enabled: true,
     requiresTutorial: true,
     requiresStage: "mushroom_forest",
-    background: "src/assets/images/backgrounds/stages/forest.png",
+    nextStageId: "fairy_forest",
+    background: "src/assets/images/backgrounds/stages/forest.webp",
     wordLength: { normalMin: 0 },
     waves: [
       {
@@ -162,6 +163,58 @@ const stageDefinitions = {
         attackPower: { min: 20, max: 24 }, count: 2, experience: 60,
         attackStyle: "charge", chargeMs: 5000, fixedProgress: 0.15,
       },
+      {
+        types: ["mushroom_boss"], name: "キノコの王様", hp: 40,
+        attackPower: { min: 26, max: 32 }, count: 1, experience: 160, boss: true,
+        attackStyle: "charge", chargeMs: 4500, fixedProgress: 0.15,
+      },
+    ],
+  },
+  fairy_forest: {
+    regionId: "forest",
+    code: "3-3",
+    name: "妖精の森",
+    meta: "",
+    enabled: true,
+    requiresTutorial: true,
+    requiresStage: "spore_path",
+    nextStageId: "thorn_depths",
+    background: "src/assets/images/backgrounds/stages/forest.webp",
+    wordLength: { normalMin: 0 },
+    waves: [
+      {
+        types: ["mushroom_level_1"], name: "深緑のキノコ", hp: 22,
+        attackPower: { min: 22, max: 26 }, count: 2, experience: 60,
+        attackStyle: "charge", chargeMs: 4500, fixedProgress: 0.15,
+      },
+      {
+        types: ["mushroom_level_1"], name: "古木のキノコ", hp: 24,
+        attackPower: { min: 24, max: 28 }, count: 2, experience: 70,
+        attackStyle: "charge", chargeMs: 4000, fixedProgress: 0.15,
+      },
+      {
+        types: ["tree_fairy_boss"], name: "木の妖精", hp: 60,
+        attackPower: { min: 32, max: 38 }, count: 1, experience: 220, boss: true,
+        attackStyle: "charge", chargeMs: 4200, fixedProgress: 0.15,
+        chargeAttackLabel: "木の葉の嵐！",
+      },
+    ],
+  },
+  thorn_depths: {
+    regionId: "forest", code: "3-4", name: "荊の深森", meta: "激ムズ",
+    enabled: true, requiresTutorial: true, requiresStage: "fairy_forest",
+    background: "src/assets/images/backgrounds/stages/forest.webp",
+    wordLength: { normalMin: 0 },
+    waves: [
+      { types: ["mushroom_level_1"], name: "猛毒のキノコ", hp: 32,
+        attackPower: { min: 34, max: 42 }, count: 2, experience: 90,
+        attackStyle: "charge", chargeMs: 3000, fixedProgress: 0.15 },
+      { types: ["tree_fairy_boss"], name: "狂樹の妖精", hp: 60,
+        attackPower: { min: 44, max: 52 }, count: 2, experience: 160,
+        attackStyle: "charge", chargeMs: 2700, fixedProgress: 0.15, chargeAttackLabel: "荊の嵐！" },
+      { types: ["thorn_stag_boss"], name: "荊冠の魔鹿", hp: 144,
+        attackPower: { min: 64, max: 76 }, count: 1, experience: 600, boss: true,
+        attackStyle: "charge", chargeMs: 2200, fixedProgress: 0.15, chargeAttackLabel: "荊角の奔流！" },
     ],
   },
 };

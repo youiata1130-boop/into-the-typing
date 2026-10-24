@@ -3,10 +3,10 @@
 - 作成日: 2026-09-16
 - 生成方式: 組み込み ImageGen。画像参照なしでカニと背景をそれぞれ新規生成。
 - カニ原本: C:/Users/youia/.codex/generated_images/01a09f73-1ec4-7702-bddf-65dac5fca912/exec-6f6a2f48-a89b-4393-88b5-96ab4adb08a5.png
-- カニ保存先: src/assets/images/enemies/crab/level_1/idle/frame_01.png
+- カニ保存先: src/assets/images/enemies/crab/level_1/idle/frame_01.webp
 - カニ: 1536 × 1024 px、RGBA、透過背景。滑らかな赤橙色の甲羅、大きなハサミ、少し鋭い目のデフォルメ。
 - 背景原本: C:/Users/youia/.codex/generated_images/01a09f73-1ec4-7702-bddf-65dac5fca912/exec-7175f937-759e-4740-a9b2-0048e3d2f853.png
-- 背景保存先: src/assets/images/backgrounds/stages/crab_shore.png
+- 背景保存先: src/assets/images/backgrounds/stages/crab_shore.webp
 - 背景: 1536 × 1024 px。青い海と空、キャラクターを配置できる広い砂浜。縦画面では中央を切り抜いて表示。
 - いずれも生成原本から加工せずコピー。カニの透明背景は白背景に重ねて目視確認。
 - 表現: カニの待機・攻撃・被弾・撃破は元画像に既存のCSSアニメーションを適用。「動きを減らす」設定を尊重。

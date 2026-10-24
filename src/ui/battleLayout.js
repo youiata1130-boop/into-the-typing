@@ -1,7 +1,7 @@
 // Layout only: viewport changes never alter battle state or request keyboard focus.
 const battleViewportState = { baselines: new Map(), frameId: 0 };
 
-function calculateBattleLayout(width, height, backBottom, slots = 1, enemySize = 1, chargeHeight = 0, enemyChargeHeight = 0) {
+function calculateBattleLayout(width, height, backBottom, slots = 1, enemySize = 1, chargeHeight = 0) {
   const enemyBaseWidth = 120 * enemySize;
   const enemyBaseHeight = 106 * enemySize;
   const padding = 8;
@@ -9,7 +9,7 @@ function calculateBattleLayout(width, height, backBottom, slots = 1, enemySize =
   const playerTop = Math.max(8, backBottom + 6);
   const playerHeadSpace = hpSpace + (chargeHeight > 0 ? chargeHeight + 6 : 0);
   const slotGap = Math.min(48, Math.max(0, (height - 150) / Math.max(1, slots)));
-  const enemyTop = 8 + enemyChargeHeight + slotGap * Math.max(0, slots - 1);
+  const enemyTop = 8 + slotGap * Math.max(0, slots - 1);
   const horizontalScale = Math.min(1, Math.max(0, (width - padding * 2 - 20) / (129 + enemyBaseWidth)));
   // Use the normal floor first, then move down, and only then reduce image size.
   const playerBottom = Math.max(8, Math.min(32, height - playerTop - playerHeadSpace - 177 * horizontalScale));
@@ -42,9 +42,9 @@ function fitBattleCharacters() {
     return;
   }
   const slots = Math.max(1, ...state.activeEnemies.map(enemy => (enemy.slot || 0) + 1));
-  const enemySize = state.activeEnemies.some(enemy => ["medaka_boss", "crab_boss", "snake_boss"].includes(enemy.type)) ? 1.3 : 1;
-  const enemyChargeHeight = state.activeEnemies.some(enemy => enemy.attackStyle === "charge") ? 38 : 0;
-  const layout = calculateBattleLayout(arena.clientWidth, arena.clientHeight, backBottom, slots, enemySize, chargeHeight, enemyChargeHeight);
+  const enemySize = state.activeEnemies.some(enemy => enemy.type === "thorn_stag_boss") ? 1.6
+    : state.activeEnemies.some(enemy => ["medaka_boss", "crab_boss", "snake_boss", "mushroom_boss", "tree_fairy_boss"].includes(enemy.type)) ? 1.3 : 1;
+  const layout = calculateBattleLayout(arena.clientWidth, arena.clientHeight, backBottom, slots, enemySize, chargeHeight);
   for (const [name, value] of Object.entries(layout)) {
     const cssName = name.replace(/[A-Z]/g, letter => "-" + letter.toLowerCase());
     arena.style.setProperty("--fit-" + cssName, value.toFixed(2) + "px");

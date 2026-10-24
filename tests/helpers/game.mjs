@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import vm from "node:vm";
 
 // A small DOM and clock let the real battle flow run without browser dependencies.
-export function createGame(savedItems = {}, { touch = false, loadImages = true, chooseSave = true } = {}) {
+export function createGame(savedItems = {}, { touch = false, loadImages = true, chooseSave = true, preloadStages = loadImages } = {}) {
   let now = 0;
   let nextTimerId = 1;
   const timers = new Map();
@@ -131,6 +131,9 @@ export function createGame(savedItems = {}, { touch = false, loadImages = true, 
     scriptUrl.search = "";
     vm.runInContext(readFileSync(scriptUrl, "utf8"), context, { filename: scriptUrl.pathname });
   }
+  // Battle fixtures keep assets ready so their synchronous setup focuses on gameplay.
+  // Loading tests disable this and exercise real per-screen download gates.
+  if (preloadStages) vm.runInContext('collectGameImageSources().forEach(src => assetLoadingState.images.set(src, {}))', context);
   // Battle tests advance all story pages; prologue tests exercise each click themselves.
   vm.runInContext(`function continueStoryToBattle() {
     for (let page = 0; page < 10 && state.running && isStoryDialogueOpen(); page++) advanceStory();

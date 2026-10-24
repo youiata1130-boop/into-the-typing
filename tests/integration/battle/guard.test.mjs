@@ -28,13 +28,13 @@ function battle({ weaponId = "swordShield", stage = "mushroom_forest", touch = f
 }
 
 for (const stage of ["mushroom_forest", "grassland_path"]) {
-  test(`${stage}: holding Space blocks damage, preserves streak and releases for the next hit`, () => {
+  test(`${stage}: holding Space quarters damage, counts as a hit and releases for full damage`, () => {
     const game = battle({ stage });
-    game.run("state.combo = 4; state.successStreak = 3; state.specialGauge = 100; pressSpace(); attack()");
-    assert.equal(game.run("state.hp"), game.run("getMaxHp()"));
-    assert.equal(game.run("state.combo"), 4);
-    assert.equal(game.run("state.successStreak"), 3);
-    assert.equal(game.run("state.perfect"), true);
+    game.run("enemy.attackPower = { min: 21, max: 21 }; state.combo = 4; state.successStreak = 3; state.specialGauge = 100; pressSpace(); attack()");
+    assert.equal(game.run("state.hp"), game.run("getMaxHp()") - 6);
+    assert.equal(game.run("state.combo"), 0);
+    assert.equal(game.run("state.successStreak"), 0);
+    assert.equal(game.run("state.perfect"), false);
     assert.equal(game.run("state.specialGauge"), 100);
     assert.equal(game.run('els.player.classList.contains("is-guarding")'), true);
     assert.equal(game.run('els.player.classList.contains("is-guard-hit")'), true);
@@ -47,11 +47,26 @@ for (const stage of ["mushroom_forest", "grassland_path"]) {
     game.advance(360);
     game.run("releaseSpace(); attack()");
     assert.equal(game.run("state.guarding"), false);
-    assert.ok(game.run("state.hp") < game.run("getMaxHp()"));
+    assert.equal(game.run("state.hp"), game.run("getMaxHp()") - 6 - 21);
     assert.equal(game.run("state.combo"), 0);
     assert.equal(game.run("state.perfect"), false);
   });
 }
+
+test("guard rounds quarter damage up, always inflicts at least one HP and can be fatal", () => {
+  for (const weaponId of ["swordShield", "greatsword"]) for (const [damage, received] of [[28, 7], [26, 7], [21, 6], [5, 2], [4, 1], [1, 1]]) {
+    const game = battle({ weaponId });
+    game.run(`enemy.attackPower = { min: ${damage}, max: ${damage} }; pressSpace(); attack()`);
+    assert.equal(game.run("state.hp"), game.run("getMaxHp()") - received);
+  }
+  const game = battle();
+  game.run("state.hp = 1; enemy.attackPower = { min: 1, max: 1 }; pressSpace(); attack()");
+  assert.equal(game.run("state.hp"), 0);
+  game.advance(320);
+  assert.equal(game.run("state.running"), false);
+  assert.equal(game.run("state.guarding"), false);
+  assert.equal(game.run("els.gameNotice.dataset.kind"), "over");
+});
 
 test("guard keeps partial input and prevents typing, buffered attacks, flick input and skills", () => {
   const game = battle({ touch: true });
@@ -106,7 +121,7 @@ test("sword and shield reserves Space for guard and Shift+Space for the existing
   assert.equal(game.run("state.guarding"), false);
   game.run("pressSpace()");
   assert.equal(game.run("state.guarding"), false);
-  for (const weaponId of ["branch", "sword", "greatsword", "dualBlades"]) {
+  for (const weaponId of ["dualBlades"]) {
     const other = battle({ weaponId });
     other.run("state.specialGauge = 100; pressSpace()");
     assert.equal(other.run("state.specialInProgress"), true);
@@ -153,4 +168,87 @@ test("Enter on the guard button and Space release independently", () => {
   assert.equal(game.run("state.guarding"), true);
   game.run('document.dispatchEvent({ type: "keyup", key: "Enter" })');
   assert.equal(game.run("state.guarding"), false);
+});
+
+test("greatsword blocks quarter damage with its blade while its word is empty", () => {
+  const game = battle({ weaponId: "greatsword" });
+  game.run("enemy.attackPower = { min: 21, max: 21 }; pressSpace(); attack()");
+  assert.equal(game.run("state.hp"), game.run("getMaxHp()") - 6);
+  assert.equal(game.run("state.guarding"), true);
+  assert.equal(game.run("els.guardButton.hidden"), false);
+  assert.equal(game.run("els.specialShortcut.textContent"), "Shift+Space");
+  assert.equal(game.run('els.player.getAttribute("aria-label")'), "大剣でガードする主人公");
+  assert.match(game.run("els.playerFrameGuard.src"), /greatsword\/guard\//);
+  assert.equal(game.run("canUseGameFlickKeyboard()"), false);
+  game.run("releaseSpace()"); game.advance(360);
+  game.run("state.specialGauge = 100; pressSpace(true)");
+  assert.equal(game.run("state.specialInProgress"), true);
+  assert.equal(game.run("state.guarding"), false);
+});
+
+test("greatsword cannot guard after a letter, but can immediately after completing the word", () => {
+  const game = battle({ weaponId: "greatsword" });
+  game.run('enemy.hp = enemy.maxHp = 100; applyTypedValue(enemy, enemy.matchedWord.slice(0, 1)); const prefix = enemy.typed; pressSpace()');
+  assert.equal(game.run("state.guarding"), false);
+  assert.equal(game.run("els.guardButton.disabled"), true);
+  assert.equal(game.run("enemy.typed"), game.run("prefix"));
+  assert.equal(game.run('beginPlayerGuard("pointer", 4)'), false);
+  game.run('els.guardButton.dispatchEvent({ type: "keydown", key: "Enter", preventDefault() {} })');
+  assert.equal(game.run("state.guarding"), false);
+  assert.equal(game.run("playerGuardInput.keys.size"), 0);
+  game.run("releaseSpace(); applyTypedValue(enemy, enemy.matchedWord); const readyAt = state.playerAttackReadyAt; pressSpace()");
+  assert.equal(game.run("state.guarding"), true);
+  assert.equal(game.run("state.playerAttackReadyAt"), game.run("readyAt"));
+  game.advance(1500);
+  assert.equal(game.run("state.guarding"), true);
+  game.run("releaseSpace()");
+  assert.equal(game.run("getInputEnemy() === enemy"), true);
+});
+
+test("erasing every greatsword letter enables guard without resetting typing penalties", () => {
+  const game = battle({ weaponId: "greatsword" });
+  game.run('applyTypedValue(enemy, enemy.matchedWord.slice(0, 2)); enemy.typingMisses = 2; applyTypedValue(enemy, "")');
+  assert.equal(game.run("els.guardButton.disabled"), false);
+  game.run("pressSpace()");
+  assert.equal(game.run("state.guarding"), true);
+  assert.equal(game.run("enemy.typingMisses"), 2);
+});
+
+test("greatsword guard respects accepted and pending mobile kana, including modifier input", () => {
+  const game = battle({ weaponId: "greatsword", touch: true });
+  game.run(`
+    enemy.word = enemy.matchedWord = "panda"; enemy.inputs = ["panda"];
+    enemy.translation = "パンダ"; enemy.readingOverride = "ぱんだ"; enemy.inputRevision++; renderWord();
+    els.flickInput.value = "は"; applyFlickValue("は", flickPromptKey(), { composing: true });
+  `);
+  assert.equal(game.run("enemy.typed"), "");
+  assert.equal(game.run("flickState.lastPending"), true);
+  assert.equal(game.run("els.guardButton.disabled"), true);
+  game.run("pressSpace()");
+  assert.equal(game.run("state.guarding"), false);
+  game.run('els.flickInput.value = "ぱ"; applyFlickValue("ぱ", flickPromptKey(), { composing: true })');
+  assert.ok(game.run("enemy.typed.length") > 0);
+  assert.equal(game.run('beginPlayerGuard("pointer", 4)'), false);
+  game.run('els.flickInput.value = ""; applyFlickValue("", flickPromptKey()); pressSpace()');
+  assert.equal(game.run("state.guarding"), true);
+});
+
+test("queued greatsword input prevents guard and cannot be silently discarded", () => {
+  const game = battle({ weaponId: "greatsword" });
+  game.run('enemy.hp = 100; applyTypedValue(enemy, enemy.matchedWord); enqueueBufferedInput("letter", "a"); pressSpace()');
+  assert.equal(game.run("state.guarding"), false);
+  assert.equal(game.run("els.guardButton.disabled"), true);
+  assert.equal(game.run("state.inputBuffer.length"), 1);
+  game.run('enqueueBufferedInput("backspace"); pressSpace()');
+  assert.equal(game.run("state.guarding"), true);
+  assert.equal(game.run("state.inputBuffer.length"), 0);
+});
+
+test("switching greatsword targets cannot hide a partially typed word from the guard restriction", () => {
+  const game = battle({ weaponId: "greatsword", stage: "flower_meadow" });
+  game.advance(2400);
+  assert.equal(game.run("state.activeEnemies.length"), 2);
+  game.run('applyTypedValue(enemy, enemy.matchedWord.slice(0, 1)); setTargetEnemy(state.activeEnemies[1]); pressSpace()');
+  assert.equal(game.run("state.guarding"), false);
+  assert.equal(game.run("els.guardButton.disabled"), true);
 });

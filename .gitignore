@@ -1,5 +1,6 @@
 # Local dependencies and npm logs
 node_modules/
+dist/
 npm-debug.log*
 
 # Local verification logs, scripts, and previews

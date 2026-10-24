@@ -4,13 +4,13 @@
 
 | 素材 | 使用先 | 原本ファイル |
 | --- | --- | --- |
-| 森のキノコ | `src/assets/images/enemies/mushroom/level_1/idle/frame_01.png` | `exec-73bc9dc4-9f1b-4266-ad56-7124efd84a55.png` |
-| 森の戦闘背景 | `src/assets/images/backgrounds/stages/forest.png` | `exec-77b16985-3e45-47c0-a1cb-9c0541366472.png` |
-| 森の地図 | `src/assets/images/backgrounds/stage_map/forest.png` | `exec-c4dc0e3b-f66a-4d36-9c9e-6356cd2ffb64.png` |
+| 森のキノコ | `src/assets/images/enemies/mushroom/level_1/idle/frame_01.webp` | `exec-73bc9dc4-9f1b-4266-ad56-7124efd84a55.png` |
+| 森の戦闘背景 | `src/assets/images/backgrounds/stages/forest.webp` | `exec-77b16985-3e45-47c0-a1cb-9c0541366472.png` |
+| 森の地図 | `src/assets/images/backgrounds/stage_map/forest.webp` | `exec-c4dc0e3b-f66a-4d36-9c9e-6356cd2ffb64.png` |
 
 原本フォルダ: `C:/Users/youia/.codex/generated_images/01a15984-234c-7a83-b057-7157135af534/`。
 
-キノコの待機・攻撃・被弾・撃破は同じ画像とCSS演出を使用する。溜めゲージ、秒数、発光、胞子はコードで表示し、画像には含めない。
+- 攻撃予告ゲージと状態ラベルは表示しない。オーラは溜めに応じて黄緑→黄→赤へ変わる。残り25％で専用の振りかぶり画像に切り替え、動きを減らす設定でも色と画像の切り替えを維持する。
 
 ## 生成プロンプト
 

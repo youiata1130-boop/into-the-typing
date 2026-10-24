@@ -2,11 +2,11 @@
 
 - Generated with the built-in imagegen tool on 2026-09-07.
 - Mode: a new item illustration and two edits using the existing unarmed hero as the inline identity reference.
-- Reference: `src/assets/images/player/unarmed/idle/frame_01.png`.
-- Runtime item: `src/assets/images/items/weapons/branch.png` (1254 × 1254 RGBA).
-- Runtime hero: `src/assets/images/player/branch/{idle,attack}/frame_01.png` (1024 × 1536 RGBA).
+- Reference: `src/assets/images/player/unarmed/idle/frame_01.webp`.
+- Runtime item: `src/assets/images/items/weapons/branch.webp` (1254 × 1254 RGBA).
+- Runtime hero: `src/assets/images/player/branch/{idle,attack}/frame_01.webp` (1024 × 1536 RGBA).
 - The item already had real transparency. The hero outputs had a painted checkerboard; local border-connected alpha masking removes the light neutral background while preserving canvas size and foreground colors.
-- Opaque hero originals are preserved under `archive/assets/images/player/branch/{idle,attack}/frame_01.png`.
+- Opaque hero originals are preserved under `archive/assets/images/player/branch/{idle,attack}/frame_01.webp`.
 
 ## branchItem
 

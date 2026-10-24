@@ -5,12 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>Into the Typing</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='52'%3E%E2%9A%94%EF%B8%8F%3C/text%3E%3C/svg%3E">
-    <link rel="preload" as="image" href="src/assets/images/backgrounds/shared/typing_rpg_background.png">
-    <link rel="preload" as="image" href="src/assets/images/backgrounds/status/base_interior.png">
-    <link rel="preload" as="image" href="src/assets/images/backgrounds/stages/crab_shore.png">
-    <link rel="preload" as="image" href="src/assets/images/story/raft_departure.png">
-    <link rel="preload" as="image" href="src/assets/images/story/raft_storm.png">
-    <link rel="stylesheet" href="src/styles/main.css?v=20261021-forest-guard-v1">
+    <link rel="preload" as="image" href="src/assets/images/backgrounds/shared/typing_rpg_background.webp">
+    <link rel="stylesheet" href="src/styles/main.css?v=20261024-healing-sword-v1">
   </head>
   <body>
     <section class="loading-screen" id="loadingScreen" aria-labelledby="loadingText" aria-busy="true">
@@ -21,7 +17,7 @@
         <button id="loadingRetry" type="button" hidden>再読み込み</button>
       </div>
     </section>
-    <div class="typing-miss-effect" id="typingMissEffect" aria-hidden="true"></div>
+    <div class="player-damage-effect" id="playerDamageEffect" aria-hidden="true"></div>
     <main class="game-shell" hidden inert>
       <section class="start-screen" id="startScreen" aria-label="スタート画面">
         <div class="start-hero">
@@ -81,7 +77,7 @@
 
         <div class="stage-map-panel" id="stageMapPanel" data-region="coast" role="region" aria-label="1 海辺の地図">
           <picture class="stage-map-art" aria-hidden="true">
-            <img id="stageMapImage" src="src/assets/images/backgrounds/stage_map/coast.jpg" width="1536" height="1024" alt="">
+            <img id="stageMapImage" width="1536" height="1024" alt="">
           </picture>
           <div class="stage-choices" id="stageChoices" role="group" aria-label="クエスト地点">
             <button class="stage-choice" id="stageChoiceForest" type="button" data-stage="forest_path" aria-label="1-1 旅の始まり" aria-controls="stageConfirm" aria-expanded="false">
@@ -147,6 +143,17 @@
                 <em class="stage-meta"></em>
               </span>
             </button>
+            <button class="stage-choice" id="stageChoiceFairy" type="button" data-stage="fairy_forest" aria-label="3-3 妖精の森（ステージ3-2未クリア）" aria-controls="stageConfirm" aria-expanded="false" disabled aria-disabled="true" hidden>
+              <span class="stage-circle"><strong class="stage-code">3-3</strong></span>
+              <span class="stage-node-copy" aria-hidden="true">
+                <span class="stage-name">妖精の森</span>
+                <em class="stage-meta"></em>
+              </span>
+            </button>
+            <button class="stage-choice" id="stageChoiceThorn" type="button" data-stage="thorn_depths" aria-label="3-4 荊の深森（ステージ3-3未クリア）" aria-controls="stageConfirm" aria-expanded="false" disabled aria-disabled="true" hidden>
+              <span class="stage-circle"><strong class="stage-code">3-4</strong></span>
+              <span class="stage-node-copy" aria-hidden="true"><span class="stage-name">荊の深森</span><em class="stage-meta">激ムズ</em></span>
+            </button>
           </div>
           <div class="stage-region-switch" id="stageRegionSwitch" role="group" aria-label="地図の切り替え">
             <button type="button" data-region="coast" aria-pressed="true" aria-controls="stageChoices"><span class="region-seal" aria-hidden="true">1</span><span>海辺</span></button>
@@ -185,6 +192,7 @@
         </header>
         <fieldset class="weapon-picker" id="weaponPanel" aria-label="武器">
           <p class="equipment-guide" id="weaponEquipGuide" role="status" hidden></p>
+          <div class="weapon-browser">
           <div class="weapon-options">
             <label class="weapon-option" for="weaponBranch">
               <input id="weaponBranch" type="radio" name="weapon" value="branch" checked aria-labelledby="weaponBranchName">
@@ -206,6 +214,17 @@
               <input id="weaponSwordShield" type="radio" name="weapon" value="swordShield" aria-labelledby="weaponSwordShieldName" disabled>
               <span class="weapon-option-body"><strong id="weaponSwordShieldName">片手剣</strong></span>
             </label>
+          </div>
+          <section class="weapon-preview" aria-labelledby="weaponPreviewName">
+            <h2 id="weaponPreviewName">木の枝</h2>
+            <div class="weapon-preview-art">
+              <img id="weaponPreviewImage" alt="" hidden>
+              <p id="weaponPreviewStatus" role="status" hidden></p>
+              <button id="weaponPreviewRetry" type="button" hidden>再読み込み</button>
+            </div>
+            <ul id="weaponPreviewFeatures"></ul>
+            <button id="weaponEquipButton" type="button" disabled>装備中</button>
+          </section>
           </div>
           <button class="equipment-next" id="weaponEquipNext" type="button" hidden disabled>ステージ1-2へ</button>
         </fieldset>
@@ -295,13 +314,26 @@
               <span class="greatsword-charge-spark greatsword-charge-spark-d"></span>
             </div>
             <div class="player-art">
-              <img class="player-image player-frame player-frame-idle" id="playerFrameIdle" src="src/assets/images/player/sword/idle/frame_01.png?v=branch-intro-v1" alt="剣を構えるプレイヤー剣士">
-              <img class="player-image player-frame player-frame-charge" id="playerFrameCharge" src="src/assets/images/player/greatsword/attack/frame_01.png?v=branch-intro-v1" alt="" aria-hidden="true">
-              <img class="player-image player-frame player-frame-windup" id="playerFrameWindup" src="src/assets/images/player/sword/attack/frame_01.png?v=branch-intro-v1" alt="">
-              <img class="player-image player-frame player-frame-strike" id="playerFrameStrike" src="src/assets/images/player/sword/attack/frame_02.png?v=branch-intro-v1" alt="">
-              <img class="player-image player-frame player-frame-guard" id="playerFrameGuard" src="src/assets/images/player/sword_shield/guard/frame_01.png" alt="" aria-hidden="true">
+              <img class="player-image player-frame player-frame-idle" id="playerFrameIdle" alt="剣を構えるプレイヤー剣士">
+              <img class="player-image player-frame player-frame-charge" id="playerFrameCharge" alt="" aria-hidden="true">
+              <img class="player-image player-frame player-frame-windup" id="playerFrameWindup" alt="">
+              <img class="player-image player-frame player-frame-strike" id="playerFrameStrike" alt="">
+              <img class="player-image player-frame player-frame-guard" id="playerFrameGuard" alt="" aria-hidden="true">
             </div>
-            <span class="guard-impact" aria-hidden="true"></span>
+            <span class="guard-impact" aria-hidden="true">
+              <span class="guard-shield-flash"></span>
+              <span class="guard-shockwave"></span>
+              <span class="guard-shockwave guard-shockwave-outer"></span>
+              <i class="guard-spark" style="--spark-angle:-75deg"></i>
+              <i class="guard-spark" style="--spark-angle:-40deg"></i>
+              <i class="guard-spark" style="--spark-angle:-8deg"></i>
+              <i class="guard-spark" style="--spark-angle:26deg"></i>
+              <i class="guard-spark" style="--spark-angle:62deg"></i>
+              <i class="guard-spark" style="--spark-angle:125deg"></i>
+              <strong class="guard-success-label">ガード成功</strong>
+            </span>
+            <span class="healing-effect" aria-hidden="true"><i></i><i></i><i></i><span class="healing-number" id="playerHealText"></span></span>
+            <span class="player-damage-text" id="playerDamageText" aria-hidden="true"></span>
           </div>
           <div class="enemy-layer" id="enemyLayer" aria-label="敵"></div>
         </div>
@@ -404,8 +436,8 @@
                   <path d="M135 130L145 135M135 139L145 144" stroke="#c49767" stroke-width="2"/>
                   <path d="M133 151H147L150 158L140 165L130 158Z" fill="url(#chestGold)" stroke="#896226"/>
                 </g>
-                <image class="treasure-sword" id="treasureDualBlades" href="src/assets/images/items/weapons/dual_blades.png" x="64" y="0" width="152" height="160" style="display:none"/>
-                <image class="treasure-sword" id="treasureSwordShield" href="src/assets/images/items/weapons/sword_shield.png" x="64" y="0" width="152" height="160" style="display:none"/>
+                <image class="treasure-sword" id="treasureDualBlades" x="64" y="0" width="152" height="160" style="display:none"/>
+                <image class="treasure-sword" id="treasureSwordShield" x="64" y="0" width="152" height="160" style="display:none"/>
                 <g stroke="#61401f" stroke-width="3" stroke-linejoin="round">
                   <path d="M46 137H234L227 190Q226 198 215 198H65Q54 198 53 190Z" fill="url(#chestWood)"/>
                   <path d="M56 163H225M59 182H222" fill="none" stroke="#885326" stroke-width="2"/>
@@ -439,10 +471,10 @@
           <button id="specialButton" type="button" aria-keyshortcuts="Space" disabled><span id="skillName">強撃</span><kbd id="specialShortcut">Space</kbd></button>
         </div>
         <div class="story-dialog" id="storyDialog" role="region" aria-label="会話" hidden>
-          <img class="prologue-image" id="prologueImage" src="src/assets/images/story/raft_departure.png" alt="" hidden>
+          <img class="prologue-image" id="prologueImage" alt="" hidden>
           <h2 id="prologueTitle" hidden></h2>
           <div class="story-item" id="storyItem" hidden>
-            <img id="storyItemImage" src="src/assets/images/items/weapons/branch.png?v=branch-intro-v1" alt="木の枝">
+            <img id="storyItemImage" alt="木の枝">
             <span>木の枝</span>
           </div>
           <p id="storyText" aria-live="polite"></p>
@@ -454,10 +486,12 @@
             <span class="battle-weapon-badge" id="battleWeaponName">鉄の剣</span>
           </div>
           <div class="typing-status" id="typingStatus" tabindex="-1" data-weapon="sword" aria-live="polite">
+            <span class="typing-miss-effect" id="typingMissEffect" aria-hidden="true"></span>
             <span class="word-card typing-word-card">
               <span class="word-translation" id="wordTranslation">はじめ</span>
               <span class="word-target"><span id="typedWord"></span><span id="remainingWord">hajime</span></span>
             </span>
+            <span class="next-word-preview" id="nextWordPreview" hidden></span>
             <div class="attack-cooldown" id="attackCooldown" role="progressbar" aria-label="攻撃後のクールタイム" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" hidden>
               <i id="attackCooldownFill"></i>
             </div>
@@ -491,24 +525,27 @@
       <p class="save-error" id="progressSaveStatus" role="alert" hidden></p>
     </main>
 
-    <script src="src/data/words.js?v=20261021-forest-guard-v1"></script>
-    <script src="src/data/labels.js?v=20261021-forest-guard-v1"></script>
-    <script src="src/config/weapons.js?v=20261021-forest-guard-v1"></script>
-    <script src="src/config/stages.js?v=20261021-forest-guard-v1"></script>
-    <script src="src/config/skills.js?v=20261021-forest-guard-v1"></script>
-    <script src="src/config/enemyAnimations.js?v=20261021-forest-guard-v1"></script>
-    <script src="src/config/playerProgression.js?v=20261021-forest-guard-v1"></script>
-    <script src="src/config/saveSlots.js?v=20261021-forest-guard-v1"></script>
-    <script src="src/ui/saveMenu.js?v=20261021-forest-guard-v1"></script>
-    <script src="src/input/japanese.js?v=20261021-forest-guard-v1"></script>
-    <script src="src/ui/battleLayout.js?v=20261021-forest-guard-v1"></script>
-    <script src="src/input/mobile.js?v=20261021-forest-guard-v1"></script>
-    <script src="src/input/flickKeyboard.js?v=20261021-forest-guard-v1"></script>
-    <script src="src/app/loading.js?v=20261021-forest-guard-v1"></script>
-    <script src="src/app/sound.js?v=20261021-forest-guard-v1"></script>
-    <script src="src/app/skills.js?v=20261021-forest-guard-v1"></script>
-    <script src="src/app/enemyCharge.js?v=20261021-forest-guard-v1"></script>
-    <script src="src/app/guard.js?v=20261021-forest-guard-v1"></script>
-    <script src="src/app/game.js?v=20261021-forest-guard-v1"></script>
+    <script src="src/data/words.js?v=20261024-thorn-depths-v1"></script>
+    <script src="src/data/labels.js?v=20261024-thorn-depths-v1"></script>
+    <script src="src/config/weapons.js?v=20261024-healing-sword-v1"></script>
+    <script src="src/config/stages.js?v=20261024-fairy-difficulty-v1"></script>
+    <script src="src/config/skills.js?v=20261024-healing-sword-v1"></script>
+    <script src="src/config/enemyAnimations.js?v=20261024-thorn-depths-v1"></script>
+    <script src="src/config/playerProgression.js?v=20261024-thorn-depths-v1"></script>
+    <script src="src/config/saveSlots.js?v=20261024-thorn-depths-v1"></script>
+    <script src="src/ui/saveMenu.js?v=20261024-thorn-depths-v1"></script>
+    <script src="src/input/japanese.js?v=20261024-thorn-depths-v1"></script>
+    <script src="src/ui/battleLayout.js?v=20261024-thorn-depths-v1"></script>
+    <script src="src/input/mobile.js?v=20261024-thorn-depths-v1"></script>
+    <script src="src/input/flickKeyboard.js?v=20261024-thorn-depths-v1"></script>
+    <script src="src/app/loading.js?v=20261024-thorn-depths-v1"></script>
+    <script src="src/app/sound.js?v=20261024-healing-sword-v1"></script>
+    <script src="src/app/skills.js?v=20261024-healing-sword-v1"></script>
+    <script src="src/app/enemyCharge.js?v=20261024-thorn-depths-v1"></script>
+    <script src="src/app/battleFeedback.js?v=20261024-healing-sword-v1"></script>
+    <script src="src/app/guard.js?v=20261024-guard-burst-v1"></script>
+    <script src="src/app/dualBladePreview.js?v=20261024-dual-preview-v1"></script>
+    <script src="src/ui/weaponMenu.js?v=20261024-healing-sword-v1"></script>
+    <script src="src/app/game.js?v=20261024-healing-sword-v1"></script>
   </body>
 </html>

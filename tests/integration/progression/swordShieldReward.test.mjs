@@ -41,11 +41,11 @@ test("3-1 first clear saves sword and shield, shows the treasure, and guides man
   game.run('selectWeapon("swordShield")');
   assert.equal(game.savedProgress().swordShieldEquipPending, false);
   assert.equal(game.savedProgress().weaponId, "swordShield");
-  assert.match(game.run("els.playerFrameGuard.src"), /sword_shield\/guard/);
   assert.equal(game.run("els.weaponEquipNext.textContent"), "ステージ3-2へ");
   game.run("continueAfterWeaponEquip()");
   assert.equal(game.run("document.documentElement.dataset.screen"), "battle");
   assert.equal(game.run("state.stageId"), "spore_path");
+  assert.match(game.run("els.playerFrameGuard.src"), /sword_shield\/guard/);
   const reloaded = createGame(game.saved());
   assert.equal(reloaded.run("state.weaponId"), "swordShield");
 });

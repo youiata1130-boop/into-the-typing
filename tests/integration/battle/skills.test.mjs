@@ -15,7 +15,7 @@ function battle(weaponId = "greatsword", touch = false) {
     target.hp = target.maxHp = 100;
     target.word = target.matchedWord = "a".repeat(40);
     target.inputs = [target.word];
-    const space = (repeat = false) => handleTypingKeydown({ key: " ", code: "Space", repeat, preventDefault() {} });
+    const space = (repeat = false) => handleTypingKeydown({ key: " ", code: "Space", shiftKey: hasGuardWeapon(), repeat, preventDefault() {} });
   `);
   return game;
 }
@@ -42,8 +42,8 @@ test("correct input charges a visible capped gauge; misses and retyping cannot f
   assert.equal(game.run("state.specialGauge"), 100);
 });
 
-test("Space spends a full gauge once and deals triple maximum weapon damage", () => {
-  for (const [weapon, damage] of [["branch", 1.2], ["sword", 6], ["greatsword", 24]]) {
+test("the skill shortcut spends a full gauge once and deals triple maximum weapon damage", () => {
+  for (const [weapon, damage] of [["greatsword", 24]]) {
     const game = battle(weapon);
     game.run('applyTypedValue(target, "a".repeat(25)); target.typingMisses = 5; space()');
     assert.equal(game.run("target.hp"), 100 - damage);
@@ -141,4 +141,19 @@ test("touch skill controls keep native activation and use the same effect", () =
   game.run('state.specialGauge = 100; updateHud(); els.specialButton.dispatchEvent({ type: "click" })');
   assert.equal(game.run("target.hp"), 76);
   assert.equal(game.run("state.specialGauge"), 0);
+});
+
+for (const touch of [false, true]) test('branch cannot charge or use a skill through any control (' + (touch ? 'touch' : 'keyboard') + ')', () => {
+  const game = battle('branch', touch);
+  game.run('applyTypedValue(target, "a".repeat(25))');
+  assert.equal(game.run('state.specialGauge'), 0);
+  assert.equal(game.run('els.skillPanel.hidden'), true);
+  assert.equal(game.run('els.specialButton.disabled'), true);
+  game.run('state.specialGauge = 100; updateHud(); space(); els.specialButton.dispatchEvent({type:"click"})');
+  assert.equal(game.run('useSpecialMove()'), false);
+  assert.equal(game.run('target.hp'), 100);
+  assert.equal(game.run('state.specialInProgress'), false);
+  assert.equal(game.run('state.specialGauge'), 100);
+  game.run('applyTypedValue(target, target.matchedWord)');
+  assert.ok(game.run('target.hp') < 100);
 });

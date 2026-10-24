@@ -3,7 +3,7 @@
 - 作成日: 2026-09-16
 - 生成方式: 組み込み ImageGen。既存の魚を目視して特徴を文章化し、新しいボスを生成。画像参照パスを渡す呼び出しは環境の読み取りエラーで失敗したため、成功した呼び出しは画像参照なし。
 - 原本: C:/Users/youia/.codex/generated_images/01a09f73-1ec4-7702-bddf-65dac5fca912/exec-c0a62d56-2b5b-42d5-8cdd-084caf065103.png
-- 採用先: src/assets/images/enemies/medaka/boss/idle/frame_01.png
+- 採用先: src/assets/images/enemies/medaka/boss/idle/frame_01.webp
 - 形式: 1774 × 887 px、RGBA、透明背景。生成原本を加工せずコピー。
 - 原本SHA-256: 10e73d45ba8d9e4d9cb05f380b7c4af26434a9b7ae7e96da96f896ed458ef5fd
 - 外見: 銀青色の滑らかな体、紺色の背、鋭い赤い目。前寄りの三つ山の背びれと大きな二股の尾びれで通常魚と区別。
@@ -12,10 +12,10 @@
 ## 泳ぎの画像
 
 - 作成方式: ユーザーが許可済みのPython画像処理（Pillow / NumPy）。顔を固定し、体の後方と尾びれを周期的に変形。
-- 保存先: src/assets/images/enemies/medaka/boss/swim/frame_01.png ～ frame_16.png
+- 保存先: src/assets/images/enemies/medaka/boss/swim/frame_01.webp ～ frame_16.webp
 - 形式: 768 × 479 pxの透過PNGを16枚。70ms/コマ、1周1.12秒。停止中も泳ぎ、動きを減らす設定では静止。攻撃・被弾・撃破は原本と既存CSSの演出。
 - 検査: 16コマの重複なし、顔の画素が全コマ一致、透明な余白を保ちひれが見切れない、原本は不変。
-- 再生成: `python scripts/assets/generate_medaka_swim.py --source src/assets/images/enemies/medaka/boss/idle/frame_01.png --output src/assets/images/enemies/medaka/boss/swim`
+- 再生成: `python scripts/assets/generate_medaka_swim.py --source src/assets/images/enemies/medaka/boss/idle/frame_01.webp --output src/assets/images/enemies/medaka/boss/swim`
 - `--preview-dir <directory>` を付けるとWebP動画・コマ一覧・SHA-256のマニフェストも保存。
 
 ## 最終生成プロンプト

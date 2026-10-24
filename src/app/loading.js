@@ -1,5 +1,6 @@
-// Keep the game closed until every image it can show is loaded and decoded.
+// Load only the images required by the next screen or battle.
 const assetLoadingState = {
+  request: null,
   ready: false,
   loading: false,
   total: 0,
@@ -16,24 +17,55 @@ const loadingUi = {
   game: document.querySelector(".game-shell"),
 };
 
+function imageSources(values) {
+  return [...new Set(values.flat(Infinity).filter(Boolean).map(src => new URL(src, document.baseURI).href))];
+}
+
+function collectStartupImageSources() {
+  return imageSources(["src/assets/images/backgrounds/shared/typing_rpg_background.webp"]);
+}
+
+function collectStageImageSources(stageId) {
+  const stage = getStageDefinition(stageId);
+  const weapons = new Set([getActiveWeapon().id]);
+  const introduction = stage.storyIntro && (stage.tutorial || !state.equipmentTutorialCompleted);
+  if (introduction) { weapons.add("unarmed"); weapons.add(stage.storyIntro.weaponId); }
+  const types = new Set(stage.waves.flatMap(getWaveEnemyTypes));
+  return imageSources([
+    stage.background || "src/assets/images/backgrounds/stages/crab_shore.webp",
+    weaponDefinitions[stage.rewardWeaponId]?.itemImage,
+    [...weapons].map(id => Object.values(getPlayerWeaponAssets(id))),
+    [...types].map(type => Object.values(enemyAnimations.enemies[type] || {})),
+    introduction ? "src/assets/images/items/weapons/branch.webp?v=branch-intro-v1" : null,
+    introduction && !state.prologueCompleted ? prologueScenes.map(scene => scene.image) : [],
+  ]);
+}
+
+// Complete registry for asset checks; this does not start any downloads.
 function collectGameImageSources() {
-  const sources = new Set();
-  const add = (src, base = document.baseURI) => {
-    if (src && !/^(data|blob):/.test(src)) sources.add(new URL(src, base).href);
-  };
-  Object.values(playerWeaponAssets).forEach(weapon => Object.values(weapon).flat().forEach(src => add(src)));
-  Object.values(weaponDefinitions).forEach(weapon => add(weapon.itemImage));
-  Object.values(stageDefinitions).filter(stage => stage.enabled).forEach(stage => add(stage.background));
-  Object.values(stageMapRegions).forEach(region => add(region.image));
-  const types = new Set(Object.values(stageDefinitions).filter(stage => stage.enabled)
-    .flatMap(stage => stage.waves.flatMap(getWaveEnemyTypes)));
-  types.forEach(type => Object.values(enemyAnimations.enemies[type]).flat().forEach(src => add(src)));
-  document.querySelectorAll("img[src]").forEach(img => add(img.getAttribute("src")));
-  document.querySelectorAll("img[srcset], source[srcset]").forEach(source => {
-    source.getAttribute("srcset").split(",").forEach(candidate => add(candidate.trim().split(/\s+/)[0]));
-  });
-  document.querySelectorAll('link[rel="preload"][as="image"]').forEach(link => add(link.getAttribute("href")));
-  return [...sources];
+  return imageSources([
+    collectStartupImageSources(), "src/assets/images/backgrounds/status/base_interior.webp",
+    "src/assets/images/backgrounds/stages/crab_shore.webp", prologueScenes.map(scene => scene.image),
+    "src/assets/images/items/weapons/branch.webp?v=branch-intro-v1",
+    Object.values(playerWeaponAssets).map(weapon => Object.values(weapon)),
+    Object.values(weaponDefinitions).map(weapon => weapon.itemImage),
+    Object.values(stageDefinitions).filter(stage => stage.enabled).map(stage => stage.background),
+    Object.values(stageMapRegions).map(region => region.image),
+    Object.values(stageDefinitions).filter(stage => stage.enabled).flatMap(stage => stage.waves.flatMap(getWaveEnemyTypes))
+      .map(type => Object.values(enemyAnimations.enemies[type] || {})),
+  ]);
+}
+
+function ensureGameAssets(sources, onReady) {
+  if (assetLoadingState.loading) return true;
+  if (sources.every(src => assetLoadingState.images.has(src))) return false;
+  assetLoadingState.request = { sources, onReady, screen: document.documentElement.dataset.screen };
+  state.running = false;
+  invalidateBattleGeneration();
+  cancelAnimationFrame(state.rafId);
+  clearInputBuffer();
+  loadGameAssets();
+  return true;
 }
 
 function loadGameImage(src, element = null) {
@@ -80,7 +112,8 @@ function updateLoadingProgress() {
 }
 
 async function loadGameAssets() {
-  if (assetLoadingState.loading || assetLoadingState.ready) return;
+  if (assetLoadingState.loading || (assetLoadingState.ready && !assetLoadingState.request)) return;
+  const request = assetLoadingState.request;
   assetLoadingState.loading = true;
   assetLoadingState.failed = [];
   assetLoadingState.completed = 0;
@@ -93,7 +126,7 @@ async function loadGameAssets() {
   loadingUi.retry.disabled = true;
   document.documentElement.dataset.screen = "loading";
   try {
-    const sources = collectGameImageSources();
+    const sources = request ? request.sources : collectStartupImageSources();
     assetLoadingState.total = sources.length;
     updateLoadingProgress();
     await Promise.all(sources.map(async src => {
@@ -106,18 +139,20 @@ async function loadGameAssets() {
       }
     }));
     if (assetLoadingState.failed.length) throw new Error("Images are not ready");
-    // A previously failed DOM image does not recover when a separate Image loads.
-    const pageImages = await Promise.allSettled([...document.querySelectorAll("img[src]")].map(image => loadGameImage(image.src, image)));
-    if (pageImages.some(result => result.status === "rejected")) throw new Error("Page images are not ready");
     assetLoadingState.ready = true;
     loadingUi.progress.value = 100;
     loadingUi.percent.textContent = "100%";
     loadingUi.screen.hidden = true;
     loadingUi.game.hidden = false;
     loadingUi.game.inert = false;
-    showStartScreen();
+    assetLoadingState.request = null;
+    assetLoadingState.loading = false;
+    if (request) {
+      document.documentElement.dataset.screen = request.screen;
+      request.onReady();
+    } else showStartScreen();
   } catch {
-    assetLoadingState.ready = false;
+    if (!request) assetLoadingState.ready = false;
     loadingUi.game.hidden = true;
     loadingUi.game.inert = true;
     loadingUi.screen.hidden = false;

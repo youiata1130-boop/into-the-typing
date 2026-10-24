@@ -12,3 +12,5 @@ This folder preserves images that are not loaded by the current game.
 Do not reference archived images from runtime code. Move an image back under `src/assets/images` before registering it in the game.
 
 Keep the same path beneath `assets/images` when archiving a file so its original location is clear. Player generation notes remain in [docs/assets/player](../docs/assets/player/greatsword-generation.md), with archived image paths updated there.
+
+Images use lossless WebP with original resolution and transparency. The identical goblin level-3 frames share `assets/images/enemies/goblin/level_3/attack/frame_01.webp`.

@@ -69,78 +69,93 @@ test("a stalled image times out and its late result cannot bypass Retry", () => 
   assert.equal(game.run("assetLoadingState.ready"), true);
 });
 
-test("all weapons and playable stages are preloaded without duplicate URLs", () => {
-  const game = createGame();
-  assert.equal(game.run("assetLoadingState.ready"), true);
+
+test("startup downloads only the shared background, without hidden page images or stage preloads", () => {
+  const game = createGame({}, { preloadStages: false });
   const urls = game.snapshot("window.testImages.map(image => image.src)");
-  assert.equal(urls.length, new Set(urls).size);
-  const medakaUrls = urls.filter(url => url.includes("/enemies/medaka/"));
-  assert.equal(medakaUrls.length, 34);
-  const crabUrls = urls.filter(url => url.includes("/enemies/crab/level_1/"));
-  assert.equal(crabUrls.length, 1);
-  for (const animation of ["idle", "attack", "damage", "defeat"]) {
-    for (const frame of game.snapshot('getEnemyFrames("crab_level_1", "' + animation + '")')) {
-      assert.ok(crabUrls.includes(new URL(frame, "https://typing.test/").href));
-    }
-  }
-  for (const [type, folder] of [["medaka_level_1", "level_1"], ["medaka_boss", "boss"]]) {
-    for (let frame = 1; frame <= 16; frame++) {
-      assert.ok(medakaUrls.some(url => url.includes("/medaka/" + folder + "/swim/frame_" + String(frame).padStart(2, "0") + ".png")));
-    }
-    assert.ok(medakaUrls.some(url => url.includes("/medaka/" + folder + "/idle/frame_01.png")));
-    for (const animation of ["idle", "attack", "damage", "defeat"]) {
-      const frames = game.snapshot('getEnemyFrames("' + type + '", "' + animation + '")');
-      assert.ok(frames.length > 0);
-      for (const frame of frames) assert.ok(medakaUrls.includes(new URL(frame, "https://typing.test/").href));
-    }
-  }
-  assert.ok(!urls.some(url => url.includes("/enemies/egg/") || url.includes("/enemies/chick/")));
-  for (const weapon of ["unarmed", "branch", "sword", "greatsword"]) {
-    assert.ok(urls.some(url => url.includes("/player/" + weapon + "/")));
-  }
-  assert.ok(!urls.some(url => url.includes("/goblin/") || url.includes("/chicken/")));
+  assert.equal(urls.length, 1);
+  assert.match(urls[0], /shared\/typing_rpg_background/);
+  const html = readFileSync(new URL("../../../index.html", import.meta.url), "utf8");
+  assert.equal([...html.matchAll(/<link rel="preload"/g)].length, 1);
+  assert.doesNotMatch(html, /<img\b[^>]*\ssrc=/);
+  assert.doesNotMatch(html, /<image\b[^>]*\shref=/);
 });
 
-test("the page preload declarations cover every CSS background and both regional maps", () => {
-  const game = createGame();
-  const base = new URL("../../../index.html", import.meta.url);
-  const html = readFileSync(base, "utf8");
-  const css = readFileSync(new URL("src/styles/main.css", base), "utf8");
-  const attrs = tag => Object.fromEntries([...tag.matchAll(/([a-z]+)="([^"]*)"/g)].map(([, key, value]) => [key, value]));
-  const pageAssets = [...html.matchAll(/<(img|source|link)\b[^>]*>/g)].map(([tag, type]) => ({ type, ...attrs(tag) }));
-  game.run(`
-    const pageAssets = ${JSON.stringify(pageAssets)};
-    document.querySelectorAll = selector => pageAssets.filter(item =>
-      selector === "img[src]" ? item.type === "img" && item.src
-      : selector.includes("srcset") ? item.srcset : item.rel === "preload" && item.as === "image"
-    ).map(item => ({ getAttribute: name => item[name] }));
-  `);
-  const urls = game.snapshot("collectGameImageSources()");
-  for (const [, path] of css.matchAll(/url\("([^"]+)"\)/g)) {
-    assert.ok(urls.includes(new URL(path, "https://typing.test/src/styles/main.css").href), path);
-  }
-  for (const name of ["coast.jpg", "grassland.jpg", "branch.png?v=branch-intro-v1"]) {
-    assert.ok(urls.some(url => url.endsWith("/" + name)), name);
-  }
+function manualGame() {
+  const game = createGame({}, { loadImages: false, preloadStages: false });
+  game.run('window.testImages.forEach(image => image.succeed())');
+  game.run('activatePlayerSave(0, getSaveEntry(0))');
+  return game;
+}
+
+test("a stage waits for its own background, enemies and equipped weapon, then starts only after decoding", () => {
+  const game = manualGame();
+  game.run('startGame("forest_path")');
+  assert.equal(game.run('state.running'), false);
+  assert.equal(game.run('loadingUi.screen.hidden'), false);
+  const urls = game.snapshot('window.testImages.slice(1).map(image => image.src)');
+  assert.ok(urls.some(src => src.includes('/medaka/level_1/')));
+  assert.ok(urls.some(src => src.includes('/player/branch/')));
+  assert.ok(urls.some(src => src.includes('/story/raft_storm')));
+  assert.ok(!urls.some(src => /mushroom|tree_fairy|greatsword|medaka\/boss/.test(src)));
+  game.run('const last = window.testImages.at(-1); last.deferDecode(); window.testImages.slice(1).forEach(image => image.succeed())');
+  assert.equal(game.run('state.running'), false);
+  game.run('last.resolveDecode()');
+  assert.equal(game.run('state.running'), true);
+  assert.equal(game.run('loadingUi.screen.hidden'), true);
+  const count = game.run('window.testImages.length');
+  game.run('startGame("forest_path")');
+  assert.equal(game.run('window.testImages.length'), count);
+});
+
+test("stage failure can retry only the failed image and cannot start combat early", () => {
+  const game = manualGame();
+  game.run('startGame(); const failed = window.testImages[1]; failed.fail(); window.testImages.slice(2).forEach(image => image.succeed())');
+  assert.equal(game.run('state.running'), false);
+  assert.equal(game.run('assetLoadingState.ready'), true);
+  assert.equal(game.run('loadingUi.retry.hidden'), false);
+  const count = game.run('window.testImages.length');
+  game.run('loadGameAssets(); loadGameAssets()');
+  assert.equal(game.run('window.testImages.length'), count + 1);
+  assert.equal(game.run('window.testImages.at(-1).src === failed.src'), true);
+  game.run('window.testImages.at(-1).succeed()');
+  assert.equal(game.run('state.running'), true);
+});
+
+test("changing regions loads just that map and stage manifests include their bosses and wind-up frames", () => {
+  const game = manualGame();
+  game.run('showStageSelect()');
+  assert.equal(game.run('state.running'), false);
+  game.run('window.testImages.at(-1).succeed()');
+  assert.equal(game.run('document.documentElement.dataset.screen'), 'stage');
+  const count = game.run('window.testImages.length');
+  game.run('switchStageMap("forest")');
+  assert.equal(game.run('window.testImages.length'), count + 1);
+  assert.match(game.run('window.testImages.at(-1).src'), /stage_map\/forest/);
+  game.run('window.testImages.at(-1).succeed()');
+  assert.equal(game.run('state.stageMapRegionId'), 'forest');
+  const urls = game.snapshot('collectStageImageSources("fairy_forest")');
+  assert.ok(urls.some(src => src.includes('/tree_fairy/boss/windup/')));
+  assert.ok(!urls.some(src => /medaka|crab|raft_storm/.test(src)));
   assert.equal(urls.length, new Set(urls).size);
 });
 
-test("startup also repairs a failed DOM image before unlocking", () => {
-  const game = createGame({}, { loadImages: false });
-  game.run(`
-    const pageImage = new Image();
-    pageImage.src = window.testImages[0].src;
-    pageImage.getAttribute = () => pageImage.src;
-    document.querySelectorAll = selector => selector === "img[src]" ? [pageImage] : [];
-    window.testImages.filter(image => image !== pageImage).forEach(image => image.succeed());
-  `);
-  assert.equal(game.run("assetLoadingState.ready"), false);
-  assert.equal(game.run("loadingUi.game.hidden"), true);
-  game.run("pageImage.fail()");
-  assert.equal(game.run("loadingUi.retry.hidden"), false);
-  game.run("loadGameAssets()");
-  assert.equal(game.run("assetLoadingState.ready"), false);
-  game.run("pageImage.succeed()");
-  assert.equal(game.run("assetLoadingState.ready"), true);
-  assert.equal(game.run("pageImage.naturalWidth > 0"), true);
+test("newly equipped weapons and reward art belong only to the stages that need them", () => {
+  const game = createGame({}, { preloadStages: false });
+  game.run('state.weaponId = "greatsword"; state.greatswordObtained = true');
+  const urls = game.snapshot('collectStageImageSources("mushroom_forest")');
+  assert.ok(urls.some(src => src.includes('/greatsword/guard/')));
+  assert.ok(urls.some(src => src.includes('/items/weapons/sword_shield.')));
+  assert.ok(!urls.some(src => src.includes('/player/sword_shield/')));
+  assert.ok(!urls.some(src => src.includes('/items/weapons/dual_blades.')));
+});
+
+test("menu download preserves the equipment guide and restores its keyboard focus", () => {
+  const game = manualGame();
+  game.run('state.swordShieldObtained = true; state.swordShieldEquipPending = true; showWeaponScreen()');
+  assert.equal(game.run('document.documentElement.dataset.screen'), 'loading');
+  game.run('window.testImages.at(-1).succeed()');
+  assert.equal(game.run('document.documentElement.dataset.screen'), 'weapons');
+  assert.equal(game.run('state.weaponEquipGuideId'), 'swordShield');
+  assert.equal(game.run('document.activeElement === els.weaponSwordShield'), true);
 });

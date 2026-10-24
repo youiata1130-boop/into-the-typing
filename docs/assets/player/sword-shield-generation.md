@@ -4,16 +4,16 @@
 
 | 用途 | 保存先 |
 | --- | --- |
-| 構え | `src/assets/images/player/sword_shield/idle/frame_01.png` |
-| ガード | `src/assets/images/player/sword_shield/guard/frame_01.png` |
-| 攻撃 | `src/assets/images/player/sword_shield/attack/frame_01.png` |
-| 宝箱 | `src/assets/images/items/weapons/sword_shield.png` |
+| 構え | `src/assets/images/player/sword_shield/idle/frame_01.webp` |
+| ガード | `src/assets/images/player/sword_shield/guard/frame_01.webp` |
+| 攻撃 | `src/assets/images/player/sword_shield/attack/frame_01.webp` |
+| 宝箱 | `src/assets/images/items/weapons/sword_shield.webp` |
 
 構え画像を攻撃の予備動作にも使用する。主人公は1024×1536、宝箱用は1254×1254。透明部分のアルファ値0を確認。
 
 ## idle
 
-参照: `src/assets/images/player/sword/idle/frame_01.png`
+参照: `src/assets/images/player/sword/idle/frame_01.webp`
 
 `transparent_background: true`
 
@@ -23,7 +23,7 @@ Use case: identity-preserve. Edit this reference into a new transparent PNG spri
 
 ## guard
 
-参照: `src/assets/images/player/sword/idle/frame_01.png`
+参照: `src/assets/images/player/sword/idle/frame_01.webp`
 
 `transparent_background: true`
 
@@ -33,7 +33,7 @@ Use case: identity-preserve. Edit this reference into a new transparent PNG spri
 
 ## attack
 
-参照: `src/assets/images/player/sword/idle/frame_01.png`
+参照: `src/assets/images/player/sword/idle/frame_01.webp`
 
 `transparent_background: true`
 

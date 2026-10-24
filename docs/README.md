@@ -10,6 +10,7 @@
 
 森エリア: [3-1 キノコの森](stages/mushroom-forest.md)、[キノコ・森の画像と生成プロンプト](assets/enemies/mushroom-generation.md)。
 続きのステージ: [3-2 胞子の小道](stages/spore-path.md)。
+森のボスステージ: [3-3 妖精の森](stages/fairy-forest.md)、[木の妖精の画像と生成プロンプト](assets/enemies/tree-fairy-generation.md)。
 
 片手剣: [ガードの仕様](gameplay/weapons.md#片手剣と盾)、[剣と盾の画像・生成プロンプト](assets/player/sword-shield-generation.md)。
 
@@ -18,3 +19,7 @@
 - 素材生成スクリプト: `scripts/assets/`。
 - 結合テスト: `tests/integration/` 内の `battle/`・`input/`・`progression/`・`stages/`・`ui/`。
 - 一時検証ファイル: `tmp/verification/` 内の `scripts/`・`logs/`・`screenshots/`・`profiles/`。
+
+画像の段階読み込み: [起動・地図・ステージごとの読み込み](testing/stage-loading.md)。
+
+森の最難関: [3-4 荊の深森](stages/thorn-depths.md)、[荊冠の魔鹿の素材・プロンプト](assets/enemies/thorn-stag-generation.md)。

@@ -38,7 +38,7 @@ test("each correct letter raises the visible charge, pose and damage up to a ful
     assert.equal(game.run("getPlayerAttackDamage(getCurrentEnemy())"), Math.round(Math.max(1, length / 13 * 4) * 10) / 10);
     assert.equal(game.run("els.weaponCharge.dataset.full"), String(length === 13));
   }
-  assert.match(game.run("els.playerFrameWindup.src"), /greatsword\/attack\/frame_01.png/);
+  assert.match(game.run("els.playerFrameWindup.src"), /greatsword\/attack\/frame_01.webp/);
   assert.equal(game.run("getCurrentEnemy().hp"), 16);
   assert.equal(game.run('els.player.classList.contains("is-perfect-release")'), true);
 });
@@ -60,7 +60,7 @@ test("every miss reduces charge by one quarter and prevents full charge for the 
   assert.equal(game.run("getCurrentEnemy().hp"), 18.3);
   assert.match(game.run('els.weaponChargeMeter.getAttribute("aria-valuetext")'), /攻撃力1\.7$/);
   assert.equal(game.run('els.player.classList.contains("is-perfect-release")'), false);
-  assert.match(game.run("els.playerFrameWindup.src"), /greatsword\/idle\/frame_01.png/);
+  assert.match(game.run("els.playerFrameWindup.src"), /greatsword\/idle\/frame_01.webp/);
   game.advance(220);
   assert.equal(game.run("getCurrentEnemy().typingMisses"), 0);
   assert.equal(game.run("getCurrentEnemy().chargeInputProgress"), 0);

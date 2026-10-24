@@ -167,7 +167,7 @@ test("stage unlocks and save-card progress stay isolated across all three player
 test("the crab king is preloaded, announces its name, and its intro is cleared on exit", () => {
   const game = createGame(saved({ totalExperience: 40, stats: { attack: 2, agility: 1 },
     skillTutorialCompleted: true, clearedStages: ["forest_path", "mist_road"] }));
-  assert.equal(game.run('collectGameImageSources().some(src => src.includes("/crab/boss/idle/frame_01.png"))'), true);
+  assert.equal(game.run('collectGameImageSources().some(src => src.includes("/crab/boss/idle/frame_01.webp"))'), true);
   game.run('startGame("sky_castle")');
   for (let tick = 0; tick < 300 && !game.run("getCurrentEnemy()?.boss"); tick++) {
     if (game.run("Boolean(getInputEnemy())")) game.run("applyTypedValue(getInputEnemy(), getInputEnemy().matchedWord)");
@@ -178,7 +178,7 @@ test("the crab king is preloaded, announces its name, and its intro is cleared o
   assert.equal(game.run("els.bossIntroTitle.textContent"), "カニの王様");
   assert.equal(game.run('els.bossIntro.classList.contains("is-active")'), true);
   assert.equal(game.run('getCurrentEnemy().hpTrack.getAttribute("aria-label")'), "カニの王様のHP");
-  assert.match(game.run("getCurrentEnemy().image.src"), /crab\/boss\/idle\/frame_01\.png/);
+  assert.match(game.run("getCurrentEnemy().image.src"), /crab\/boss\/idle\/frame_01\.webp/);
   assert.equal(game.run("state.totalExperience"), 40);
   assert.equal(game.run("state.greatswordObtained"), false);
   game.run('showStageSelect(); startGame("sky_castle")');

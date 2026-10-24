@@ -1,6 +1,6 @@
 # 草原の蜂
 
-組み込みの画像生成ツールで生成。透過PNGを `src/assets/images/enemies/bee/level_1/idle/frame_01.png` に保存。浮遊・被弾・撃破はCSSで演出する。
+組み込みの画像生成ツールで生成。透過PNGを `src/assets/images/enemies/bee/level_1/idle/frame_01.webp` に保存。浮遊・被弾・撃破はCSSで演出する。
 
 ## プロンプト
 

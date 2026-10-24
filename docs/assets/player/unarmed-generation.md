@@ -1,10 +1,10 @@
 # Unarmed player art
 
 - Generated with the built-in imagegen tool on 2026-09-07.
-- Reference: `src/assets/images/player/sword/idle/frame_01.png` (inline preview).
-- Runtime assets: `src/assets/images/player/unarmed/idle/frame_01.png` and `src/assets/images/player/unarmed/attack/frame_01.png`.
+- Reference: `src/assets/images/player/sword/idle/frame_01.webp` (inline preview).
+- Runtime assets: `src/assets/images/player/unarmed/idle/frame_01.webp` and `src/assets/images/player/unarmed/attack/frame_01.webp`.
 - The built-in attempts returned RGB images with a painted checkerboard. The follow-up transparency fix uses local alpha masking to remove the light neutral background connected to the image border; character colors and canvas dimensions are preserved. Both runtime files are now RGBA PNGs with fully transparent borders.
-- The opaque originals are preserved under `archive/assets/images/player/unarmed/{idle,attack}/frame_01.png`.
+- The opaque originals are preserved under `archive/assets/images/player/unarmed/{idle,attack}/frame_01.webp`.
 
 ## unarmedIdle
 

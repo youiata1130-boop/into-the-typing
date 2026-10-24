@@ -81,3 +81,48 @@ test("long flick input highlights each kana immediately, including voiced-kana c
   }
   assert.equal(game.run("performance.now()"), 850);
 });
+
+for (const weapon of ["sword", "swordShield", "greatsword", "dualBlades"]) {
+  test(weapon + ": trailing keys and held-key repeats cannot create a miss on the next prompt", () => {
+    const game = battle();
+    game.run(`
+      state.weaponId = "${weapon}"; target.weaponId = "${weapon}";
+      target.word = target.matchedWord = "neko"; target.inputs = ["neko"];
+      let misses = 0; const originalMiss = recordTypingMiss;
+      recordTypingMiss = enemy => { misses++; originalMiss(enemy); };
+      setNextWord = enemy => {
+        enemy.word = enemy.matchedWord = "sora"; enemy.inputs = ["sora"];
+        enemy.typed = ""; enemy.bestLength = 0; enemy.typingMisses = 0;
+        enemy.translation = "空"; enemy.inputRevision++;
+      };
+      [..."neko"].forEach(type);
+      type("o"); type("Backspace"); type("z");
+    `);
+    const cooldown = game.run('state.playerAttackCooldownMs');
+    assert.equal(game.run('state.inputBuffer.length'), 0);
+    game.advance(cooldown - 1);
+    game.run('handleTypingKeydown({key:"o",code:"KeyO",repeat:true,preventDefault(){}})');
+    game.advance(1);
+    game.run('handleTypingKeydown({key:"o",code:"KeyO",repeat:true,preventDefault(){}})');
+    assert.equal(game.run('target.typed'), '');
+    assert.equal(game.run('misses'), 0);
+    assert.equal(game.run('els.typingMissEffect.classList.contains("is-active")'), false);
+    game.run('type("s"); type("o")');
+    assert.equal(game.run('target.typed'), 'so');
+    game.run('type("z")');
+    assert.equal(game.run('misses'), 1);
+    assert.equal(game.run('target.typed'), 'so');
+    assert.equal(game.run('els.typingMissEffect.classList.contains("is-active")'), true);
+    game.run('type("r"); type("a")');
+    assert.equal(game.run('state.combo'), 1);
+    assert.equal(game.run('els.typingMissEffect.classList.contains("is-active")'), false);
+  });
+}
+
+test("distinct presses of the same letter remain valid within a word", () => {
+  const game = battle();
+  game.run('target.word=target.matchedWord="gakkou"; target.inputs=["gakkou"]; [..."gakkou"].forEach(type)');
+  assert.equal(game.run('state.combo'), 1);
+  assert.equal(game.run('target.typingMisses'), 0);
+  assert.equal(game.run('els.typingMissEffect.classList.contains("is-active")'), false);
+});

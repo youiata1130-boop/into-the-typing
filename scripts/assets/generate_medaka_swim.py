@@ -12,7 +12,7 @@ import numpy as np
 from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parents[2]
-SOURCE = ROOT / "src/assets/images/enemies/medaka/level_1/idle/frame_01.png"
+SOURCE = ROOT / "src/assets/images/enemies/medaka/level_1/idle/frame_01.webp"
 OUTPUT = ROOT / "src/assets/images/enemies/medaka/level_1/swim"
 FRAME_COUNT = 16
 FRAME_MS = 70
@@ -95,8 +95,8 @@ def main():
         assert box and box[0] > 0 and box[1] > 0
         assert box[2] < frame.width and box[3] < frame.height, "Clipped fin"
         assert frame.getchannel("A").getextrema() == (0, 255)
-        path = args.output / f"frame_{index + 1:02d}.png"
-        frame.save(path, optimize=True)
+        path = args.output / f"frame_{index + 1:02d}.webp"
+        frame.save(path, lossless=True, exact=True, method=6)
         frames.append(frame)
         manifest.append({"file": path.name, "bytes": path.stat().st_size,
                          "bounds": box, "sha256": hashlib.sha256(path.read_bytes()).hexdigest()})

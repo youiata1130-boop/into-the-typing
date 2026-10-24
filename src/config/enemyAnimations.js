@@ -1,9 +1,9 @@
 const enemyAssetVersion = "asset-layout-v1";
 const enemyFrame = (enemy, level, state, frame) =>
-  `src/assets/images/enemies/${enemy}/${level}/${state}/frame_${String(frame).padStart(2, "0")}.png?v=${enemyAssetVersion}`;
+  `src/assets/images/enemies/${enemy}/${level}/${state}/frame_${String(frame).padStart(2, "0")}.webp?v=${enemyAssetVersion}`;
 
 // Add new frames in order:
-// frame_01.png, frame_02.png, frame_03.png ...
+// frame_01.webp, frame_02.webp, frame_03.webp ...
 // Then add the same paths to the matching array below.
 window.ENEMY_ANIMATIONS = {
   defaultEnemy: "goblin_level_1",
@@ -13,8 +13,30 @@ window.ENEMY_ANIMATIONS = {
     medaka_boss: { frameMs: 70, idleWhileStopped: true },
   },
   enemies: {
+    thorn_stag_boss: {
+      idle: [enemyFrame("thorn_stag", "boss", "idle", 1)],
+      windup: [enemyFrame("thorn_stag", "boss", "windup", 1)],
+      attack: [enemyFrame("thorn_stag", "boss", "windup", 1)],
+      damage: [enemyFrame("thorn_stag", "boss", "idle", 1)],
+      defeat: [enemyFrame("thorn_stag", "boss", "idle", 1)],
+    },
+    tree_fairy_boss: {
+      idle: [enemyFrame("tree_fairy", "boss", "idle", 1)],
+      windup: [enemyFrame("tree_fairy", "boss", "windup", 1)],
+      attack: [enemyFrame("tree_fairy", "boss", "idle", 1)],
+      damage: [enemyFrame("tree_fairy", "boss", "idle", 1)],
+      defeat: [enemyFrame("tree_fairy", "boss", "idle", 1)],
+    },
+    mushroom_boss: {
+      idle: [enemyFrame("mushroom", "boss", "idle", 1)],
+      windup: [enemyFrame("mushroom", "boss", "windup", 1)],
+      attack: [enemyFrame("mushroom", "boss", "idle", 1)],
+      damage: [enemyFrame("mushroom", "boss", "idle", 1)],
+      defeat: [enemyFrame("mushroom", "boss", "idle", 1)],
+    },
     mushroom_level_1: {
       idle: [enemyFrame("mushroom", "level_1", "idle", 1)],
+      windup: [enemyFrame("mushroom", "level_1", "windup", 1)],
       attack: [enemyFrame("mushroom", "level_1", "idle", 1)],
       damage: [enemyFrame("mushroom", "level_1", "idle", 1)],
       defeat: [enemyFrame("mushroom", "level_1", "idle", 1)],

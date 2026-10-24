@@ -13,7 +13,7 @@ function battle(touch = false) {
       skillTutorialCompleted: true, clearedStages,
     }),
   }, { touch });
-  game.run('startGame("mushroom_forest"); const mushroom = getCurrentEnemy()');
+  game.run('randomizeEnemyAttackMs = baseMs => baseMs; startGame("mushroom_forest"); const mushroom = getCurrentEnemy()');
   return game;
 }
 function tick(game, ms) {
@@ -27,12 +27,16 @@ test("stationary mushroom warns before the exact attack boundary and charges aga
   const position = game.run("mushroom.progress");
   tick(game, 849);
   assert.equal(game.run("mushroom.chargeElapsedMs"), 0);
-  assert.equal(game.run("mushroom.chargeLabel.textContent"), "攻撃まで 6.0秒");
+  assert.equal(game.run("mushroom.element.dataset.chargePhase"), "charging");
   tick(game, 1);
-  tick(game, 4500);
+  tick(game, 4499);
+  assert.match(game.run("mushroom.image.src"), /\/idle\//);
+  tick(game, 1);
   assert.equal(game.run("mushroom.element.dataset.chargePhase"), "warning");
-  assert.equal(game.run("mushroom.chargeLabel.textContent"), "攻撃まで 1.5秒");
-  assert.equal(game.run('mushroom.chargeMeter.getAttribute("aria-valuenow")'), "75");
+  assert.equal(game.run("mushroom.element.dataset.chargePhase"), "warning");
+  assert.match(game.run("mushroom.image.src"), /\/windup\//);
+  assert.doesNotMatch(game.run('mushroom.element.getAttribute("aria-label")'), /\d|秒/);
+  assert.equal(game.run("mushroom.chargeMeter"), undefined);
   game.run("enemyAttack(mushroom)");
   assert.equal(game.run("state.hp"), hp);
   tick(game, 1499);
@@ -41,12 +45,14 @@ test("stationary mushroom warns before the exact attack boundary and charges aga
   const after = game.run("state.hp");
   assert.ok(after < hp);
   assert.equal(game.run("mushroom.progress"), position);
-  assert.equal(game.run("mushroom.chargeLabel.textContent"), "胞子攻撃！");
+  assert.equal(game.run("mushroom.element.dataset.chargePhase"), "attack");
+  assert.doesNotMatch(game.run("mushroom.image.src"), /\/windup\//);
   assert.equal(game.run("getInputEnemy() === mushroom"), true);
   game.run("enemyAttack(mushroom)");
   assert.equal(game.run("state.hp"), after);
   tick(game, 360);
-  assert.equal(game.run("mushroom.chargeLabel.textContent"), "攻撃まで 6.0秒");
+  assert.equal(game.run("mushroom.element.dataset.chargePhase"), "charging");
+  assert.match(game.run("mushroom.image.src"), /\/idle\//);
   tick(game, 5999);
   assert.equal(game.run("state.hp"), after);
   tick(game, 1);
@@ -59,11 +65,13 @@ test("ordinary hits briefly pause charging without moving the mushroom or erasin
   tick(game, 850);
   tick(game, 5000);
   game.run("mushroom.hp = 100; applyTypedValue(mushroom, mushroom.matchedWord)");
+  assert.doesNotMatch(game.run("mushroom.image.src"), /\/windup\//);
   assert.equal(game.run("mushroom.progress"), .15);
   tick(game, 219);
   assert.equal(game.run("mushroom.chargeElapsedMs"), 5000);
   tick(game, 1);
   assert.equal(game.run("mushroom.chargeElapsedMs"), 5000);
+  assert.match(game.run("mushroom.image.src"), /\/windup\//);
   const hp = game.run("state.hp");
   tick(game, 999);
   assert.equal(game.run("state.hp"), hp);
@@ -77,11 +85,13 @@ test("strong strike resets the charge while survivors stay planted", () => {
   tick(game, 850);
   tick(game, 5500);
   game.run("mushroom.hp = 100; state.specialGauge = 100");
+  assert.match(game.run("mushroom.image.src"), /\/windup\//);
   assert.equal(game.run("useSpecialMove()"), true);
   assert.equal(game.run("mushroom.chargeElapsedMs"), 0);
   assert.equal(game.run("mushroom.progress"), .15);
   tick(game, 420);
   assert.equal(game.run("mushroom.chargeElapsedMs"), 0);
+  assert.match(game.run("mushroom.image.src"), /\/idle\//);
   const hp = game.run("state.hp");
   tick(game, 5999);
   assert.equal(game.run("state.hp"), hp);
@@ -96,7 +106,7 @@ test("defeat, restart and leaving cancel the old charge and discard pending rewa
     tick(game, 5900);
     game.run("mushroom.hp = 1; applyTypedValue(mushroom, mushroom.matchedWord)");
     tick(game, 220);
-    assert.equal(game.run("mushroom.chargeMeter.hidden"), true);
+    assert.equal(game.run("mushroom.element.dataset.chargePhase"), "defeated");
     game.run(action);
     const hp = game.run("state.hp");
     game.advance(8000);
@@ -134,11 +144,23 @@ test("three mushrooms award 135 EXP once on desktop and touch, and the clear sur
 test("forest art preloads and the mushroom uses its own sprite for every state", () => {
   const game = battle();
   const urls = game.snapshot("collectGameImageSources()");
-  for (const path of ["backgrounds/stage_map/forest.png", "backgrounds/stages/forest.png", "enemies/mushroom/level_1/idle/frame_01.png"]) {
+  for (const path of ["backgrounds/stage_map/forest.webp", "backgrounds/stages/forest.webp", "enemies/mushroom/level_1/idle/frame_01.webp", "enemies/mushroom/level_1/windup/frame_01.webp"]) {
     assert.ok(urls.some(url => url.includes(path)));
     assert.ok(existsSync(new URL("../../../src/assets/images/" + path, import.meta.url)));
   }
-  for (const animation of ["idle", "damage", "attack", "defeat"]) {
+  for (const animation of ["idle", "windup", "damage", "attack", "defeat"]) {
     assert.match(game.run(`getEnemyFrames("mushroom_level_1", "${animation}")[0]`), /enemies\/mushroom\//);
   }
+});
+
+test("enemy aura shifts from green through yellow to red and resets after charge reset", () => {
+  const game = battle();
+  game.run('const aura = {}; mushroom.element.style.setProperty = (key, value) => { aura[key] = value; }');
+  for (const [progress, hue] of [[0, 100], [0.5, 50], [0.9, 10], [1, 0]]) {
+    game.run(`mushroom.chargeElapsedMs = mushroom.chargeDurationMs * ${progress}; updateEnemyCharge(mushroom)`);
+    assert.equal(game.run('aura["--enemy-aura-color"]'), `hsl(${hue} 90% 64%)`);
+    assert.doesNotMatch(game.run('mushroom.element.innerHTML'), /enemy-charge/);
+  }
+  game.run('resetEnemyCharge(mushroom)');
+  assert.equal(game.run('aura["--enemy-aura-color"]'), 'hsl(100 90% 64%)');
 });

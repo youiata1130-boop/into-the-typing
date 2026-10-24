@@ -114,7 +114,7 @@ test("a special move during an incoming attack keeps its damage animation until 
 
 test("incoming attacks retain their recovery and repeat interval without repeated damage per frame", () => {
   const game = battle();
-  game.run("target.atBase = true; target.nextAttackAt = performance.now(); enemyLoop(performance.now())");
+  game.run("randomizeEnemyAttackMs = baseMs => baseMs; target.atBase = true; target.nextAttackAt = performance.now(); enemyLoop(performance.now())");
   game.advance(359);
   game.run("enemyLoop(performance.now())");
   assert.equal(game.run("target.animation"), "attack");

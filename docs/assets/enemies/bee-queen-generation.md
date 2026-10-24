@@ -1,8 +1,8 @@
 # 蜂の女王
 
 - 生成方法: 組み込みの `image_gen`。通常の蜂を参考画像にして、ボスの新規バリエーションを生成。
-- 保存先: `src/assets/images/enemies/bee/boss/idle/frame_01.png`
-- 参考画像: `src/assets/images/enemies/bee/level_1/idle/frame_01.png`
+- 保存先: `src/assets/images/enemies/bee/boss/idle/frame_01.webp`
+- 参考画像: `src/assets/images/enemies/bee/level_1/idle/frame_01.webp`
 - 透過PNG。通常の蜂の画像は保持し、浮遊・攻撃・被弾・撃破はCSSで演出する。
 - 2-3の最後に単独で登場。冠と赤いマントで通常の蜂と区別する。
 

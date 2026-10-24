@@ -17,19 +17,19 @@ const specialGaugeMax = skillGaugeSettings.max;
 const prologueScenes = [
   {
     title: "海への出発",
-    image: "src/assets/images/story/raft_departure.png",
+    image: "src/assets/images/story/raft_departure.webp",
     alt: "いかだに乗り、青い海へこぎ出す少年",
     text: "海の向こうの世界にあこがれた少年は、\n小さないかだに乗り、冒険へと出発した。",
   },
   {
     title: "突然の嵐",
-    image: "src/assets/images/story/raft_storm.png",
+    image: "src/assets/images/story/raft_storm.webp",
     alt: "激しい雨と大波の中、いかだにつかまる少年",
     text: "ところが、旅の途中で空が暗くなり、激しい嵐に。\n少年のいかだは、大波にのまれてしまった。",
   },
   {
     title: "見知らぬ浜辺",
-    image: "src/assets/images/backgrounds/stages/crab_shore.png",
+    image: "src/assets/images/backgrounds/stages/crab_shore.webp",
     alt: "無人島の白い浜辺と青い海",
     text: "目を覚ますと、そこは見知らぬ無人島。\n少年の新たな冒険が、この浜辺から始まる。",
   },
@@ -44,81 +44,81 @@ const enemyAnimations = window.ENEMY_ANIMATIONS || {
   enemies: {
     medaka_level_1: {
       idle: Array.from({ length: 16 }, (_, index) =>
-        `src/assets/images/enemies/medaka/level_1/swim/frame_${String(index + 1).padStart(2, "0")}.png`),
-      attack: ["src/assets/images/enemies/medaka/level_1/idle/frame_01.png"],
-      damage: ["src/assets/images/enemies/medaka/level_1/idle/frame_01.png"],
-      defeat: ["src/assets/images/enemies/medaka/level_1/idle/frame_01.png"],
+        `src/assets/images/enemies/medaka/level_1/swim/frame_${String(index + 1).padStart(2, "0")}.webp`),
+      attack: ["src/assets/images/enemies/medaka/level_1/idle/frame_01.webp"],
+      damage: ["src/assets/images/enemies/medaka/level_1/idle/frame_01.webp"],
+      defeat: ["src/assets/images/enemies/medaka/level_1/idle/frame_01.webp"],
     },
     medaka_boss: {
       idle: Array.from({ length: 16 }, (_, index) =>
-        `src/assets/images/enemies/medaka/boss/swim/frame_${String(index + 1).padStart(2, "0")}.png`),
-      attack: ["src/assets/images/enemies/medaka/boss/idle/frame_01.png"],
-      damage: ["src/assets/images/enemies/medaka/boss/idle/frame_01.png"],
-      defeat: ["src/assets/images/enemies/medaka/boss/idle/frame_01.png"],
+        `src/assets/images/enemies/medaka/boss/swim/frame_${String(index + 1).padStart(2, "0")}.webp`),
+      attack: ["src/assets/images/enemies/medaka/boss/idle/frame_01.webp"],
+      damage: ["src/assets/images/enemies/medaka/boss/idle/frame_01.webp"],
+      defeat: ["src/assets/images/enemies/medaka/boss/idle/frame_01.webp"],
     },
     crab_level_1: {
-      idle: ["src/assets/images/enemies/crab/level_1/idle/frame_01.png"],
-      attack: ["src/assets/images/enemies/crab/level_1/idle/frame_01.png"],
-      damage: ["src/assets/images/enemies/crab/level_1/idle/frame_01.png"],
-      defeat: ["src/assets/images/enemies/crab/level_1/idle/frame_01.png"],
+      idle: ["src/assets/images/enemies/crab/level_1/idle/frame_01.webp"],
+      attack: ["src/assets/images/enemies/crab/level_1/idle/frame_01.webp"],
+      damage: ["src/assets/images/enemies/crab/level_1/idle/frame_01.webp"],
+      defeat: ["src/assets/images/enemies/crab/level_1/idle/frame_01.webp"],
     },
     crab_boss: {
-      idle: ["src/assets/images/enemies/crab/boss/idle/frame_01.png"],
-      attack: ["src/assets/images/enemies/crab/boss/idle/frame_01.png"],
-      damage: ["src/assets/images/enemies/crab/boss/idle/frame_01.png"],
-      defeat: ["src/assets/images/enemies/crab/boss/idle/frame_01.png"],
+      idle: ["src/assets/images/enemies/crab/boss/idle/frame_01.webp"],
+      attack: ["src/assets/images/enemies/crab/boss/idle/frame_01.webp"],
+      damage: ["src/assets/images/enemies/crab/boss/idle/frame_01.webp"],
+      defeat: ["src/assets/images/enemies/crab/boss/idle/frame_01.webp"],
     },
     egg_level_1: {
       idle: [
-        "src/assets/images/enemies/egg/level_1/idle/frame_01.png",
-        "src/assets/images/enemies/egg/level_1/idle/frame_02.png",
-        "src/assets/images/enemies/egg/level_1/idle/frame_03.png",
-        "src/assets/images/enemies/egg/level_1/idle/frame_02.png",
+        "src/assets/images/enemies/egg/level_1/idle/frame_01.webp",
+        "src/assets/images/enemies/egg/level_1/idle/frame_02.webp",
+        "src/assets/images/enemies/egg/level_1/idle/frame_03.webp",
+        "src/assets/images/enemies/egg/level_1/idle/frame_02.webp",
       ],
-      attack: ["src/assets/images/enemies/egg/level_1/attack/frame_02.png"],
-      damage: ["src/assets/images/enemies/egg/level_1/damage/frame_02.png"],
-      defeat: ["src/assets/images/enemies/egg/level_1/defeat/frame_02.png"],
+      attack: ["src/assets/images/enemies/egg/level_1/attack/frame_02.webp"],
+      damage: ["src/assets/images/enemies/egg/level_1/damage/frame_02.webp"],
+      defeat: ["src/assets/images/enemies/egg/level_1/defeat/frame_02.webp"],
     },
     chick_level_1: {
       idle: [
-        "src/assets/images/enemies/chick/level_1/idle/frame_01.png",
-        "src/assets/images/enemies/chick/level_1/idle/frame_01.png",
-        "src/assets/images/enemies/chick/level_1/idle/frame_02.png",
-        "src/assets/images/enemies/chick/level_1/idle/frame_02.png",
+        "src/assets/images/enemies/chick/level_1/idle/frame_01.webp",
+        "src/assets/images/enemies/chick/level_1/idle/frame_01.webp",
+        "src/assets/images/enemies/chick/level_1/idle/frame_02.webp",
+        "src/assets/images/enemies/chick/level_1/idle/frame_02.webp",
       ],
-      attack: ["src/assets/images/enemies/chick/level_1/attack/frame_02.png"],
-      damage: ["src/assets/images/enemies/chick/level_1/damage/frame_02.png"],
-      defeat: ["src/assets/images/enemies/chick/level_1/defeat/frame_02.png"],
+      attack: ["src/assets/images/enemies/chick/level_1/attack/frame_02.webp"],
+      damage: ["src/assets/images/enemies/chick/level_1/damage/frame_02.webp"],
+      defeat: ["src/assets/images/enemies/chick/level_1/defeat/frame_02.webp"],
     },
     chicken_level_1: {
-      idle: ["src/assets/images/enemies/chicken/level_1/idle/frame_02.png"],
-      attack: ["src/assets/images/enemies/chicken/level_1/attack/frame_02.png"],
-      damage: ["src/assets/images/enemies/chicken/level_1/damage/frame_02.png"],
-      defeat: ["src/assets/images/enemies/chicken/level_1/defeat/frame_02.png"],
+      idle: ["src/assets/images/enemies/chicken/level_1/idle/frame_02.webp"],
+      attack: ["src/assets/images/enemies/chicken/level_1/attack/frame_02.webp"],
+      damage: ["src/assets/images/enemies/chicken/level_1/damage/frame_02.webp"],
+      defeat: ["src/assets/images/enemies/chicken/level_1/defeat/frame_02.webp"],
     },
     chicken_level_2: {
-      idle: ["src/assets/images/enemies/chicken/level_2/idle/frame_02.png"],
-      attack: ["src/assets/images/enemies/chicken/level_2/attack/frame_02.png"],
-      damage: ["src/assets/images/enemies/chicken/level_2/damage/frame_02.png"],
-      defeat: ["src/assets/images/enemies/chicken/level_2/defeat/frame_02.png"],
+      idle: ["src/assets/images/enemies/chicken/level_2/idle/frame_02.webp"],
+      attack: ["src/assets/images/enemies/chicken/level_2/attack/frame_02.webp"],
+      damage: ["src/assets/images/enemies/chicken/level_2/damage/frame_02.webp"],
+      defeat: ["src/assets/images/enemies/chicken/level_2/defeat/frame_02.webp"],
     },
     goblin_level_1: {
-      idle: ["src/assets/images/enemies/goblin/level_1/idle/frame_02.png"],
-      attack: ["src/assets/images/enemies/goblin/level_1/attack/frame_02.png"],
-      damage: ["src/assets/images/enemies/goblin/level_1/damage/frame_02.png"],
-      defeat: ["src/assets/images/enemies/goblin/level_1/defeat/frame_02.png"],
+      idle: ["src/assets/images/enemies/goblin/level_1/idle/frame_02.webp"],
+      attack: ["src/assets/images/enemies/goblin/level_1/attack/frame_02.webp"],
+      damage: ["src/assets/images/enemies/goblin/level_1/damage/frame_02.webp"],
+      defeat: ["src/assets/images/enemies/goblin/level_1/defeat/frame_02.webp"],
     },
     goblin_level_2: {
-      idle: ["src/assets/images/enemies/goblin/level_2/idle/frame_02.png"],
-      attack: ["src/assets/images/enemies/goblin/level_2/attack/frame_02.png"],
-      damage: ["src/assets/images/enemies/goblin/level_2/damage/frame_02.png"],
-      defeat: ["src/assets/images/enemies/goblin/level_2/defeat/frame_02.png"],
+      idle: ["src/assets/images/enemies/goblin/level_2/idle/frame_02.webp"],
+      attack: ["src/assets/images/enemies/goblin/level_2/attack/frame_02.webp"],
+      damage: ["src/assets/images/enemies/goblin/level_2/damage/frame_02.webp"],
+      defeat: ["src/assets/images/enemies/goblin/level_2/defeat/frame_02.webp"],
     },
     goblin_level_3: {
-      idle: ["src/assets/images/enemies/goblin/level_3/idle/frame_02.png"],
-      attack: ["src/assets/images/enemies/goblin/level_3/attack/frame_02.png"],
-      damage: ["src/assets/images/enemies/goblin/level_3/damage/frame_02.png"],
-      defeat: ["src/assets/images/enemies/goblin/level_3/defeat/frame_02.png"],
+      idle: ["src/assets/images/enemies/goblin/level_3/idle/frame_02.webp"],
+      attack: ["src/assets/images/enemies/goblin/level_3/attack/frame_02.webp"],
+      damage: ["src/assets/images/enemies/goblin/level_3/damage/frame_02.webp"],
+      defeat: ["src/assets/images/enemies/goblin/level_3/defeat/frame_02.webp"],
     },
   },
 };
@@ -334,9 +334,12 @@ const state = {
   greatswordImpactTimerId: 0,
   inputBuffer: [],
   usedWords: [],
+  dualNextSpawnWord: null,
 };
 
 function invalidateBattleGeneration() {
+  clearPlayerDamageEffect();
+  clearHealingEffect();
   clearPlayerGuard();
   window.clearTimeout(state.enemySpawnTimerId);
   state.enemySpawnTimerId = 0;
@@ -382,6 +385,9 @@ const els = {
   specialEffect: document.querySelector("#specialEffect"),
   arena: document.querySelector(".arena"),
   typingMissEffect: document.querySelector("#typingMissEffect"),
+  playerDamageEffect: document.querySelector("#playerDamageEffect"),
+  playerDamageText: document.querySelector("#playerDamageText"),
+  playerHealText: document.querySelector("#playerHealText"),
   greatswordImpact: document.querySelector("#greatswordImpact"),
   bossIntro: document.querySelector("#bossIntro"),
   bossIntroKicker: document.querySelector("#bossIntroKicker"),
@@ -389,6 +395,7 @@ const els = {
   bossIntroText: document.querySelector("#bossIntroText"),
   wordTranslation: document.querySelector("#wordTranslation"),
   typedWord: document.querySelector("#typedWord"),
+  nextWordPreview: document.querySelector("#nextWordPreview"),
   remainingWord: document.querySelector("#remainingWord"),
   typingLabel: document.querySelector("#typingLabel"),
   typingStatus: document.querySelector("#typingStatus"),
@@ -429,6 +436,12 @@ const els = {
   weaponSwordShieldOption: document.querySelector("#weaponSwordShieldOption"),
   weaponEquipGuide: document.querySelector("#weaponEquipGuide"),
   weaponEquipNext: document.querySelector("#weaponEquipNext"),
+  weaponPreviewName: document.querySelector("#weaponPreviewName"),
+  weaponPreviewImage: document.querySelector("#weaponPreviewImage"),
+  weaponPreviewFeatures: document.querySelector("#weaponPreviewFeatures"),
+  weaponPreviewStatus: document.querySelector("#weaponPreviewStatus"),
+  weaponPreviewRetry: document.querySelector("#weaponPreviewRetry"),
+  weaponEquipButton: document.querySelector("#weaponEquipButton"),
   battleScreen: document.querySelector("#battleScreen"),
   introStartButton: document.querySelector("#introStartButton"),
   homeButton: document.querySelector("#homeButton"),
@@ -570,7 +583,7 @@ function getPlayerAttackDamage(enemy = null) {
 }
 
 function getSpecialGain() {
-  return canChargeSkill() ? skillGaugeSettings.gainPerCharacter : 0;
+  return canChargeSkill() ? (getActiveSkill().gainPerCharacter ?? skillGaugeSettings.gainPerCharacter) : 0;
 }
 
 function chargeSpecialGauge() {
@@ -591,6 +604,7 @@ function resetSuccessStreak() {
 function isSpecialReady() {
   return canChargeSkill() && !isUnarmedStory()
     && !state.activeEnemies.some(enemy => enemy.tutorial && isEnemyAlive(enemy))
+    && (getActiveSkill().target !== "self" || state.hp < getMaxHp())
     && state.specialGauge >= specialGaugeMax;
 }
 
@@ -627,12 +641,13 @@ function updateStatusPanel() {
 
   els.weaponPanel.querySelectorAll("input[name='weapon']").forEach((input) => {
     const available = isWeaponAvailable(input.value);
-    input.checked = input.value === activeWeapon.id;
+    input.checked = input.value === (!els.weaponScreen.hidden ? weaponMenuState.selectedId : activeWeapon.id);
     input.disabled = state.running || !available;
     input.closest(".weapon-option").hidden = !available;
   });
 
   updateWeaponEquipGuide();
+  updateWeaponDetails();
 
   els.statusPanel.querySelectorAll("[data-stat][data-stat-delta]").forEach((button) => {
     const stat = button.dataset.stat;
@@ -645,6 +660,7 @@ function updateStatusPanel() {
 }
 
 function syncPlayerWeaponArt(weapon, chargePose = 0) {
+  if (els.battleScreen.hidden) return;
   const assets = getPlayerWeaponAssets(weapon.id);
   const frames = [
     [els.playerFrameIdle, assets.idle],
@@ -663,7 +679,7 @@ function syncPlayerWeaponArt(weapon, chargePose = 0) {
     }
   });
 
-  const playerLabel = state.guarding ? "盾でガードする主人公"
+  const playerLabel = state.guarding ? getPlayerGuardLabel()
     : weapon.id === "unarmed" ? "素手で構える主人公" : `${weapon.name}を装備した主人公`;
   els.playerFrameIdle.alt = playerLabel;
   els.player.setAttribute("aria-label", playerLabel);
@@ -753,6 +769,8 @@ function snapshotAttackCooldowns() {
 }
 
 function startPlayerAttackCooldown(weaponId) {
+  clearInputBuffer();
+  clearTypingMissEffect();
   clearPlayerAttackCooldown();
   const duration = state.stageAttackCooldowns[weaponId];
   state.playerAttackCooldownMs = duration;
@@ -766,7 +784,7 @@ function startPlayerAttackCooldown(weaponId) {
   state.playerAttackCooldownTimerId = scheduleBattleTimeout(() => {
     state.playerAttackCooldownTimerId = 0;
     state.playerAttackReadyAt = 0;
-    // Retain early queued keystrokes until this cooldown's buffer is consumed.
+    // The newly visible prompt starts with fresh input.
     renderWord();
     updateHud();
     flushBufferedInput();
@@ -774,6 +792,7 @@ function startPlayerAttackCooldown(weaponId) {
 }
 
 function updateHud() {
+  updateDualBladePreview();
   updateGuardHud();
   syncGameFlickKeyboard();
   updateAttackCooldown();
@@ -892,6 +911,7 @@ function enqueueBufferedInput(action, value = "") {
   }
 
   scheduleBufferedInputFlush();
+  updateGuardHud();
 }
 
 function applyBufferedInputEntry(enemy, entry) {
@@ -915,6 +935,7 @@ function flushBufferedInput() {
 
   clearInputBufferTimer();
   trimInputBuffer();
+  updateGuardHud();
 
   while (state.inputBuffer.length) {
     const targetEnemy = getInputEnemy();
@@ -957,6 +978,8 @@ function showGameNotice(kind, kicker, title, text, options = {}) {
   els.gameNotice.classList.toggle("has-treasure", Boolean(treasure));
   if (treasure) {
     const weaponName = getWeaponDefinition(treasure).name;
+    if (treasure === "dualBlades") els.treasureDualBlades.setAttribute("href", weaponDefinitions.dualBlades.itemImage);
+    if (treasure === "swordShield") els.treasureSwordShield.setAttribute("href", weaponDefinitions.swordShield.itemImage);
     els.treasureText.textContent = `${weaponName}を手に入れた！`;
     els.treasureArt.setAttribute("aria-label", `宝箱から現れた${weaponName}`);
     els.treasureSingleSword.style.display = ["dualBlades", "swordShield"].includes(treasure) ? "none" : "";
@@ -1004,6 +1027,7 @@ function setStoryPhase(phase) {
   els.storyDialog.setAttribute("aria-label", isPrologue ? "物語のはじまり" : "会話");
   els.storyDialog.hidden = !dialogueOpen;
   els.storyItem.hidden = phase !== "weapon-offer";
+  if (phase === "weapon-offer") document.querySelector("#storyItemImage").src = "src/assets/images/items/weapons/branch.webp?v=branch-intro-v1";
   els.prologueImage.hidden = !isPrologue;
   els.prologueTitle.hidden = !isPrologue;
   if (scene) {
@@ -1056,7 +1080,7 @@ function advanceStory() {
     state.activeEnemies.forEach((enemy) => {
       enemy.weaponId = state.weaponId;
       enemy.resolving = false;
-      enemy.nextAttackAt = performance.now() + repeatAttackMs;
+      enemy.nextAttackAt = performance.now() + randomizeEnemyAttackMs(enemy.repeatAttackMs);
       setNextWord(enemy);
       playEnemyAnimation(enemy, "idle");
     });
@@ -1099,15 +1123,17 @@ function continueAfterResult() {
 
 function switchStageMap(regionId) {
   if (!Object.hasOwn(stageMapRegions, regionId)) return;
+  if (ensureGameAssets(imageSources([stageMapRegions[regionId].image]), () => switchStageMap(regionId))) return;
   state.stageMapRegionId = regionId;
   hideStageConfirm();
 }
 
 function syncStageButtons() {
   const region = stageMapRegions[state.stageMapRegionId];
+  if (!els.stageScreen.hidden) els.stageScreen.style.setProperty("--map-background", `url("${new URL(region.image, document.baseURI).href}")`);
   els.stageMapPanel.dataset.region = state.stageMapRegionId;
   els.stageMapPanel.setAttribute("aria-label", `${region.name}の地図`);
-  if (els.stageMapImage.getAttribute("src") !== region.image) els.stageMapImage.setAttribute("src", region.image);
+  if (!els.stageScreen.hidden && els.stageMapImage.getAttribute("src") !== region.image) els.stageMapImage.setAttribute("src", region.image);
   els.stageRegionSwitch.querySelectorAll("[data-region]").forEach(button => {
     button.setAttribute("aria-pressed", String(button.dataset.region === state.stageMapRegionId));
   });
@@ -1224,6 +1250,7 @@ function showStartScreen() {
 
 function showStageSelect() {
   if (!assetLoadingState.ready || activeSaveSlot === null) return;
+  if (ensureGameAssets(imageSources([stageMapRegions[state.stageMapRegionId].image]), showStageSelect)) return;
   setStoryPhase("none");
   state.pendingExperience = 0;
   invalidateBattleGeneration();
@@ -1244,6 +1271,7 @@ function showStageSelect() {
   syncStageButtons();
   els.stageConfirm.hidden = true;
   showScreen("stage");
+  syncStageButtons();
   focusStageSurface();
 }
 
@@ -1269,6 +1297,7 @@ function showMenuScreen(screen) {
 }
 
 function showHomeScreen() {
+  if (ensureGameAssets(imageSources(["src/assets/images/backgrounds/status/base_interior.webp"]), showHomeScreen)) return;
   const fromStatus = !els.statusScreen.hidden;
   showMenuScreen("home");
   (fromStatus ? els.homeStatusButton : els.homeWeaponsButton).focus({ preventScroll: true });
@@ -1305,8 +1334,12 @@ function updateWeaponEquipGuide() {
 }
 
 function showWeaponScreen() {
+  if (ensureGameAssets(imageSources(["src/assets/images/backgrounds/status/base_interior.webp"]), showWeaponScreen)) return;
   state.weaponEquipGuideId = getPendingWeaponEquipId();
+  weaponMenuState.selectedId = state.weaponEquipGuideId || state.weaponId;
+  weaponMenuState.loadingSrc = "";
   showMenuScreen("weapons");
+  updateWeaponDetails();
   const selected = els.weaponPanel.querySelector("input[name='weapon']:checked:not(:disabled)");
   const recommended = state.weaponEquipGuideId === "swordShield" ? els.weaponSwordShield
     : state.weaponEquipGuideId === "dualBlades" ? els.weaponDualBlades
@@ -1334,6 +1367,7 @@ function updateSkillTutorial() {
 }
 
 function showStatusScreen() {
+  if (ensureGameAssets(imageSources(["src/assets/images/backgrounds/status/base_interior.webp"]), showStatusScreen)) return;
   state.skillGuideActive = state.skillTutorialPending;
   showMenuScreen("status");
   els.statusPanel.scrollTop = 0;
@@ -1363,6 +1397,7 @@ function selectWeapon(weaponId) {
   }
 
   state.weaponId = weaponId;
+  weaponMenuState.selectedId = weaponId;
   if (weaponId === "sword") state.swordEquipPending = false;
   if (weaponId === "greatsword") state.greatswordEquipPending = false;
   if (weaponId === "dualBlades") state.dualBladesEquipPending = false;
@@ -1391,7 +1426,8 @@ function getEnemyFrames(enemyType, animationName) {
 }
 
 function updateEnemyFrame(enemy) {
-  const frames = getEnemyFrames(enemy.type, enemy.animation);
+  const visualAnimation = enemy.animation === "idle" && isEnemyWindingUp(enemy) ? "windup" : enemy.animation;
+  const frames = getEnemyFrames(enemy.type, visualAnimation);
 
   if (!frames.length) {
     return;
@@ -1598,7 +1634,9 @@ function clearBossIntro() {
 }
 
 function renderWord() {
+  updateDualBladePreview();
   syncFlickInput();
+  updateGuardHud();
   const selectedEnemy = performance.now() < state.playerAttackReadyAt ? null : getCurrentEnemy();
 
   if (!selectedEnemy) {
@@ -1776,11 +1814,6 @@ function createEnemyElement(enemy) {
       <span class="enemy-word-translation"></span>
       <span class="enemy-word-target"><span class="enemy-word-typed"></span><span class="enemy-word-remaining"></span></span>
     </div>
-    ${enemy.attackStyle === "charge" ? `
-    <div class="enemy-charge" role="meter" aria-label="キノコの攻撃準備" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-      <span class="enemy-charge-label"></span>
-      <div class="enemy-charge-track"><i></i></div>
-    </div>` : ""}
     <div class="character-hp enemy-hp">
       <span>ENEMY</span>
       <div class="character-hp-track" role="meter" aria-label="Enemy HP" aria-valuemin="0">
@@ -1798,9 +1831,7 @@ function createEnemyElement(enemy) {
   enemy.hpFill = element.querySelector(".character-hp-track i");
   enemy.hpTrack = element.querySelector(".character-hp-track");
   if (enemy.attackStyle === "charge") {
-    enemy.chargeMeter = element.querySelector(".enemy-charge");
-    enemy.chargeLabel = element.querySelector(".enemy-charge-label");
-    enemy.chargeFill = element.querySelector(".enemy-charge-track i");
+    element.setAttribute("role", "group");
   }
   enemy.wordTranslationEl = element.querySelector(".enemy-word-translation");
   enemy.wordTypedEl = element.querySelector(".enemy-word-typed");
@@ -1871,10 +1902,10 @@ function setTargetEnemy(enemy) {
   renderWord();
 }
 
-function setNextWord(enemy) {
+function chooseEnemyWord(enemy) {
   const weapon = getWeaponDefinition(enemy.weaponId);
   const wordLength = getAdjustedWordLengthSettings(weapon.id);
-  const next = weapon.id === "unarmed"
+  return weapon.id === "unarmed"
     ? wordSets.unarmed[enemy.tutorial.punches % wordSets.unarmed.length]
     : chooseWord({
       minLength: wordLength.normalMin,
@@ -1882,6 +1913,14 @@ function setNextWord(enemy) {
       useShortestInputLength: Boolean(weapon.useShortestInputLength),
       wordList: weapon.words,
     });
+}
+
+function setNextWord(enemy) {
+  const reserved = enemy.weaponId === "dualBlades"
+    ? enemy.nextWordPreview || (!enemy.word ? state.dualNextSpawnWord : null) : null;
+  const next = reserved || chooseEnemyWord(enemy);
+  if (reserved === state.dualNextSpawnWord) state.dualNextSpawnWord = null;
+  enemy.nextWordPreview = null;
   enemy.word = next.text;
   enemy.readingOverride = next.reading || "";
   enemy.inputRevision = (enemy.inputRevision || 0) + 1;
@@ -1906,10 +1945,12 @@ function createEnemy(wave, index) {
     name: wave.name || "",
     slot,
     attackPower: normalizeAttackPower(wave.attackPower),
-    approachMs: wave.approachMs ?? attackMs,
+    approachMs: randomizeEnemyAttackMs(wave.approachMs ?? attackMs),
     repeatAttackMs: wave.repeatAttackMs ?? repeatAttackMs,
     attackStyle: wave.attackStyle || "melee",
-    chargeDurationMs: Math.max(1000, wave.chargeMs ?? 6000),
+    chargeAttackLabel: wave.chargeAttackLabel || "胞子攻撃！",
+    baseChargeDurationMs: Math.max(1000, wave.chargeMs ?? 6000),
+    chargeDurationMs: randomizeEnemyAttackMs(Math.max(1000, wave.chargeMs ?? 6000)),
     chargeElapsedMs: 0,
     fixedProgress: wave.fixedProgress ?? 0.15,
     boss: Boolean(wave.boss),
@@ -1956,6 +1997,7 @@ function createEnemy(wave, index) {
 }
 
 function clearEnemies() {
+  state.dualNextSpawnWord = null;
   clearBossIntro();
   clearEnemyAnimationTimers();
   state.activeEnemies = [];
@@ -2106,14 +2148,15 @@ function enemyAttack(enemy) {
     aimEnemySpores(enemy);
   } else if (enemy.progress < 1) return;
   enemy.atBase = enemy.attackStyle !== "charge";
-  enemy.nextAttackAt = performance.now() + enemyAttackRecoveryMs + enemy.repeatAttackMs;
+  enemy.nextAttackAt = performance.now() + enemyAttackRecoveryMs + randomizeEnemyAttackMs(enemy.repeatAttackMs);
   const damage = rollAttackDamage(enemy.attackPower);
   const guarded = state.guarding && canPlayerGuard();
-  const receivedDamage = guarded ? Math.round(damage * getActiveWeapon().guardDamageMultiplier) : damage;
+  const receivedDamage = guarded ? Math.ceil(damage * getActiveWeapon().guardDamageMultiplier) : damage;
   state.hp = Math.max(0, state.hp - receivedDamage);
   if (guarded) playGuardImpact();
   if (receivedDamage > 0) {
-    window.GAME_SOUND.play("hurt");
+    if (!guarded) window.GAME_SOUND.play("hurt");
+    playPlayerDamageEffect(receivedDamage, guarded);
     state.combo = 0;
     resetSuccessStreak();
     state.perfect = false;
@@ -2223,6 +2266,7 @@ function useSpecialMove() {
 
   const skill = getActiveSkill();
   if (!skill.effects.length || skill.effects.some(effect => !skillEffectHandlers[effect.type])) return false;
+  if (skill.target === "self") return useHealingSkill(skill);
   const targets = getSkillTargets(skill);
   if (!targets.length || targets.some((enemy) => enemy.resolving)) {
     updateHud();
@@ -2468,6 +2512,8 @@ function startGame(stageId = state.stageId) {
     return;
   }
 
+  if (ensureGameAssets(collectStageImageSources(resolvedStageId), () => startGame(resolvedStageId))) return;
+
   invalidateBattleGeneration();
   const needsIntroduction = Boolean(stage.storyIntro && (stage.tutorial || !state.equipmentTutorialCompleted));
   state.prologueSceneIndex = 0;
@@ -2477,7 +2523,7 @@ function startGame(stageId = state.stageId) {
   snapshotAttackCooldowns();
   state.stageMapRegionId = stage.regionId;
   els.arena.dataset.stage = resolvedStageId;
-  const backgroundUrl = new URL(stage.background || "src/assets/images/backgrounds/stages/crab_shore.png", document.baseURI);
+  const backgroundUrl = new URL(stage.background || "src/assets/images/backgrounds/stages/crab_shore.webp", document.baseURI);
   els.arena.style.setProperty("--stage-background", `url("${backgroundUrl.href}")`);
   state.pendingStageId = "";
   state.playableEnemyWaves = buildPlayableEnemyWaves(stage.waves);
@@ -2547,7 +2593,7 @@ function clearTypingMissEffect() {
   state.typingMissTimerId = 0;
   state.typingMissShakeTimerId = 0;
   els.typingMissEffect.classList.remove("is-active");
-  els.arena.classList.remove("typing-miss-shake");
+  els.typingStatus.classList.remove("typing-miss-shake");
 }
 
 function playTypingMissEffect() {
@@ -2556,10 +2602,10 @@ function playTypingMissEffect() {
   // Restart the feedback for a fresh miss, without moving the input controls.
   void els.typingMissEffect.offsetWidth;
   els.typingMissEffect.classList.add("is-active");
-  els.arena.classList.add("typing-miss-shake");
+  els.typingStatus.classList.add("typing-miss-shake");
   state.typingMissShakeTimerId = scheduleBattleTimeout(() => {
     state.typingMissShakeTimerId = 0;
-    els.arena.classList.remove("typing-miss-shake");
+    els.typingStatus.classList.remove("typing-miss-shake");
   }, 240);
   state.typingMissTimerId = scheduleBattleTimeout(() => {
     state.typingMissTimerId = 0;
@@ -2693,6 +2739,13 @@ function handleTypingKeydown(event) {
   }
 
   const letter = getTypingCharacterFromKey(event);
+  // A hidden prompt cannot own input. In particular, a held final key must
+  // not repeat into the next word after the cooldown finishes.
+  if ((letter || event.key === "Backspace") && (performance.now() < state.playerAttackReadyAt
+      || (letter && event.repeat))) {
+    event.preventDefault();
+    return;
+  }
   if (state.guarding) {
     if (letter || event.key === "Backspace") event.preventDefault();
     return;
@@ -2751,6 +2804,8 @@ els.statusPanel.addEventListener("click", (event) => {
 
   changePlayerStat(button.dataset.stat, Number(button.dataset.statDelta || 0));
 });
+els.weaponEquipButton.addEventListener("click", equipPreviewedWeapon);
+els.weaponPreviewRetry.addEventListener("click", loadWeaponPreviewImage);
 els.weaponPanel.addEventListener("change", (event) => {
   const input = event.target.closest("input[name='weapon']");
 
@@ -2758,7 +2813,7 @@ els.weaponPanel.addEventListener("change", (event) => {
     return;
   }
 
-  selectWeapon(input.value);
+  previewWeapon(input.value);
 });
 els.startButton.addEventListener("click", () => {
   if (state.running) {

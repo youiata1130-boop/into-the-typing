@@ -13,7 +13,7 @@ const progress = extra => ({
 const saved = extra => ({ "into-the-typing.player.v2": JSON.stringify(progress(extra)) });
 const battle = (extra, touch = false, stage = "flower_meadow") => {
   const game = createGame(saved(extra), { touch });
-  game.run(`startGame("${stage}")`);
+  game.run(`randomizeEnemyAttackMs = baseMs => baseMs; startGame("${stage}")`);
   return game;
 };
 const fillWave = game => game.advance(game.run("startNoticeMs + (chooseEnemyWave().maxActive - 1) * chooseEnemyWave().spawnIntervalMs"));
@@ -273,7 +273,7 @@ test("all five bees clear once, awarding 100 EXP and dual blades on desktop and 
 });
 
 test("a skill clears four bees together without duplicating the spawn queue or rewards", () => {
-  const game = battle({ clearedStages: [...cleared, "flower_meadow"] }, false, "swarm_meadow");
+  const game = battle({ weaponId: "greatsword", clearedStages: [...cleared, "flower_meadow"] }, false, "swarm_meadow");
   fillWave(game);
   game.run("state.specialGauge = 100; useSpecialMove()");
   game.advance(420);
@@ -315,7 +315,7 @@ test("leaving, retrying and losing cancel old spawns and discard partial rewards
 test("bee and dual-blade illustrations exist and preload before play", () => {
   const game = createGame();
   const urls = game.snapshot("collectGameImageSources()");
-  for (const path of ["enemies/bee/level_1/idle/frame_01.png", "enemies/bee/boss/idle/frame_01.png", "items/weapons/dual_blades.png", "player/dual_blades/idle/frame_01.png", "player/dual_blades/attack/frame_01.png"]) {
+  for (const path of ["enemies/bee/level_1/idle/frame_01.webp", "enemies/bee/boss/idle/frame_01.webp", "items/weapons/dual_blades.webp", "player/dual_blades/idle/frame_01.webp", "player/dual_blades/attack/frame_01.webp"]) {
     assert.ok(urls.some(url => url.includes(path)));
     assert.ok(existsSync(new URL("../../../src/assets/images/" + path, import.meta.url)));
   }

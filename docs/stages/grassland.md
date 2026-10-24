@@ -20,9 +20,9 @@
 
 2026-10-09、組み込み ImageGen で新規生成。原本を加工せずコピー。
 
-- 蛇: `src/assets/images/enemies/snake/level_1/idle/frame_01.png`
-- 蛇の王様: `src/assets/images/enemies/snake/boss/idle/frame_01.png`
-- 草原: `src/assets/images/backgrounds/stages/grassland.png`
+- 蛇: `src/assets/images/enemies/snake/level_1/idle/frame_01.webp`
+- 蛇の王様: `src/assets/images/enemies/snake/boss/idle/frame_01.webp`
+- 草原: `src/assets/images/backgrounds/stages/grassland.webp`
 
 ## 最終プロンプト
 

@@ -1,15 +1,15 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { createGame } from "../../helpers/game.mjs";
 
 test("a new adventure shows departure, storm and island one page at a time while battle stays paused", () => {
   const game = createGame({}, { touch: true });
   game.run("startGame()");
   const scenes = [
-    { title: "海への出発", text: /少年.*いかだ.*冒険/s, image: /story\/raft_departure\.png$/ },
-    { title: "突然の嵐", text: /嵐.*大波/s, image: /story\/raft_storm\.png$/ },
-    { title: "見知らぬ浜辺", text: /無人島.*浜辺/s, image: /stages\/crab_shore\.png$/ },
+    { title: "海への出発", text: /少年.*いかだ.*冒険/s, image: /story\/raft_departure\.webp$/ },
+    { title: "突然の嵐", text: /嵐.*大波/s, image: /story\/raft_storm\.webp$/ },
+    { title: "見知らぬ浜辺", text: /無人島.*浜辺/s, image: /stages\/crab_shore\.webp$/ },
   ];
   for (const [index, scene] of scenes.entries()) {
     assert.equal(game.run("els.prologueTitle.textContent"), scene.title);
@@ -95,10 +95,9 @@ test("existing progressed saves skip the added prologue without changing their p
   }
 });
 
-test("every illustrated prologue scene is preloaded and exists as a local project asset", () => {
+test("every illustrated prologue scene is in the first-stage manifest and exists as a local project asset", () => {
   const game = createGame();
-  const html = readFileSync(new URL("../../../index.html", import.meta.url), "utf8");
-  const preloads = [...html.matchAll(/<link\b[^>]*rel="preload"[^>]*href="([^"]+)"/g)].map(match => match[1]);
+  const preloads = game.snapshot('collectStageImageSources("forest_path")').map(src => new URL(src).pathname.slice(1));
   for (const scene of game.snapshot("prologueScenes")) {
     assert.ok(preloads.includes(scene.image), scene.image + " must preload before play");
     assert.ok(existsSync(new URL("../../../" + scene.image, import.meta.url)), scene.image);
