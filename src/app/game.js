@@ -2385,7 +2385,7 @@ function defeatEnemy(enemy) {
   updateHud();
   flushBufferedInput();
 
-  if (state.cleared >= state.roundLimit) {
+  if (state.cleared >= state.roundLimit && !getStageDefinition(state.stageId).capture) {
     scheduleBattleTimeout(() => finishGame(true), 620);
     return;
   }
@@ -2407,6 +2407,8 @@ function finishGame(cleared, failureReason = "") {
   if (!state.running || (cleared && state.cleared < state.roundLimit)) {
     return;
   }
+  // Capturing stages award the clear only after the final escape animation.
+  if (cleared && getStageDefinition(state.stageId).capture && !mountainCapture.completed) return;
 
   setStoryPhase("none");
   const t = labels();

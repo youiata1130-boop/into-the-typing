@@ -19,12 +19,22 @@ function battle({ touch = false, weaponId = "swordShield", unlocked = true, pass
   return game;
 }
 function capture(game) {
-  // Real defeat/removal callbacks must enter the event before the next wave spawns.
-  for (let index = 0; index < 2; index++) {
+  // Capture must wait for every enemy, including the final removal animation.
+  for (let index = 0; index < 5; index++) {
+    assert.equal(game.run('isMountainCaptureActive()'), false);
     game.run('{ const enemy = getCurrentEnemy(); enemy.hp = 0; defeatEnemy(enemy); }');
-    game.advance(index ? 620 : 900);
+    if (index === 4) {
+      game.advance(619);
+      assert.equal(game.run('isMountainCaptureActive()'), false);
+      game.advance(1);
+    } else game.advance(900);
   }
   assert.equal(game.run('isMountainCaptureActive()'), true);
+  assert.equal(game.run('state.running'), true);
+  assert.equal(game.run('state.cleared'), 5);
+  assert.equal(game.run('state.pendingExperience'), 460);
+  assert.equal(game.savedProgress().totalExperience, 2850);
+  assert.ok(!game.savedProgress().clearedStages.includes('mountain_path'));
 }
 
 test("4-1 unlocks after 3-4 with its own mountain map, birds and stage-only capture artwork", () => {
@@ -56,6 +66,38 @@ test("birds approach the player and attack on arrival rather than charging in pl
   assert.ok(game.run('state.hp') < hp);
 });
 
+for (const [method, weaponId] of [['attack', 'swordShield'], ['counter', 'sword'], ['skill', 'greatsword']]) {
+  test(`a final ${method} enters capture instead of prematurely clearing or saving rewards`, () => {
+    const game = battle({ weaponId });
+    for (let index = 0; index < 4; index++) {
+      game.run('{const enemy = getCurrentEnemy(); enemy.hp = 0; defeatEnemy(enemy)}');
+      game.advance(900);
+      assert.equal(game.run('isMountainCaptureActive()'), false);
+    }
+    game.run('getCurrentEnemy().hp = 1');
+    if (method === 'attack') game.run('applyTypedValue(getInputEnemy(), getInputEnemy().matchedWord)');
+    if (method === 'counter') {
+      game.run('beginPlayerCounter(); setEnemyProgress(getCurrentEnemy(), 1); enemyAttack(getCurrentEnemy())');
+    }
+    if (method === 'skill') {
+      game.run('state.specialGauge = 100');
+      assert.equal(game.run('useSpecialMove()'), true);
+    }
+    game.advance(1200);
+    assert.equal(game.run('state.cleared'), 5);
+    assert.equal(game.run('isMountainCaptureActive()'), true);
+    game.run('finishGame(true)');
+    assert.equal(game.run('state.running'), true);
+    assert.equal(game.savedProgress().totalExperience, 2850);
+    assert.ok(!game.savedProgress().clearedStages.includes('mountain_path'));
+    game.run('applyTypedValue(getInputEnemy(), getInputEnemy().matchedWord)');
+    game.advance(650);
+    assert.equal(game.run('state.running'), false);
+    assert.equal(game.savedProgress().totalExperience, 3310);
+    assert.ok(game.savedProgress().clearedStages.includes('mountain_path'));
+  });
+}
+
 for (const weaponId of ['sword', 'greatsword', 'dualBlades', 'swordShield']) {
   test(`${weaponId}: capture uses the full passage and blocks weapon actions without spending the gauge`, () => {
     const game = battle({ weaponId });
@@ -81,7 +123,7 @@ for (const weaponId of ['sword', 'greatsword', 'dualBlades', 'swordShield']) {
   });
 }
 
-for (const passageId of passageIds) for (const touch of [false, true]) test(`${passageId}: ${touch ? 'flick' : 'keyboard'} completion escapes once, resumes the next wave and saves 460 EXP on clear`, () => {
+for (const passageId of passageIds) for (const touch of [false, true]) test(`${passageId}: ${touch ? 'flick' : 'keyboard'} final escape clears the stage and saves 460 EXP once`, () => {
   const game = battle({ touch, passageId });
   capture(game);
   const passage = game.snapshot(`capturePassages[${JSON.stringify(passageId)}]`);
@@ -105,21 +147,21 @@ for (const passageId of passageIds) for (const touch of [false, true]) test(`${p
     }
   }
   assert.equal(game.run('captureUi.heading.textContent'), '脱出！');
-  assert.equal(game.run('state.cleared'), 2);
+  assert.equal(game.run('state.cleared'), 5);
   assert.equal(game.run('state.hp'), hp);
   assert.equal(game.run('state.specialGauge'), gauge);
-  assert.equal(game.run('state.pendingExperience'), 160);
+  assert.equal(game.run('state.pendingExperience'), 460);
+  game.run('finishGame(true)');
+  assert.equal(game.run('state.running'), true);
+  assert.equal(game.savedProgress().totalExperience, 2850);
   game.advance(1000);
   assert.equal(game.run('isMountainCaptureActive()'), false);
-  assert.equal(game.run('getCurrentEnemy().type'), 'mountain_bird_level_1');
-  assert.equal(game.run('state.currentWaveIndex'), 1);
-  for (let index = 0; index < 3; index++) {
-    game.run('{const enemy = getCurrentEnemy(); enemy.hp = 0; defeatEnemy(enemy)}');
-    game.advance(900);
-  }
+  assert.equal(game.run('getCurrentEnemy()'), null);
   assert.equal(game.run('state.running'), false);
+  assert.equal(game.run('els.gameNotice.dataset.kind'), 'clear');
   assert.equal(game.savedProgress().totalExperience, 3310);
   assert.ok(game.savedProgress().clearedStages.includes('mountain_path'));
+  game.run('finishGame(true)');
   game.advance(31000);
   assert.equal(game.savedProgress().totalExperience, 3310);
 });
@@ -178,7 +220,7 @@ test("damaged or unavailable passage storage does not prevent capture and variet
   assert.notEqual(game.run('getInputEnemy().passageId'), previous);
 });
 
-test("an unfinished passage fails at exactly 30 seconds and grants no partial EXP", () => {
+test("an unfinished final passage fails at exactly 30 seconds without granting a clear or EXP", () => {
   const game = battle();
   capture(game);
   game.run('applyTypedValue(getInputEnemy(), "ta")');
@@ -203,8 +245,9 @@ test("late input cannot beat an expired deadline, while input just before it can
   timely.advance(29999);
   timely.run('applyTypedValue(getInputEnemy(), getInputEnemy().matchedWord)');
   timely.advance(1000);
-  assert.equal(timely.run('state.running'), true);
-  assert.equal(timely.run('state.currentWaveIndex'), 1);
+  assert.equal(timely.run('state.running'), false);
+  assert.equal(timely.savedProgress().totalExperience, 3310);
+  assert.ok(timely.savedProgress().clearedStages.includes('mountain_path'));
 });
 
 test("leaving and restarting clears capture, input and old deadline callbacks", () => {
@@ -219,4 +262,19 @@ test("leaving and restarting clears capture, input and old deadline callbacks", 
   capture(game);
   assert.equal(game.run('getInputEnemy().typed'), '');
   assert.equal(game.run('captureUi.time.textContent'), '残り30秒');
+});
+
+test("leaving during the final escape animation cannot award rewards to a restarted battle", () => {
+  const game = battle();
+  capture(game);
+  game.run('applyTypedValue(getInputEnemy(), getInputEnemy().matchedWord)');
+  game.advance(100);
+  game.run('interruptGame(); startGame("mountain_path")');
+  game.advance(2000);
+  assert.equal(game.run('state.running'), true);
+  assert.equal(game.run('state.cleared'), 0);
+  assert.equal(game.run('state.pendingExperience'), 0);
+  assert.equal(game.run('isMountainCaptureActive()'), false);
+  assert.equal(game.savedProgress().totalExperience, 2850);
+  assert.ok(!game.savedProgress().clearedStages.includes('mountain_path'));
 });

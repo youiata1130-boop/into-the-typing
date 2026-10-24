@@ -88,8 +88,8 @@ function tickMountainCapture() {
 
 function tryStartMountainCapture() {
   const config = getStageDefinition(state.stageId).capture;
-  if (!state.running || !config || mountainCapture.completed || state.activeEnemies.length
-      || state.cleared !== config.afterDefeats) return false;
+  if (!state.running || !config || mountainCapture.active || mountainCapture.completed || state.activeEnemies.length
+      || state.cleared !== state.roundLimit) return false;
   const selection = chooseCapturePassage(config.passageIds);
   if (!selection) return false;
   const { id: passageId, passage } = selection;
@@ -101,7 +101,7 @@ function tryStartMountainCapture() {
   clearEnemyActionStop();
   clearNoticeTimer();
   hideGameNotice();
-  mountainCapture.active = mountainCapture.completed = true;
+  mountainCapture.active = true;
   mountainCapture.durationMs = config.durationMs;
   mountainCapture.deadline = performance.now() + config.durationMs;
   const inputs = getWordInputs(passage);
@@ -138,12 +138,11 @@ function escapeMountainCapture() {
   els.battleScreen.classList.add("is-escaping");
   window.GAME_SOUND.play("defeat");
   mountainCapture.escapeTimerId = scheduleBattleTimeout(() => {
+    mountainCapture.completed = true;
     clearMountainCapture(false);
     clearInputBuffer();
     state.selectedEnemyId = "";
-    queueNextEnemy();
-    updateHud();
-    renderWord();
+    finishGame(true);
     scheduleBattleLayout();
   }, 650);
 }
