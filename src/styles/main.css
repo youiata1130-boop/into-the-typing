@@ -5821,9 +5821,12 @@ html[data-flick-input="true"] .skill-panel kbd { display: none; }
 .online-head h1 { margin: 0; font-size: clamp(22px, 4vw, 30px); }
 .online-screen button { min-height: 44px; padding: 9px 18px; border: 1px solid #9aafb8; border-radius: 8px; background: #fff; color: #223047; font-weight: 700; cursor: pointer; }
 .online-screen button:disabled { opacity: .55; cursor: default; }
-.online-screen button:focus-visible, .online-screen input:focus-visible { outline: 3px solid #1f7a8c; outline-offset: 2px; }
+.online-screen button:focus-visible, .online-screen input:focus-visible, .online-screen select:focus-visible { outline: 3px solid #1f7a8c; outline-offset: 2px; }
+.online-setup { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 12px; max-width: 440px; margin: 20px auto 12px; font-size: 18px; font-weight: 700; }
+.online-setup select { min-width: 0; min-height: 44px; padding: 8px; border: 1px solid #9aafb8; border-radius: 8px; background: #fff; color: #223047; font: inherit; }
+.online-setup select:disabled { color: #52636d; background: #e6edef; opacity: 1; }
 .online-screen .online-primary { background: #226e7d; color: #fff; border-color: #14505d; }
-.online-lobby { display: grid; gap: 14px; max-width: 440px; margin: clamp(20px, 7vh, 70px) auto; padding: 24px; border: 1px solid #bacbd1; border-radius: 14px; background: #ffffffed; box-shadow: 0 10px 30px #22304714; }
+.online-lobby { display: grid; gap: 14px; max-width: 440px; margin: 16px auto; padding: 24px; border: 1px solid #bacbd1; border-radius: 14px; background: #ffffffed; box-shadow: 0 10px 30px #22304714; }
 .online-lobby label { font-weight: 700; font-size: 18px; }
 .online-lobby input { min-width: 0; width: 100%; padding: 12px; border: 1px solid #9aafb8; border-radius: 8px; font: inherit; font-size: 20px; background: #fff; color: #223047; }
 .online-rules { display: flex; justify-content: space-around; gap: 16px; padding: 8px 0; font-size: 18px; }
@@ -5837,7 +5840,7 @@ html[data-flick-input="true"] .skill-panel kbd { display: none; }
 .online-status:empty { display: none; }
 .online-arena { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; }
 .online-fighters { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-column: 1 / -1; gap: 18px; }
-.online-fighter { display: flex; align-items: center; gap: 10px; overflow: hidden; padding: 10px; min-width: 0; min-height: 155px; border: 2px solid #91bdcd; background: #f9feff; border-radius: 12px; }
+.online-fighter { position: relative; isolation: isolate; display: flex; align-items: center; gap: 10px; overflow: hidden; padding: 10px; min-width: 0; min-height: 155px; border: 2px solid #91bdcd; background: #f9feff; border-radius: 12px; }
 .online-fighter > div { flex: 1; min-width: 0; }
 .online-fighter h2 { margin: 0 0 8px; font-size: 18px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .online-fighter strong { font-size: clamp(18px, 2.6vw, 27px); font-variant-numeric: tabular-nums; }
@@ -5854,6 +5857,23 @@ html[data-flick-input="true"] .skill-panel kbd { display: none; }
 .online-opponent, .online-input { padding: 18px; min-width: 0; border: 2px solid #c7d8dd; border-radius: 12px; background: #fff; }
 .online-opponent { border-color: #e1b68f; background: #fffbf6; }
 .online-opponent h2, .online-input h2 { margin: 0; font-size: 18px; }
+.online-input-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; }
+.online-screen .online-defense { padding: 6px 10px; font-size: 16px; min-height: 36px; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; background: #e2f4fb; border-color: #3693b8; white-space: nowrap; }
+.online-defense[aria-pressed="true"] { box-shadow: inset 0 0 0 3px #238db9; }
+.online-next { margin: 8px 0 0; font-size: 16px; line-height: 1.3; overflow-wrap: anywhere; color: #3b5968; }
+.online-opponent.is-striking { background: #ffe0b2; border-color: #de6c16; box-shadow: inset 0 0 0 3px #e9943c; }
+.online-fighter.is-winding { border-color: #d45b22; box-shadow: inset 0 0 18px #ed893d66; }
+.online-fighter.is-guarding { border-color: #329dce; box-shadow: inset 0 0 22px #44b4ef66; }
+.online-fighter.is-countering { border-color: #9162d2; box-shadow: inset 0 0 24px #a46de577; }
+.online-defense-effect { position: absolute; inset: 0; z-index: 2; pointer-events: none; --effect-color: #1c9de3; background: radial-gradient(ellipse, #ffffffb0, transparent 72%); animation: onlineDefense .65s ease-out both; }
+.online-defense-effect::before { content: ""; position: absolute; inset: 6px 12%; border: 7px solid var(--effect-color); border-radius: 50% 50% 42% 42%; box-shadow: 0 0 18px var(--effect-color), inset 0 0 16px var(--effect-color); }
+.online-defense-effect[data-effect="justGuard"] { --effect-color: #ffbb00; background: repeating-conic-gradient(from 10deg at 50% 50%, transparent 0deg 20deg, #ffd648b0 20deg 24deg), radial-gradient(ellipse, #ffffffe0, transparent 74%); }
+.online-defense-effect[data-effect="justGuard"]::before { inset: 3px 8%; border-width: 10px; border-style: double; }
+.online-defense-effect[data-effect="counter"] { --effect-color: #9857eb; background: linear-gradient(140deg, transparent 42%, #f9e8ff 46% 52%, #b878ef 53% 56%, transparent 60%); }
+.online-defense-effect[data-effect="counter"]::before { inset: 10px 8%; border-radius: 0; border-width: 0 0 7px 7px; transform: skew(-25deg); }
+.online-fighter[data-weapon="dualBlades"].is-attacking img { animation: onlineFlurry .35s ease-out; }
+@keyframes onlineDefense { 0% { opacity: 0; transform: scale(.55); } 20%, 65% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1.15); } }
+@keyframes onlineFlurry { 25% { translate: 12px -5px; } 50% { translate: -6px 0; } 75% { translate: 12px 5px; } }
 .online-progress-head { flex-wrap: wrap; justify-content: space-between; gap: 8px; }
 .online-progress-head time { font-size: 18px; font-variant-numeric: tabular-nums; color: #52636d; }
 .online-word { font-size: clamp(24px, 3.5vw, 36px); font-weight: 800; margin: 18px 0 12px; overflow-wrap: anywhere; }
@@ -5906,6 +5926,7 @@ html[data-flick-input="true"] .skill-panel kbd { display: none; }
   .online-fighter h2 { font-size: 16px; }
   .online-fighter strong { font-size: 18px; }
   .online-input { grid-column: 2; grid-row: 1 / 3; padding: 8px; }
+  .online-input[data-weapon="dualBlades"] .online-input-head { display: none; }
   .online-opponent { grid-column: 1; padding: 8px; }
   .online-word { font-size: 24px; margin: 4px 0; }
   .online-letters { font-size: 20px; }
@@ -5923,12 +5944,15 @@ html[data-flick-input="true"] .skill-panel kbd { display: none; }
   .online-arena { gap: 6px; }
   .online-opponent, .online-input { padding: 7px; }
   .online-word { margin: 4px 0 2px; font-size: 22px; }
-  .online-opponent .online-word, .online-input > h2 { display: none; }
+  .online-opponent .online-word, .online-input-head h2 { display: none; }
+  .online-input-head:has(.online-defense[hidden]) { display: none; }
+  .online-next { margin-top: 3px; }
   .online-opponent progress { height: 18px; margin-top: 4px; }
   .online-entry { margin-top: 4px; }
   .online-keyboard { grid-template-rows: repeat(4, 38px); gap: 4px; margin-top: 4px; }
+  .online-input[data-weapon="dualBlades"] .online-keyboard { grid-template-rows: repeat(4, 34px); }
 }
-@media (prefers-reduced-motion: reduce) { .online-fighter, .online-fighter img { animation: none !important; } .online-screen progress::-webkit-progress-value { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .online-fighter, .online-fighter img, .online-defense-effect { animation: none !important; } .online-screen progress::-webkit-progress-value { transition: none; } }
 
 /* The captured hero hangs beneath the eagle's talons, above the mountain trail. */
 .capture-scene {

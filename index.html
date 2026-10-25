@@ -6,7 +6,7 @@
     <title>Into the Typing</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='52'%3E%E2%9A%94%EF%B8%8F%3C/text%3E%3C/svg%3E">
     <link rel="preload" as="image" href="src/assets/images/backgrounds/shared/typing_rpg_background.webp">
-    <link rel="stylesheet" href="src/styles/main.css?v=20261024-online-v1">
+    <link rel="stylesheet" href="src/styles/main.css?v=20261025-npc-v1">
   </head>
   <body>
     <section class="loading-screen" id="loadingScreen" aria-labelledby="loadingText" aria-busy="true">
@@ -26,6 +26,7 @@
             <button class="intro-start-button" id="introStartButton" type="button">初めから</button>
             <button class="intro-start-button" id="continueButton" type="button" disabled>続きから</button>
             <button class="intro-start-button" id="onlineButton" type="button">オンライン対戦</button>
+            <button class="intro-start-button" id="npcButton" type="button">NPC戦</button>
           </div>
         </div>
       </section>
@@ -36,10 +37,27 @@
           <h1 id="onlineTitle">オンライン対戦</h1>
           <button id="onlineBack" type="button">退出</button>
         </header>
+        <div class="online-setup" id="onlineSetup">
+          <label id="onlineBattleModeLabel" for="onlineBattleMode">対戦モード</label>
+          <select id="onlineBattleMode"><option value="simple">シンプル</option><option value="weapons">武器対戦</option></select>
+          <label id="onlineWeaponLabel" for="onlineWeapon" hidden>あなたの武器</label>
+          <select id="onlineWeapon" hidden><option value="sword">鉄の剣</option><option value="greatsword">大剣</option><option value="dualBlades">双剣</option><option value="swordShield">片手剣</option></select>
+          <label id="onlineHandicapRatioLabel" for="onlineHandicapRatio">HPハンデ</label>
+          <select id="onlineHandicapRatio"><option value="1">なし（1：1）</option><option value="1.1">1：1.1</option><option value="1.2">1：1.2</option><option value="1.3">1：1.3</option><option value="1.4">1：1.4</option><option value="1.5">1：1.5</option><option value="2">1：2</option><option value="2.5">1：2.5</option><option value="3">1：3</option></select>
+          <label id="onlineHandicapSeatLabel" for="onlineHandicapSeat" hidden>HPを増やす人</label>
+          <select id="onlineHandicapSeat" hidden><option id="onlineHandicapHost" value="0">部屋を作る人</option><option id="onlineHandicapGuest" value="1">参加する人</option></select>
+          <label id="npcWeaponLabel" for="npcWeapon" hidden>NPCの武器</label>
+          <select id="npcWeapon" hidden><option value="sword">鉄の剣</option><option value="greatsword">大剣</option><option value="dualBlades">双剣</option><option value="swordShield">片手剣</option></select>
+          <label id="npcHpLabel" for="npcHp" hidden>NPCのHP</label>
+          <select id="npcHp" hidden><option value="500">500</option><option value="1000" selected>1,000</option><option value="1500">1,500</option><option value="2000">2,000</option><option value="2500">2,500</option><option value="3000">3,000</option></select>
+          <label id="npcSpeedLabel" for="npcSpeed" hidden>NPCの入力速度</label>
+          <select id="npcSpeed" hidden><option value="1">1文字/秒</option><option value="2">2文字/秒</option><option value="3" selected>3文字/秒</option><option value="4">4文字/秒</option><option value="6">6文字/秒</option></select>
+        </div>
+        <button id="npcStart" class="online-primary online-ready" type="button" hidden>対戦開始</button>
         <div class="online-lobby" id="onlineLobby">
           <label for="onlineName">名前</label>
           <input id="onlineName" maxlength="20" autocomplete="off" value="プレイヤー">
-          <div class="online-rules"><span>体力 <strong>1,000</strong></span><span>攻撃 <strong>40</strong></span></div>
+          <div class="online-rules"><span>基準HP <strong>1,000</strong></span><span>攻撃 <strong>40</strong></span></div>
           <button id="onlineCreate" class="online-primary" type="button">部屋をつくる</button>
           <div class="online-join">
             <label for="onlineRoomInput">部屋番号</label>
@@ -52,30 +70,34 @@
         <div class="online-arena" id="onlineArena" hidden>
           <div class="online-fighters">
             <article class="online-fighter online-self" id="onlineSelf">
+              <span class="online-defense-effect" id="onlineSelfEffect" role="img" hidden></span>
               <img id="onlineSelfImage" alt="あなたの剣士">
               <div><h2 id="onlineSelfName">あなた</h2><strong id="onlineSelfHp">1000 / 1000</strong><progress id="onlineSelfBar" max="1000" value="1000" aria-label="あなたの体力"></progress></div>
             </article>
             <article class="online-fighter online-other" id="onlineOther">
+              <span class="online-defense-effect" id="onlineOtherEffect" role="img" hidden></span>
               <img id="onlineOtherImage" alt="相手の剣士">
               <div><h2 id="onlineOtherName">相手</h2><strong id="onlineOtherHp">1000 / 1000</strong><progress id="onlineOtherBar" max="1000" value="1000" aria-label="相手の体力"></progress></div>
             </article>
           </div>
-          <div class="online-opponent">
+          <div class="online-opponent" id="onlineOpponent">
             <div class="online-progress-head"><h2>相手の入力</h2><strong id="onlineOpponentCount">0文字</strong><time id="onlineClock" aria-label="対戦の残り時間">3:00</time></div>
             <p class="online-word" id="onlineOpponentTarget"></p>
             <p class="online-letters"><span id="onlineOpponentTyped" class="online-done"></span><span id="onlineOpponentRemaining"></span></p>
             <progress id="onlineOpponentProgress" max="1" value="0" aria-label="相手の入力進捗"></progress>
           </div>
           <div class="online-input" id="onlineInput" tabindex="-1">
-            <h2>あなたの入力</h2>
+            <div class="online-input-head"><h2>あなたの入力</h2><button class="online-defense" id="onlineDefense" type="button" hidden></button></div>
             <p class="online-word" id="onlineTarget"></p>
             <p class="online-letters"><span id="onlineTyped" class="online-done"></span><span id="onlineRemaining"></span></p>
-            <div class="online-entry" id="onlineEntry" hidden><output aria-label="入力中のかな"></output><button id="onlineErase" type="button" aria-label="1文字消す">⌫</button></div>
+            <p class="online-next" id="onlineNext" hidden></p>
+            <div class="online-entry" id="onlineEntry" hidden><button class="online-defense" id="onlineTouchDefense" type="button" hidden></button><output aria-label="入力中のかな"></output><button id="onlineErase" type="button" aria-label="1文字消す">⌫</button></div>
             <div class="online-keyboard" id="onlineKeyboard" role="group" aria-label="対戦用フリックキーボード" hidden></div>
           </div>
           <p class="online-banner" id="onlineBanner" role="status" hidden></p>
         </div>
         <button id="onlineReady" class="online-primary online-ready" type="button" hidden>準備完了にする</button>
+        <button id="npcSettings" class="online-ready" type="button" hidden>設定を変える</button>
         <div class="game-flick-popup online-flick-popup" id="onlineFlickPopup" aria-hidden="true" hidden></div>
       </section>
 
@@ -608,7 +630,7 @@
       <p class="save-error" id="progressSaveStatus" role="alert" hidden></p>
     </main>
 
-    <script src="src/data/words.js?v=20261024-thorn-depths-v1"></script>
+    <script src="src/data/words.js?v=20261025-everyday-words-v1"></script>
     <script src="src/data/capturePassages.js?v=20261024-passages-v2"></script>
     <script src="src/data/labels.js?v=20261024-enter-skill-v1"></script>
     <script src="src/config/weapons.js?v=20261024-greatsword-hero-v1"></script>
@@ -634,9 +656,10 @@
     <script src="src/app/enemyActionStop.js?v=20261024-dual-time-stop-v1"></script>
     <script src="src/app/attackBoost.js?v=20261024-shield-attack-boost-v1"></script>
     <script src="src/app/counter.js?v=20261024-mountain-v1"></script>
-    <script src="src/online/duel.js?v=20261024-online-v1"></script>
+    <script src="src/online/duel.js?v=20261025-npc-v1"></script>
     <script src="src/online/connection.js?v=20261024-online-v1"></script>
+    <script src="src/online/npc.js?v=20261025-npc-v1"></script>
     <script src="src/app/game.js?v=20261024-online-v1"></script>
-    <script src="src/online/play.js?v=20261024-online-v1"></script>
+    <script src="src/online/play.js?v=20261025-npc-v1"></script>
   </body>
 </html>

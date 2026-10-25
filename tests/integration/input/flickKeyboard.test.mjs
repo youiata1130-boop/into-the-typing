@@ -40,7 +40,7 @@ function typeKana(game, value) {
   }
 }
 
-test("all 223 playable prompts can be entered on the game keyboard without a conversion or a miss", () => {
+test("all playable prompts can be entered on the game keyboard without a conversion or a miss", () => {
   const list = createGame().snapshot("wordSets.ja.concat(wordSets.branch, wordSets.unarmed)");
   for (const word of list) {
     const game = battle(word);
