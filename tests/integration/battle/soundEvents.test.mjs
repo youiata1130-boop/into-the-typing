@@ -16,6 +16,7 @@ function battle(weaponId = "sword") {
     const target = getCurrentEnemy();
     target.hp = target.maxHp = 100;
   `);
+  game.advance(game.run("startNoticeMs"));
   return game;
 }
 

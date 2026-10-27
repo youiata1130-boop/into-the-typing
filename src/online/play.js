@@ -16,7 +16,8 @@
     input: $("onlineInput"), keyboard: $("onlineKeyboard"), entry: $("onlineEntry"), erase: $("onlineErase"),
     popup: $("onlineFlickPopup"), setup: $("onlineSetup"), battleMode: $("onlineBattleMode"),
     weapon: $("onlineWeapon"), weaponLabel: $("onlineWeaponLabel"), next: $("onlineNext"), opponent: $("onlineOpponent"),
-    defense: $("onlineDefense"), touchDefense: $("onlineTouchDefense"),
+    nextTranslation: $("onlineNextTranslation"), nextTarget: $("onlineNextTarget"),
+    defense: $("onlineDefense"), touchDefense: $("onlineTouchDefense"), damageRule: $("onlineDamageRule"),
     handicapRatio: $("onlineHandicapRatio"), handicapSeat: $("onlineHandicapSeat"), handicapSeatLabel: $("onlineHandicapSeatLabel"),
     handicapHost: $("onlineHandicapHost"), handicapGuest: $("onlineHandicapGuest"),
     title: $("onlineTitle"), battleModeLabel: $("onlineBattleModeLabel"), handicapRatioLabel: $("onlineHandicapRatioLabel"),
@@ -166,7 +167,7 @@
         value: session.match.players[1].value });
     } else if (packet.type === "input-rejected" && !session.host && packet.index === session.localIndex
         && packet.seq === session.seq && typeof packet.value === "string" && packet.value.length <= 40
-        && duel.targetFor(duel.wordFor(session.match, words, packet.index), session.mode, packet.value).startsWith(packet.value)) {
+        && duel.targetFor(duel.wordFor(session.match, words, packet.index, session.seat), session.mode, packet.value).startsWith(packet.value)) {
       session.localValue = session.kanaValue = packet.value; session.pending = false; render();
     } else if (packet.type === "weapon" && session.host) {
       if (duel.chooseWeapon(session.match, 1, packet.weaponId)) {
@@ -312,11 +313,11 @@
     if (session.match.battleMode === "weapons" && ((player.guarding && !releasing) || player.countering
         || (session.host && player.counterStartedAt !== null && performance.now() - player.counterStartedAt <= duel.rules.defenseWindowMs)
         || (session.defensePending && !releasing) || (session.host ? player.attackAt !== null : player.attackWaitMs !== null))) return false;
-    return session.localValue !== duel.targetFor(duel.wordFor(session.match, words, player.index), player.mode, session.localValue);
+    return session.localValue !== duel.targetFor(duel.wordFor(session.match, words, player.index, session.seat), player.mode, session.localValue);
   }
   function input(value) {
     if (!canType()) return false;
-    const match = session.match, player = match.players[session.seat], word = duel.wordFor(match, words, player.index);
+    const match = session.match, player = match.players[session.seat], word = duel.wordFor(match, words, player.index, session.seat);
     const target = duel.targetFor(word, player.mode, value);
     if (typeof value !== "string" || !target.startsWith(value)) { window.GAME_SOUND.play("miss"); return false; }
     const packet = { type: "input", match: match.id, index: player.index, seq: ++session.seq, value, pending: session.pending };
@@ -329,7 +330,7 @@
   }
   function applyKana(value) {
     if (!canType() || session.mode !== "kana") return false;
-    const word = duel.wordFor(session.match, words, session.localIndex);
+    const word = duel.wordFor(session.match, words, session.localIndex, session.seat);
     const parsed = { reading: word.reading };
     const pending = window.JAPANESE_INPUT.pendingPrefix(value, parsed);
     if (!word.reading.startsWith(value) && pending === null) { window.GAME_SOUND.play("miss"); return false; }
@@ -362,7 +363,7 @@
         || (session.opponent !== "npc" && !session.conn?.open)) return false;
     const player = match.players[session.seat];
     // Include kana which is still awaiting a dakuten/small-letter correction.
-    const partial = session.localValue && session.localValue !== duel.targetFor(duel.wordFor(match, words, player.index), player.mode, session.localValue);
+    const partial = session.localValue && session.localValue !== duel.targetFor(duel.wordFor(match, words, player.index, session.seat), player.mode, session.localValue);
     if (action === "guard-start" && player.weaponId === "greatsword" && (partial || session.pending)) return false;
     const packet = { type: "defense", match: match.id, seq: ++session.defenseSeq, action };
     if (session.host) {
@@ -391,6 +392,7 @@
     const match = session.match && (session.host ? duel.snapshot(session.match) : session.match);
     const npcMode = session.opponent === "npc";
     const busy = Boolean(session.peer || session.connectTimer), weaponMode = npcMode || (match?.battleMode || session.battleMode) === "weapons";
+    ui.damageRule.textContent = weaponMode ? "文字数に応じて変化" : String(duel.rules.damage);
     ui.title.textContent = npcMode ? "NPC戦" : "オンライン対戦";
     ui.battleMode.hidden = ui.battleModeLabel.hidden = npcMode;
     ui.handicapRatio.hidden = ui.handicapRatioLabel.hidden = npcMode;
@@ -430,21 +432,26 @@
       session.localValue = self.value; session.kanaValue = self.value; session.pending = false;
       session.seq = self.seq; cancelGesture();
     } else if (self.seq >= session.seq) session.localValue = self.value;
-    const selfWord = duel.wordFor(match, words, self.index), otherWord = duel.wordFor(match, words, other.index);
+    const selfWord = duel.wordFor(match, words, self.index, session.seat), otherWord = duel.wordFor(match, words, other.index, 1 - session.seat);
     const selfTarget = duel.targetFor(selfWord, self.mode, session.localValue), otherTarget = duel.targetFor(otherWord, other.mode, other.value);
-    ui.target.textContent = selfWord.text;
-    ui.typed.textContent = session.localValue; ui.remaining.textContent = selfTarget.slice(session.localValue.length);
-    ui.opponentTarget.textContent = otherWord.text;
-    ui.opponentTyped.textContent = other.value; ui.opponentRemaining.textContent = otherTarget.slice(other.value.length);
-    ui.opponentCount.textContent = `${other.value.length} / ${otherTarget.length}文字`;
-    ui.opponentProgress.max = otherTarget.length; ui.opponentProgress.value = other.value.length;
+    const showWords = match.phase === "fighting" || match.phase === "finished";
+    ui.target.textContent = showWords ? selfWord.text : "";
+    ui.typed.textContent = showWords ? session.localValue : "";
+    ui.remaining.textContent = showWords ? selfTarget.slice(session.localValue.length) : "";
+    ui.opponentTarget.textContent = showWords ? otherWord.text : "";
+    ui.opponentTyped.textContent = showWords ? other.value : "";
+    ui.opponentRemaining.textContent = showWords ? otherTarget.slice(other.value.length) : "";
+    ui.opponentCount.textContent = showWords ? `${other.value.length} / ${otherTarget.length}文字` : "";
+    ui.opponentProgress.max = showWords ? otherTarget.length : 1;
+    ui.opponentProgress.value = showWords ? other.value.length : 0;
     ui.opponent.classList.toggle("is-striking", weaponMode && other.attackWaitMs !== null);
     ui.input.classList.toggle("is-complete", session.localValue === selfTarget);
     ui.entry.querySelector("output").textContent = session.kanaValue;
     ui.entry.classList.toggle("is-pending", session.pending);
     ui.next.hidden = !weaponMode || self.weaponId !== "dualBlades" || match.phase !== "fighting";
-    const nextWord = duel.wordFor(match, words, self.index + 1);
-    ui.next.textContent = `次：${nextWord.text} ${duel.targetFor(nextWord, self.mode)}`;
+    const nextWord = duel.wordFor(match, words, self.index + 1, session.seat);
+    ui.nextTranslation.textContent = ui.next.hidden ? "" : nextWord.text;
+    ui.nextTarget.textContent = ui.next.hidden ? "" : duel.targetFor(nextWord, self.mode);
     const kind = duel.weapons[self.weaponId].defense;
     const hasDefense = weaponMode && kind !== "none" && match.phase === "fighting";
     ui.defense.hidden = !hasDefense || self.mode === "kana";

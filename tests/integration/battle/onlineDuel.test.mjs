@@ -19,7 +19,7 @@ function duel({ start = true, modes = ['roman', 'roman'] } = {}) {
 test('online prompts have valid Japanese and roman input, and fixed rules do not use saved growth', () => {
   const game = duel();
   assert.ok(game.run('W.length') >= 30);
-  assert.equal(game.run('W.every(word => word.reading && word.roman.length >= 10 && word.roman.length <= 16)'), true);
+  assert.equal(game.run('D.wordPool(match,W).every(i => W[i].reading && W[i].roman.length >= 10 && W[i].roman.length <= 16)'), true);
   assert.deepEqual(game.snapshot('match.players.map(p => p.hp)'), [1000, 1000]);
   assert.equal(game.run('D.rules.damage'), 40);
   assert.equal(game.run('D.rules.attackMinMs'), 2000);
@@ -106,7 +106,7 @@ test('time limit compares HP and cannot accept an attack after the deadline', ()
 
 test('kana players share the same prompts and damage as roman players', () => {
   const game = duel({ modes: ['kana', 'roman'] });
-  for (let index = 0; index < game.run('W.length'); index++) {
+  for (let index = 0; index < game.run('D.wordPool(match,W).length'); index++) {
     game.run(`answer(0); answer(1); match.players.forEach(p=>p.hp=1000); D.tick(match,W,${5000 + index * 2000})`);
     assert.deepEqual(game.snapshot('match.players.map(p=>p.hp)'), [960, 960]);
     assert.equal(game.run('match.players[0].index === match.players[1].index'), true);

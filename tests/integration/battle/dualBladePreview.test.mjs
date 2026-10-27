@@ -7,14 +7,14 @@ function battle(weaponId='dualBlades',touch=false){
 }
 for(const touch of [false,true])test((touch?'touch':'keyboard')+' dual preview stays stable and becomes the next word through cooldown',()=>{
  const game=battle('dualBlades',touch);
- game.run('const preview=getDualBladePreviewWord();const expectedInput=getWordInputs(preview)[0];const before=els.nextWordPreview.textContent;applyTypedValue(enemy,enemy.matchedWord[0])');
+ game.run('const preview=getDualBladePreviewWord();const expectedInput=getWordInputs(preview)[0];const before=els.nextWordTarget.textContent;applyTypedValue(enemy,enemy.matchedWord[0])');
  assert.equal(game.run('els.nextWordPreview.hidden'),false);
- assert.equal(game.run('els.nextWordPreview.textContent === before'),true);
- if(touch)assert.ok(game.run('els.nextWordPreview.textContent.includes(window.JAPANESE_INPUT.parse(preview.text,preview.reading||"").reading)'));
- else assert.ok(game.run('els.nextWordPreview.textContent.includes(expectedInput)'));
+ assert.equal(game.run('els.nextWordTarget.textContent === before'),true);
+ if(touch)assert.equal(game.run('els.nextWordTarget.textContent'),game.run('window.JAPANESE_INPUT.parse(preview.text,preview.reading||"").reading'));
+ else assert.equal(game.run('els.nextWordTarget.textContent'),game.run('expectedInput'));
  game.run('applyTypedValue(enemy,enemy.matchedWord)');game.advance(110);
  assert.equal(game.run('enemy.word===preview.text'),true);
- assert.ok(game.run('els.nextWordPreview.textContent.includes(preview.translation)'));
+ assert.equal(game.run('els.nextWordTranslation.textContent'),game.run('preview.translation'));
  game.advance(200);assert.equal(game.run('enemy.matchedWord===expectedInput'),true);
  assert.equal(game.run('enemy.typed'),'');
 });

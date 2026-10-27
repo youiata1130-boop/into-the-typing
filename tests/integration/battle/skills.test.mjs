@@ -17,6 +17,7 @@ function battle(weaponId = "greatsword", touch = false) {
     target.inputs = [target.word];
     const enter = (repeat = false) => handleTypingKeydown({ key: "Enter", code: "Enter", repeat, preventDefault() {} });
   `);
+  game.advance(game.run("startNoticeMs"));
   return game;
 }
 
@@ -87,8 +88,10 @@ test("a skill boss kill follows the ordinary clear and reward flow exactly once"
   const game = battle();
   game.run(`
     stageDefinitions.grassland_path.waves = [{ types: ["snake_boss"], name: "蛇の王様", hp: 24, count: 1, experience: 70, boss: true }];
-    startGame("grassland_path"); state.specialGauge = 100; enter();
+    startGame("grassland_path");
   `);
+  game.advance(game.run("startNoticeMs"));
+  game.run("state.specialGauge = 100; enter()");
   assert.equal(game.run("state.activeEnemies[0].hp"), 0);
   assert.equal(game.run("state.totalExperience"), 255);
   game.advance(420);

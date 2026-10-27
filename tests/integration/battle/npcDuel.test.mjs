@@ -33,7 +33,7 @@ test('NPC settings accept four weapons, six HP choices and five speeds without a
 
 test('NPC types one character at a time at the selected rate in roman and kana modes', () => {
   for (const mode of ['roman','kana']) for (const speed of [1,2,3,4,6]) {
-    const game = fixture({weaponId:'dualBlades',hp:1000,speed}, mode);
+    const game = fixture({weaponId:'greatsword',hp:1000,speed}, mode);
     game.run('for(let now=0;now<=4000;now+=50)frame(now)');
     assert.equal(game.run('match.players[1].value.length'), speed, `${mode} ${speed} chars/sec`);
     assert.equal(game.run('match.players[1].seq'), speed);
@@ -41,18 +41,18 @@ test('NPC types one character at a time at the selected rate in roman and kana m
   }
 });
 
-test('NPC waits for countdown, completes the prompt and obeys attack timing and 40 damage', () => {
+test('NPC waits for countdown and uses its own weapon prompt, attack timing and damage', () => {
   const game = fixture({weaponId:'dualBlades',hp:500,speed:6});
   game.run('for(let now=0;now<3000;now+=50)frame(now)');
   assert.equal(game.run('match.players[1].value'), '');
-  game.run('for(let now=3000;now<5400;now+=50)frame(now)');
-  assert.equal(game.run('match.players[0].hp'), 1000);
-  game.run('for(let now=5400;match.players[1].index===0&&now<9000;now+=50)frame(now)');
+  game.run('const length=D.targetFor(D.wordFor(match,W,0,1),"roman").length;for(let now=3000;match.players[1].index===0&&now<9000;now+=50)frame(now)');
   assert.equal(game.run('match.players[1].index'), 1);
-  assert.equal(game.run('match.players[0].hp'), 960);
+  assert.ok(game.run('match.clockNow-3000>=length*240'));
+  assert.ok(game.run('match.clockNow-3000<=length*240+100'));
+  assert.equal(game.run('match.players[0].hp'), 1000-game.run('length')*4);
   assert.equal(game.run('match.players[1].value'), '');
   game.run('frame(match.clockNow+50)');
-  assert.equal(game.run('match.players[0].hp'), 960);
+  assert.equal(game.run('match.players[0].hp'), 1000-game.run('length')*4);
 });
 
 test('a stalled frame cannot burst-type a whole prompt or advance a finished battle', () => {
@@ -67,25 +67,25 @@ test('a stalled frame cannot burst-type a whole prompt or advance a finished bat
 for (const weapon of ['sword','greatsword','swordShield']) {
   test(`NPC ${weapon} reacts to the visible windup using legal defense and its usual cost`, () => {
     const game = fixture({weaponId:weapon,hp:1000,speed:1});
-    game.run('frame(3000);answer();D.tick(match,W,5000);bot.random=()=>0;N.step(bot,match,W,5000);N.step(bot,match,W,5250)');
+    game.run('frame(3000);const damage=D.targetFor(D.wordFor(match,W,0,0),"roman").length*4;answer();D.tick(match,W,5000);bot.random=()=>0;N.step(bot,match,W,5000);N.step(bot,match,W,5250)');
     assert.equal(game.run(weapon === 'sword' ? 'match.players[1].counterStartedAt!==null' : 'match.players[1].guarding'), true);
     game.run('D.tick(match,W,5400)');
     assert.equal(game.run('match.players[1].feedback'), weapon === 'sword' ? 'counter' : 'justGuard');
-    assert.equal(game.run('match.players[1].defenseCost'), weapon === 'sword' ? 60 : 30);
-    assert.equal(game.run('match.players[1].hp'), weapon === 'sword' ? 1000 : 990);
+    assert.equal(game.run('match.players[1].defenseCost'), weapon === 'sword' ? game.run('damage+Math.min(20,damage)') : game.run('damage*3/4'));
+    assert.equal(game.run('match.players[1].hp'), weapon === 'sword' ? 1000 : game.run('1000-damage/4'));
   });
 }
 
 test('NPC greatsword cannot guard midway through a word and defense is not guaranteed', () => {
   const game = fixture({weaponId:'greatsword',hp:1000,speed:3});
-  game.run('frame(3000);answer();D.tick(match,W,5000);bot.random=()=>0;N.step(bot,match,W,5000);N.step(bot,match,W,5200);N.step(bot,match,W,5250)');
+  game.run('frame(3000);const damage=D.targetFor(D.wordFor(match,W,0,0),"roman").length*4;answer();D.tick(match,W,5000);bot.random=()=>0;N.step(bot,match,W,5000);N.step(bot,match,W,5200);N.step(bot,match,W,5250)');
   assert.ok(game.run('match.players[1].value.length') > 0);
   assert.equal(game.run('match.players[1].guarding'), false);
   game.run('D.tick(match,W,5400)');
-  assert.equal(game.run('match.players[1].hp'), 960);
+  assert.equal(game.run('match.players[1].hp'), 1000-game.run('damage'));
   const noDefense = fixture({weaponId:'swordShield',hp:1000,speed:1});
   noDefense.run('frame(3000);answer();D.tick(match,W,5000);N.step(bot,match,W,5000);N.step(bot,match,W,5250);D.tick(match,W,5400)');
-  assert.equal(noDefense.run('match.players[1].hp'), 960);
+  assert.equal(noDefense.run('match.players[1].hp'), 1000-game.run('damage'));
 });
 
 function localGame(touch = false) {

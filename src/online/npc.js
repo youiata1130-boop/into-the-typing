@@ -44,7 +44,7 @@ window.ONLINE_NPC = (() => {
     }
     if (player.index !== bot.index) { bot.index = player.index; bot.credit = 0; }
     const countering = player.counterStartedAt !== null && now - player.counterStartedAt <= duel.rules.defenseWindowMs;
-    const target = duel.targetFor(duel.wordFor(match, words, player.index), player.mode, player.value);
+    const target = duel.targetFor(duel.wordFor(match, words, player.index, 1), player.mode, player.value);
     if (player.guarding || countering || player.attackAt !== null || player.value === target) { bot.credit = 0; return; }
     // A late frame never fills a whole word at once; progress advances character by character.
     bot.credit = Math.min(2, bot.credit + elapsed * bot.speed / 1000);

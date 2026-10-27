@@ -404,6 +404,8 @@ const els = {
   wordTranslation: document.querySelector("#wordTranslation"),
   typedWord: document.querySelector("#typedWord"),
   nextWordPreview: document.querySelector("#nextWordPreview"),
+  nextWordTranslation: document.querySelector("#nextWordTranslation"),
+  nextWordTarget: document.querySelector("#nextWordTarget"),
   remainingWord: document.querySelector("#remainingWord"),
   typingLabel: document.querySelector("#typingLabel"),
   typingStatus: document.querySelector("#typingStatus"),
@@ -1653,7 +1655,7 @@ function renderWord() {
   updateDualBladePreview();
   syncFlickInput();
   updateGuardHud();
-  const selectedEnemy = performance.now() < state.playerAttackReadyAt ? null : getCurrentEnemy();
+  const selectedEnemy = isBattleStartPending() || performance.now() < state.playerAttackReadyAt ? null : getCurrentEnemy();
 
   if (!selectedEnemy) {
     els.wordTranslation.textContent = state.running ? "" : state.currentTranslation;
@@ -1783,7 +1785,12 @@ function getCurrentEnemy() {
   return selectedEnemy || state.activeEnemies.find((enemy) => isEnemyAlive(enemy)) || null;
 }
 
+function isBattleStartPending() {
+  return state.running && performance.now() < state.battleStartsAt;
+}
+
 function getInputEnemy() {
+  if (isBattleStartPending()) return null;
   if (isMountainCaptureActive()) {
     return state.running && !mountainCapture.introActive && !mountainCapture.prompt.resolving ? mountainCapture.prompt : null;
   }
@@ -2213,7 +2220,7 @@ function enemyAttack(enemy) {
 
 function damageEnemy(enemy) {
   if (!state.running || state.hp <= 0 || state.guarding || isStoryDialogueOpen() || !isEnemyAlive(enemy) || enemy.resolving
-      || performance.now() < state.playerAttackReadyAt) return;
+      || isBattleStartPending() || performance.now() < state.playerAttackReadyAt) return;
   const weapon = getWeaponDefinition(enemy.weaponId);
   const recoveryMs = Math.min(weapon.attackRecoveryMs ?? 220, state.stageAttackCooldowns[weapon.id]);
   if (enemy.tutorial) {
@@ -2606,6 +2613,7 @@ function startGame(stageId = state.stageId) {
       return;
     }
 
+    renderWord();
     startLoop();
     focusGameSurface();
   }, startNoticeMs);
@@ -2662,7 +2670,7 @@ function applyTypedValue(enemy, value, { readingProgress } = {}) {
     return;
   }
   if (!state.running || state.guarding || isStoryDialogueOpen() || !enemy || enemy.resolving
-      || state.specialInProgress || state.hp <= 0 || performance.now() < state.playerAttackReadyAt) {
+      || state.specialInProgress || state.hp <= 0 || isBattleStartPending() || performance.now() < state.playerAttackReadyAt) {
     return;
   }
 
@@ -2794,7 +2802,7 @@ function handleTypingKeydown(event) {
   const letter = getTypingCharacterFromKey(event);
   // A hidden prompt cannot own input. In particular, a held final key must
   // not repeat into the next word after the cooldown finishes.
-  if ((letter || event.key === "Backspace") && (performance.now() < state.playerAttackReadyAt
+  if ((letter || event.key === "Backspace") && (isBattleStartPending() || performance.now() < state.playerAttackReadyAt
       || (letter && event.repeat))) {
     event.preventDefault();
     return;

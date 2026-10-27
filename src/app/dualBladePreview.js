@@ -1,5 +1,5 @@
 function getDualBladePreviewWord() {
-  if (isMountainCaptureActive()) return null;
+  if (isMountainCaptureActive() || isBattleStartPending()) return null;
   if (!state.running || getBattleWeaponId() !== "dualBlades" || isStoryDialogueOpen()
       || els.battleScreen.hidden || state.cleared >= state.roundLimit) return null;
   const enemy = getCurrentEnemy();
@@ -26,6 +26,7 @@ function updateDualBladePreview() {
   const input = next ? getWordInputs(next)[0] || next.text : "";
   const reading = next && flickState.enabled
     ? window.JAPANESE_INPUT.parse(next.text, next.reading || "")?.reading || input : input;
-  const text = next ? `次：${next.translation}　${reading}` : "";
-  if (els.nextWordPreview.textContent !== text) els.nextWordPreview.textContent = text;
+  const translation = next?.translation || "";
+  if (els.nextWordTranslation.textContent !== translation) els.nextWordTranslation.textContent = translation;
+  if (els.nextWordTarget.textContent !== reading) els.nextWordTarget.textContent = reading;
 }

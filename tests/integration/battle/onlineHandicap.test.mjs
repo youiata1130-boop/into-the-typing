@@ -73,10 +73,12 @@ test('handicap increases HP without scaling attack damage, and zero HP still end
   for (const mode of ['simple', 'weapons']) {
     game.run(`const m_${mode}=make({battleMode:'${mode}',handicapRatio:3,handicapSeat:1});
       D.ready(m_${mode},0,0);D.ready(m_${mode},1,0);D.tick(m_${mode},W,3000);
-      for(let seat=0;seat<2;seat++)D.acceptInput(m_${mode},W,seat,{match:m_${mode}.id,index:0,seq:1,value:D.wordFor(m_${mode},W,0).inputs[0]});
+      const damage_${mode}=${mode === 'simple' ? '40' : 'D.wordFor(m_'+mode+',W,0).inputs[0].length*4'};
+      for(let seat=0;seat<2;seat++)D.acceptInput(m_${mode},W,seat,{match:m_${mode}.id,index:0,seq:1,value:D.wordFor(m_${mode},W,0,seat).inputs[0]});
       D.tick(m_${mode},W,5000);D.tick(m_${mode},W,5400);`);
-    assert.deepEqual(game.snapshot(`m_${mode}.players.map(p=>p.hp)`), [960,2960]);
-    game.run(`m_${mode}.players[1].hp=40;
+    const damage = game.run(`damage_${mode}`);
+    assert.deepEqual(game.snapshot(`m_${mode}.players.map(p=>p.hp)`), [1000-damage,3000-damage]);
+    game.run(`m_${mode}.players[1].hp=1;
       D.acceptInput(m_${mode},W,0,{match:m_${mode}.id,index:1,seq:2,value:D.wordFor(m_${mode},W,1).inputs[0]});
       D.tick(m_${mode},W,7400);D.tick(m_${mode},W,7800);`);
     assert.equal(game.run(`m_${mode}.phase`), 'finished');

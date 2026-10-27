@@ -4,201 +4,169 @@ import { createGame } from "../../helpers/game.mjs";
 
 function battle(weapons = ['sword', 'swordShield'], modes = ['roman', 'roman'], start = true) {
   const game = createGame();
-  game.run(`const D = window.ONLINE_DUEL, W = window.ONLINE_PLAY.words;
-    const match = D.create('0123456789abcdef01234567', W.map((_, i) => i), ['甲', '乙'], ${JSON.stringify(modes)},
-      {battleMode:'weapons', weapons:${JSON.stringify(weapons)}});
-    function typeFor(seat, value, now = match.clockNow, pending = false) {
-      const p = match.players[seat];
-      return D.acceptInput(match,W,seat,{match:match.id,index:p.index,seq:p.seq+1,value,pending},now);
-    }
-    function answer(seat, now = match.clockNow) {
-      const p = match.players[seat]; return typeFor(seat,D.targetFor(D.wordFor(match,W,p.index),p.mode),now);
-    }
-    function defend(seat, action, now) {
-      return D.defense(match,W,seat,{match:match.id,seq:match.players[seat].defenseSeq+1,action},now);
-    }
+  game.run(`const D=window.ONLINE_DUEL,W=window.ONLINE_PLAY.words;
+    const order=W.map((_,i)=>i).sort((a,b)=>W[b].roman.length-W[a].roman.length);
+    const match=D.create('0123456789abcdef01234567',order,['甲','乙'],${JSON.stringify(modes)},
+      {battleMode:'weapons',weapons:${JSON.stringify(weapons)}});
+    function word(seat){return D.wordFor(match,W,match.players[seat].index,seat)}
+    function profile(seat){const p=match.players[seat];return D.attackProfile(word(seat),p.mode,p.value)}
+    function typeFor(seat,value,now=match.clockNow,pending=false){const p=match.players[seat];
+      return D.acceptInput(match,W,seat,{match:match.id,index:p.index,seq:p.seq+1,value,pending},now)}
+    function answer(seat){const p=match.players[seat];return typeFor(seat,D.targetFor(word(seat),p.mode))}
+    function defend(seat,action,now){return D.defense(match,W,seat,{match:match.id,seq:match.players[seat].defenseSeq+1,action},now)}
+    function launch(seat){answer(seat);const p=match.players[seat];D.tick(match,W,Math.max(match.clockNow,p.openedAt+profile(seat).inputMs));return p.attackAt}
   `);
-  if (start) game.run('D.ready(match,0,0);D.ready(match,1,0);D.tick(match,W,3000)');
+  if(start)game.run('D.ready(match,0,0);D.ready(match,1,0);D.tick(match,W,3000)');
   return game;
 }
 
-test('only four weapons are selectable, changes reset both ready states and lock at countdown', () => {
-  const game = battle(undefined, undefined, false);
-  assert.deepEqual(game.snapshot('Object.keys(D.weapons)'), ['sword', 'greatsword', 'dualBlades', 'swordShield']);
-  for (const id of ['branch', 'bareHands', 'unarmed', '__proto__', 'constructor', '', null]) {
-    assert.equal(game.run(`D.chooseWeapon(match,0,${JSON.stringify(id)})`), false);
-    assert.throws(() => game.run(`D.create(match.id,match.order,['a','b'],['roman','roman'],{battleMode:'weapons',weapons:[${JSON.stringify(id)},'sword']})`));
+test('only four weapons are selectable; changes reset ready states and lock at countdown',()=>{
+  const g=battle(undefined,undefined,false);
+  assert.deepEqual(g.snapshot('Object.keys(D.weapons)'),['sword','greatsword','dualBlades','swordShield']);
+  for(const id of ['branch','unarmed','__proto__','constructor','',null]){
+    assert.equal(g.run(`D.chooseWeapon(match,0,${JSON.stringify(id)})`),false);
+    assert.throws(()=>g.run(`D.create(match.id,order,['a','b'],['roman','roman'],{battleMode:'weapons',weapons:[${JSON.stringify(id)},'sword']})`));
   }
-  game.run('D.ready(match,0,0);D.chooseWeapon(match,1,"dualBlades")');
-  assert.deepEqual(game.snapshot('match.players.map(p=>p.ready)'), [false, false]);
-  game.run('D.ready(match,0,0);D.ready(match,1,0)');
-  assert.equal(game.run('D.chooseWeapon(match,0,"greatsword")'), false);
-  assert.equal(game.run('match.players[0].weaponId'), 'sword');
+  g.run('D.ready(match,0,0);D.chooseWeapon(match,1,"dualBlades")');
+  assert.deepEqual(g.snapshot('match.players.map(p=>p.ready)'),[false,false]);
+  g.run('D.ready(match,0,0);D.ready(match,1,0)');
+  assert.equal(g.run('D.chooseWeapon(match,0,"greatsword")'),false);
 });
 
-test('weapon attacks give both peers a 400 ms warning and cannot be submitted twice', () => {
-  const game = battle();
-  game.run('answer(0);D.tick(match,W,5000)');
-  assert.equal(game.run('D.snapshot(match).players[0].attackWaitMs'), 400);
-  assert.equal(game.run('answer(0)'), false);
-  game.run('D.tick(match,W,5399)');
-  assert.equal(game.run('match.players[1].hp'), 1000);
-  game.run('D.tick(match,W,5400);D.tick(match,W,5500)');
-  assert.equal(game.run('match.players[1].hp'), 960);
-  assert.equal(game.run('match.players[0].attacks'), 1);
-});
-
-for (const [elapsed, hp, cost, effect] of [[201, 980, 20, 'guard'], [200, 990, 30, 'justGuard'], [1, 990, 30, 'justGuard']]) {
-  test(`guard at ${elapsed} ms reduces damage and repays exactly the prevented amount`, () => {
-    const game = battle();
-    game.run(`answer(0);D.tick(match,W,5000);defend(1,'guard-start',${5400 - elapsed})`);
-    assert.equal(game.run(`defend(1,'guard-start',5399)`), false, 'holding cannot refresh the just-guard window');
-    assert.equal(game.run('typeFor(1,D.wordFor(match,W,0).inputs[0].slice(0,2),5399)'), false);
-    game.run('D.tick(match,W,5400)');
-    assert.equal(game.run('match.players[1].hp'), hp);
-    assert.equal(game.run('match.players[1].defenseCost'), cost);
-    assert.equal(game.run('match.players[1].feedback'), effect);
-    assert.equal(game.run('match.players[1].guarding'), false);
-    assert.equal(game.run('defend(1,"guard-start",5401)'), false);
-    game.run('answer(1);D.tick(match,W,5401);D.tick(match,W,5801)');
-    assert.equal(game.run('match.players[0].hp'), 1000 - (40 - cost));
-    assert.equal(game.run('match.players[1].defenseCost'), 0);
-    assert.equal(game.run('defend(1,"guard-start",5802)'), true);
-  });
-}
-
-test('greatsword guards only before typing or after completion, including unconfirmed kana', () => {
-  const game = battle(['greatsword', 'swordShield'], ['kana', 'roman']);
-  game.run('typeFor(0,D.wordFor(match,W,0).reading.slice(0,1))');
-  assert.equal(game.run('defend(0,"guard-start",3001)'), false);
-  game.run('typeFor(0,"",3002,true)');
-  assert.equal(game.run('defend(0,"guard-start",3003)'), false);
-  game.run('typeFor(0,"",3004,false)');
-  assert.equal(game.run('defend(0,"guard-start",3005)'), true);
-  assert.equal(game.run('answer(0,3006)'), false);
-  game.run('defend(0,"guard-end",3007);answer(0,3008)');
-  assert.equal(game.run('defend(0,"guard-start",3009)'), true);
-  game.run('typeFor(1,D.wordFor(match,W,0).inputs[0].slice(0,2),3010)');
-  assert.equal(game.run('defend(1,"guard-start",3011)'), true);
-  game.run('defend(1,"guard-end",3012)');
-  assert.equal(game.run('match.players[1].value.length'), 2);
-});
-
-test('counter lasts 200 ms, reflects 20, borrows 60 power and cannot be held or chained freely', () => {
-  const game = battle(['dualBlades', 'sword']);
-  game.run('answer(0);D.tick(match,W,5000);defend(1,"counter",5200)');
-  assert.equal(game.run('answer(1,5300)'), false);
-  assert.equal(game.run('defend(1,"counter",5300)'), false);
-  game.run('D.tick(match,W,5400)');
-  assert.deepEqual(game.snapshot('match.players.map(p=>p.hp)'), [980, 1000]);
-  assert.equal(game.run('match.players[1].defenseCost'), 60);
-  assert.equal(game.run('match.players[1].counterHits'), 1);
-  assert.equal(game.run('defend(1,"counter",6000)'), false);
-  game.run('answer(1);D.tick(match,W,6000);D.tick(match,W,6400)');
-  assert.equal(game.run('match.players[0].hp'), 980);
-  assert.equal(game.run('match.players[1].defenseCost'), 20);
-  game.run('answer(1);D.tick(match,W,8400);D.tick(match,W,8800)');
-  assert.equal(game.run('match.players[0].hp'), 960);
-  assert.equal(game.run('match.players[1].defenseCost'), 0);
-  assert.equal(game.run('defend(1,"counter",8801)'), true);
-});
-
-test('expired counter fails, and no weapon can invoke another weapon defense or skills', () => {
-  const game = battle(['dualBlades', 'sword']);
-  assert.equal(game.run('defend(0,"guard-start",3001)'), false);
-  assert.equal(game.run('defend(0,"counter",3001)'), false);
-  assert.equal(game.run('defend(1,"guard-start",3001)'), false);
-  assert.equal(game.run('defend(1,"skill",3001)'), false);
-  game.run('answer(0);D.tick(match,W,5000);defend(1,"counter",5199);D.tick(match,W,5400)');
-  assert.deepEqual(game.snapshot('match.players.map(p=>p.hp)'), [1000, 960]);
-  assert.equal(game.run('defend(1,"counter",5798)'), false);
-  assert.equal(game.run('defend(1,"counter",5799)'), true);
-});
-
-test('simultaneous counter and just guard retain both success effects despite reflected damage', () => {
-  const game = battle(['sword', 'greatsword']);
-  game.run('answer(0);answer(1);D.tick(match,W,5000);defend(0,"counter",5300);defend(1,"guard-start",5300);D.tick(match,W,5400)');
-  assert.deepEqual(game.snapshot('match.players.map(p=>p.feedback)'), ['counter', 'justGuard']);
-  assert.deepEqual(game.snapshot('match.players.map(p=>p.feedbackId)'), [1, 1]);
-});
-
-test('a swing spent on defense ends the opposing guard even when its damage is zero', () => {
-  const game = battle(['sword', 'swordShield']);
-  game.run('match.players[0].defenseCost=40;answer(0);D.tick(match,W,5000);defend(1,"guard-start",5300);D.tick(match,W,5400)');
-  assert.equal(game.run('match.players[1].guarding'), false);
-  assert.equal(game.run('match.players[1].hp'), 1000);
-  assert.equal(game.run('answer(1)'), true);
-});
-
-test('late, replayed and foreign defense packets cannot change the state', () => {
-  const game = battle();
-  for (const change of ['{match:"old"}', '{seq:0}', '{seq:NaN}', '{seq:1.5}', '{action:"skill"}']) {
-    assert.equal(game.run(`D.defense(match,W,1,{match:match.id,seq:1,action:'guard-start',...${change}},3000)`), false);
+test('each seat gets its weapon range, with repeatable shuffled cycles and no stale pool after changing weapon',()=>{
+  const g=battle(undefined,undefined,false);
+  for(const [id,min,max] of [['sword',2,8],['swordShield',2,8],['dualBlades',2,4],['greatsword',12,20]]){
+    g.run(`D.chooseWeapon(match,1,'${id}')`);
+    const lengths=g.snapshot('D.wordPool(match,W,1).map(i=>Math.min(...W[i].inputs.map(s=>s.length)))');
+    assert.ok(lengths.length>=12,id+' repertoire');
+    assert.ok(lengths.every(n=>n>=min&&n<=max),id+' range');
+    assert.equal(g.run('D.wordFor(match,W,0,1)===D.wordFor(match,W,D.wordPool(match,W,1).length,1)'),true);
+    assert.equal(g.run('D.wordFor(match,W,0,1).text===D.wordFor(D.snapshot(match),W,0,1).text'),true);
   }
-  game.run('defend(1,"guard-start",3000)');
-  assert.equal(game.run('D.defense(match,W,1,{match:match.id,seq:1,action:"guard-end"},3001)'), false);
-  assert.equal(game.run('defend(1,"guard-end",match.endsAt)'), false);
-  assert.equal(game.run('defend(1,"guard-end",NaN)'), false);
+  g.run('D.chooseWeapon(match,0,"dualBlades");D.ready(match,0,0);D.ready(match,1,0);D.tick(match,W,3000)');
+  assert.equal(g.run('typeFor(1,D.targetFor(word(0),"roman"))'),false,'cannot answer the opponent’s short prompt');
+  assert.equal(g.run('answer(1)'),true);
+  assert.equal(g.run('D.validSnapshot(D.snapshot(match),W)'),true);
 });
 
-test('unpaid defense power is settled at timeout and knockout, with no last-second advantage', () => {
-  for (const kind of ['sword', 'greatsword', 'swordShield']) {
-    const game = battle(['dualBlades', kind]);
-    game.run(`answer(0);answer(1);D.tick(match,W,5000);defend(1,${JSON.stringify(kind === 'sword' ? 'counter' : 'guard-start')},5300);D.tick(match,W,5400);D.tick(match,W,183000)`);
-    assert.equal(game.run('match.winner'), -1, kind);
-    assert.deepEqual(game.snapshot('match.players.map(p=>p.defenseCost)'), [0, 0]);
-    assert.equal(game.run('D.validSnapshot(D.snapshot(match),W)'), true);
-  }
-  const game = battle(['dualBlades', 'sword']);
-  game.run('match.players.forEach(p=>p.hp=40);answer(0);answer(1);D.tick(match,W,5000);defend(1,"counter",5300);D.tick(match,W,5400)');
-  assert.equal(game.run('match.winner'), -1);
-});
-
-test('all 16 weapon pairings tie at equal typing speed, across seeds, speeds, input modes and defenses', () => {
-  const game = battle();
-  const results = game.snapshot(`(() => {
-    const results = [];
-    for (const a of Object.keys(D.weapons)) for (const b of Object.keys(D.weapons))
-    for (const charsPerSecond of [2,5,10]) for (const mode of ['roman','kana']) for (const withDefense of [false,true])
-    for (const seed of [13,89,431]) {
-      let rng = seed;
-      const order = D.shuffledOrder(W.length,()=>{rng=(Math.imul(rng,1664525)+1013904223)>>>0;return rng/4294967296});
-      const m = D.create(match.id,order,['A','B'],[mode,mode],{battleMode:'weapons',weapons:[a,b]});
-      D.ready(m,0,0);D.ready(m,1,0);D.tick(m,W,3000);
-      for(let now=3000; m.phase==='fighting' && now<=183000; now+=50) {
-        for(let seat=0;seat<2;seat++) {
-          const p=m.players[seat], other=m.players[1-seat], target=D.targetFor(D.wordFor(m,W,p.index),mode,p.value);
-          const length=Math.min(target.length,Math.floor((now-p.openedAt)/1000*charsPerSecond));
-          if(length>p.value.length) D.acceptInput(m,W,seat,{match:m.id,index:p.index,seq:p.seq+1,value:target.slice(0,length)},now);
-          if(withDefense && other.attackAt!==null && other.attackAt-now<=100 && !p.defenseCost) {
-            const kind=D.weapons[p.weaponId].defense;
-            D.defense(m,W,seat,{match:m.id,seq:p.defenseSeq+1,action:kind==='counter'?'counter':'guard-start'},now);
-          }
-        }
-        D.tick(m,W,now);
-      }
-      results.push({a,b,charsPerSecond,mode,withDefense,seed,winner:m.winner,valid:D.validSnapshot(D.snapshot(m),W)});
-    }
-    return results;
-  })()`);
-  assert.equal(results.length, 576);
-  for (const result of results) {
-    assert.equal(result.winner, -1, JSON.stringify(result));
-    assert.equal(result.valid, true, JSON.stringify(result));
+test('damage and minimum attack duration scale equally with actual roman or kana input length',()=>{
+  const g=battle();
+  assert.equal(g.run(`W.every(w=>['roman','kana'].every(mode=>
+    (mode==='roman'?w.inputs.filter(value=>D.targetFor(w,mode,value)===value):[w.reading]).every(value=>{const p=D.attackProfile(w,mode,value);
+      return p.damage===value.length*4&&p.inputMs===value.length*200&&p.windupMs===value.length*40})))`),true);
+  for(const id of ['dualBlades','sword','greatsword']){
+    const b=battle([id,'swordShield']);
+    b.run('const power=profile(0);answer(0);D.tick(match,W,3000+power.inputMs-1)');
+    assert.equal(b.run('match.players[0].attackAt'),null);
+    b.run('D.tick(match,W,3000+power.inputMs);const hitAt=match.players[0].attackAt');
+    assert.equal(b.run('D.snapshot(match).players[0].attackWaitMs'),b.run('power.windupMs'));
+    assert.equal(b.run('answer(0)'),false);
+    b.run('D.tick(match,W,hitAt-1)');assert.equal(b.run('match.players[1].hp'),1000);
+    b.run('D.tick(match,W,hitAt);D.tick(match,W,hitAt+1)');
+    assert.equal(b.run('match.players[1].hp'),1000-b.run('power.damage'));
+    assert.equal(b.run('match.players[0].attacks'),1);
   }
 });
 
-test('weapon snapshots bound defense fields and send relative times, never browser clock origins', () => {
-  const game = battle();
-  game.run('answer(0);D.tick(match,W,5000);defend(1,"guard-start",5300)');
-  assert.equal(game.run('D.validSnapshot(D.snapshot(match),W)'), true);
-  assert.deepEqual(game.snapshot('Object.keys(D.snapshot(match).players[0]).filter(k=>/At$/.test(k))'), []);
-  for (const change of ['s.battleMode="other"', 's.players[0].weaponId="branch"', 's.players[0].guarding=true',
-    's.players[1].countering=true', 's.players[0].attackWaitMs=401', 's.players[0].counterWaitMs=601',
-    's.players[0].defenseCost=61', 's.players[0].defenseCost=-1', 's.players[0].feedback="<script>"', 's.players[0].pendingInput="yes"']) {
-    assert.equal(game.run(`(()=>{const s=D.snapshot(match);${change};return D.validSnapshot(s,W)})()`), false, change);
+for(const elapsed of [201,200,1])test(`guard at ${elapsed} ms borrows exactly the prevented variable damage`,()=>{
+  const g=battle();g.run(`const power=profile(0).damage;const hitAt=launch(0);defend(1,'guard-start',hitAt-${elapsed})`);
+  assert.equal(g.run('defend(1,"guard-start",hitAt-1)'),false);
+  assert.equal(g.run('typeFor(1,D.targetFor(word(1),"roman").slice(0,1),hitAt-1)'),false);
+  g.run('D.tick(match,W,hitAt)');
+  const power=g.run('power'),taken=Math.ceil(power*(elapsed>200?.5:.25)),cost=power-taken;
+  assert.equal(g.run('match.players[1].hp'),1000-taken);
+  assert.equal(g.run('match.players[1].defenseCost'),cost);
+  assert.equal(g.run('match.players[1].feedback'),elapsed>200?'guard':'justGuard');
+  assert.equal(g.run('defend(1,"guard-start",hitAt+1)'),false);
+  g.run('let repaid=0;while(match.players[1].defenseCost){const p=profile(1).damage;const at=launch(1);D.tick(match,W,at);repaid+=p}');
+  assert.equal(g.run('match.players[0].hp'),1000-(g.run('repaid')-cost));
+  assert.equal(g.run('defend(1,"guard-start",match.clockNow+1)'),true);
+});
+
+test('greatsword permits guard only before typing or after completion, including unfinished kana',()=>{
+  const g=battle(['greatsword','swordShield'],['kana','roman']);
+  g.run('typeFor(0,word(0).reading.slice(0,1))');assert.equal(g.run('defend(0,"guard-start",3001)'),false);
+  g.run('typeFor(0,"",3002,true)');assert.equal(g.run('defend(0,"guard-start",3003)'),false);
+  g.run('typeFor(0,"",3004,false)');assert.equal(g.run('defend(0,"guard-start",3005)'),true);
+  assert.equal(g.run('answer(0)'),false);
+  g.run('defend(0,"guard-end",3006);answer(0)');assert.equal(g.run('defend(0,"guard-start",3007)'),true);
+  g.run('typeFor(1,word(1).inputs[0].slice(0,2),3008)');assert.equal(g.run('defend(1,"guard-start",3009)'),true);
+});
+
+test('counter reflects up to 20, repays all prevented/reflected power and cannot be chained',()=>{
+  const g=battle(['dualBlades','sword']);g.run('const power=profile(0).damage;const hitAt=launch(0);defend(1,"counter",hitAt-100)');
+  assert.equal(g.run('answer(1)'),false);
+  g.run('D.tick(match,W,hitAt)');
+  const reflected=Math.min(20,g.run('power')),cost=g.run('power')+reflected;
+  assert.deepEqual(g.snapshot('match.players.map(p=>p.hp)'),[1000-reflected,1000]);
+  assert.equal(g.run('match.players[1].defenseCost'),cost);
+  assert.equal(g.run('defend(1,"counter",hitAt+1)'),false);
+  g.run('let paid=0;while(match.players[1].defenseCost){const power=profile(1).damage;const at=launch(1);D.tick(match,W,at);paid+=power}');
+  assert.equal(g.run('match.players[0].hp'),1000-reflected-(g.run('paid')-cost));
+});
+
+test('expired counter fails, forbidden defenses and skills cannot be invoked',()=>{
+  const g=battle(['swordShield','sword']);g.run('const power=profile(0).damage;const hitAt=launch(0);defend(1,"counter",hitAt-201);D.tick(match,W,hitAt)');
+  assert.deepEqual(g.snapshot('match.players.map(p=>p.hp)'),[1000,1000-g.run('power')]);
+  assert.equal(g.run('defend(1,"counter",hitAt+398)'),false);
+  assert.equal(g.run('defend(1,"counter",hitAt+399)'),true);
+  const d=battle(['dualBlades','sword']);
+  for(const [seat,action] of [[0,'guard-start'],[0,'counter'],[1,'guard-start'],[1,'skill']])assert.equal(d.run(`defend(${seat},'${action}',3001)`),false);
+});
+
+test('simultaneous counter and just guard preserve both effects, and empty swings release guard',()=>{
+  const g=battle(['sword','swordShield']);g.run('answer(0);answer(1);D.tick(match,W,3000+profile(0).inputMs);const at=match.players[0].attackAt;defend(0,"counter",at-100);defend(1,"guard-start",at-100);D.tick(match,W,at)');
+  assert.deepEqual(g.snapshot('match.players.map(p=>p.feedback)'),['counter','justGuard']);
+  const e=battle();e.run('match.players[0].defenseCost=profile(0).damage;const at=launch(0);defend(1,"guard-start",at-100);D.tick(match,W,at)');
+  assert.equal(e.run('match.players[1].guarding'),false);assert.equal(e.run('match.players[1].hp'),1000);
+});
+
+test('late and replayed defense cannot change state; debt is settled at timeout and knockout',()=>{
+  const g=battle();
+  for(const change of ['{match:"old"}','{seq:0}','{seq:NaN}','{seq:1.5}','{action:"skill"}'])assert.equal(g.run(`D.defense(match,W,1,{match:match.id,seq:1,action:'guard-start',...${change}},3000)`),false);
+  g.run('defend(1,"guard-start",3000)');
+  assert.equal(g.run('D.defense(match,W,1,{match:match.id,seq:1,action:"guard-end"},3001)'),false);
+  assert.equal(g.run('defend(1,"guard-end",match.endsAt)'),false);
+  assert.equal(g.run('defend(1,"guard-end",NaN)'),false);
+  for(const kind of ['sword','greatsword','swordShield'])for(const finish of ['timeout','knockout']){
+    const b=battle(['dualBlades',kind]);
+    b.run(`const damage=profile(0).damage;const at=launch(0);defend(1,'${kind==='sword'?'counter':'guard-start'}',at-100);D.tick(match,W,at);
+      const hp=match.players[1].hp, debt=match.players[1].defenseCost;
+      ${finish==='timeout'?'D.tick(match,W,match.endsAt)':'match.players[0].hp=0;D.tick(match,W,at+1)'}`);
+    assert.equal(b.run('match.players[1].hp'),b.run('hp-debt'));
+    assert.deepEqual(b.snapshot('match.players.map(p=>p.defenseCost)'),[0,0]);
+    assert.equal(b.run('D.validSnapshot(D.snapshot(match),W)'),true);
   }
 });
+
+test('equal-speed weapons stay within one heavy hit over complete matches, across orders and input modes',()=>{
+  const g=battle();
+  const results=g.snapshot(`(()=>{const out=[];
+    for(const a of Object.keys(D.weapons))for(const b of Object.keys(D.weapons))for(const speed of [2,5,10])for(const mode of ['roman','kana'])for(const withDefense of [false,true])for(const seed of [13,89,431]){
+      let rng=seed;const order=D.shuffledOrder(W.length,()=>{rng=(Math.imul(rng,1664525)+1013904223)>>>0;return rng/4294967296});
+      const m=D.create(match.id,order,['A','B'],[mode,mode],{battleMode:'weapons',weapons:[a,b]});D.ready(m,0,0);D.ready(m,1,0);D.tick(m,W,3000);
+      for(let now=3000;m.phase==='fighting'&&now<=183000;now+=50){for(let seat=0;seat<2;seat++){
+        const p=m.players[seat],target=D.targetFor(D.wordFor(m,W,p.index,seat),mode,p.value),n=Math.min(target.length,Math.floor((now-p.openedAt)/1000*speed));
+        if(n>p.value.length)D.acceptInput(m,W,seat,{match:m.id,index:p.index,seq:p.seq+1,value:target.slice(0,n)},now);
+        const other=m.players[1-seat],kind=D.weapons[p.weaponId].defense;
+        if(withDefense&&other.attackAt!==null&&other.attackAt-now<=100&&!p.defenseCost&&kind!=='none')
+          D.defense(m,W,seat,{match:m.id,seq:p.defenseSeq+1,action:kind==='counter'?'counter':'guard-start'},now);
+      }D.tick(m,W,now)}
+      out.push({a,b,speed,mode,withDefense,seed,winner:m.winner,gap:Math.abs(m.players[0].hp-m.players[1].hp),valid:D.validSnapshot(D.snapshot(m),W)});
+    }return out})()`);
+  assert.equal(results.length,576);
+  for(const r of results){assert.ok(r.gap<=80,JSON.stringify(r));assert.equal(r.valid,true,JSON.stringify(r));if(r.a===r.b)assert.equal(r.winner,-1,JSON.stringify(r));}
+});
+
+test('snapshots validate each seat’s prompt, bounded defense fields and relative attack timing',()=>{
+  const g=battle(['greatsword','dualBlades']);g.run('const at=launch(0)');
+  assert.equal(g.run('D.validSnapshot(D.snapshot(match),W)'),true);
+  assert.deepEqual(g.snapshot('Object.keys(D.snapshot(match).players[0]).filter(k=>/At$/.test(k))'),[]);
+  for(const change of ['s.battleMode="other"','s.players[0].weaponId="branch"','s.players[1].guarding=true','s.players[0].countering=true','s.players[0].attackWaitMs=1601','s.players[0].counterWaitMs=601','s.players[0].defenseCost=181','s.players[0].defenseCost=-1','s.players[0].feedback="<script>"','s.players[0].pendingInput="yes"','s.players[1].value=s.players[0].value']){
+    assert.equal(g.run(`(()=>{const s=D.snapshot(match);${change};return D.validSnapshot(s,W)})()`),false,change);
+  }
+});
+
 
 function room() {
   const game = createGame();

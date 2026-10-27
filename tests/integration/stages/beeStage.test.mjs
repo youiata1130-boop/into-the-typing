@@ -293,6 +293,7 @@ test("a skill clears four bees together without duplicating the spawn queue or r
 test("leaving, retrying and losing cancel old spawns and discard partial rewards", () => {
   for (const action of ["showStageSelect()", "finishGame(false)", 'startGame("grassland_path")', 'startGame("flower_meadow")']) {
     const game = battle();
+    game.advance(game.run("startNoticeMs"));
     game.run("applyTypedValue(getInputEnemy(), getInputEnemy().matchedWord)");
     game.advance(220);
     assert.equal(game.run("state.pendingExperience"), 20);

@@ -115,7 +115,9 @@ test("leaving, losing or restarting clears cooldown and old callbacks cannot unl
     assert.equal(game.run("state.playerAttackReadyAt"), 0);
     assert.equal(game.run("state.playerAttackCooldownTimerId"), 0);
     assert.equal(game.run("els.attackCooldown.hidden"), true);
-    game.run('startGame("grassland_path"); applyTypedValue(getInputEnemy(), getInputEnemy().matchedWord)');
+    game.run('startGame("grassland_path")');
+    game.advance(game.run("startNoticeMs"));
+    game.run('applyTypedValue(getInputEnemy(), getInputEnemy().matchedWord)');
     game.advance(1000);
     assert.equal(game.run("getInputEnemy()"), null);
     game.advance(500);
