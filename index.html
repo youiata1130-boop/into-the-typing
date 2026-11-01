@@ -150,11 +150,24 @@
           <div class="coop-battle" id="coopBattle" hidden>
             <div class="coop-boss" id="coopBoss">
               <time class="coop-clock" id="coopClock" aria-label="残り時間" hidden></time>
-              <div class="coop-enemy">
+              <div class="coop-enemy" id="coopEnemy">
                 <progress class="coop-character-hp" id="coopBossBar" max="1000" value="1000" aria-label="巨人の体力"></progress>
-                <img class="coop-tentacle coop-tentacle-left" id="coopTentacleLeft" alt="" hidden>
-                <img class="coop-tentacle coop-tentacle-right" id="coopTentacleRight" alt="" hidden>
                 <img id="coopBossImage" alt="岩の巨人">
+              </div>
+              <div class="coop-octopus" id="coopOctopus" role="group" aria-label="攻撃先" hidden>
+                <button class="coop-part" id="coopPartLeft" type="button" aria-label="左の触手" aria-pressed="false">
+                  <progress class="coop-character-hp" id="coopLeftBar" max="100" value="100" aria-label="左の触手の体力"></progress>
+                  <img id="coopTentacleLeft" alt="" hidden>
+                </button>
+                <button class="coop-part" id="coopPartRight" type="button" aria-label="中央の触手" aria-pressed="false">
+                  <progress class="coop-character-hp" id="coopRightBar" max="100" value="100" aria-label="中央の触手の体力"></progress>
+                  <img id="coopTentacleRight" alt="" hidden>
+                </button>
+                <button class="coop-part coop-part-body" id="coopPartBody" type="button" aria-label="本体" aria-pressed="false">
+                  <progress class="coop-character-hp" id="coopBodyBar" max="1000" value="1000" aria-label="本体の体力"></progress>
+                  <img id="coopBodyImage" alt="">
+                  <span class="coop-regrowth" id="coopRegrowth" hidden>再生中</span>
+                </button>
               </div>
               <div class="coop-actors" id="coopActors" aria-label="仲間の配置"></div>
               <div class="coop-warning"><p id="coopTarget" role="status"></p></div>

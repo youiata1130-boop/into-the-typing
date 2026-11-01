@@ -6427,21 +6427,30 @@ html[data-flick-input="true"][data-compact-battle="true"] .typing-status[data-we
 @keyframes coopGiantPunch { 0% { transform: translateX(2.5%); } 25% { transform: translateX(-14%) skewX(-5deg); } 60% { transform: translateX(-7%); } 100% { transform: none; } }
 @keyframes coopGiantSlam { 30% { transform: translateY(4px) scaleY(.82); } 60% { transform: scaleY(.97); } 100% { transform: none; } }
 @keyframes coopGiantShockwave { 0%, 20% { opacity: 0; transform: scale(.15); } 30% { opacity: .9; } 100% { opacity: 0; transform: scale(1); } }
-.coop-boss[data-stage="octopus"] .coop-enemy { display: grid; grid-template: 14px minmax(0, 1fr) / repeat(3, minmax(0, 1fr)); gap: 6px 0; width: 50%; height: auto; max-height: 68%; aspect-ratio: 2 / 1.1; }
-.coop-boss[data-stage="octopus"] .coop-enemy > .coop-character-hp { grid-area: 1 / 1 / 2 / 4; justify-self: center; margin: 0; }
-.coop-boss[data-stage="octopus"] .coop-enemy > img { grid-row: 2; width: 100%; height: 100%; max-height: 100%; object-position: bottom; animation: none; }
-.coop-boss[data-stage="octopus"] .coop-tentacle-left { grid-column: 1; }
-.coop-boss[data-stage="octopus"] .coop-tentacle-right { grid-column: 2; }
-.coop-boss[data-stage="octopus"] #coopBossImage { grid-column: 3; transform: translateY(6%); }
-.coop-boss[data-stage="octopus"][data-attack="single"] .coop-tentacle-left { animation: coopTentacleWindup .7s ease-in-out infinite; }
-.coop-boss[data-stage="octopus"][data-attack="all"] .coop-tentacle { animation: coopTentacleWindup .45s ease-in-out infinite alternate; }
-.coop-boss[data-stage="octopus"][data-strike="single"] .coop-tentacle-left,
-.coop-boss[data-stage="octopus"][data-strike="all"] .coop-tentacle { animation: coopTentacleStrike .6s ease-out both; }
-.coop-boss[data-attack="slow"] .coop-enemy > img { animation: coopSlowCast .8s ease-in-out infinite; }
+.coop-octopus { position: absolute; right: 3%; bottom: 44px; width: 50%; height: auto; max-height: 58%; aspect-ratio: 2 / 1.1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.coop-screen .coop-part { position: relative; display: grid; grid-template-rows: 14px minmax(0, 1fr); gap: 6px; align-items: end; min-width: 0; min-height: 0; margin: 0; padding: 0; border: 0; border-radius: 8px; background: transparent; box-shadow: none; touch-action: manipulation; }
+.coop-screen .coop-part:disabled { opacity: 1; cursor: default; }
+.coop-screen .coop-part:hover, .coop-screen .coop-part:active { background: transparent; transform: none; box-shadow: none; }
+.coop-screen .coop-part:focus-visible { outline: 3px solid #ffdf64; outline-offset: 4px; }
+.coop-part > img { position: relative; z-index: 1; width: 100%; height: 100%; min-height: 0; object-fit: contain; object-position: bottom; transform-origin: 50% 100%; transition: transform .35s, opacity .35s; }
+.coop-part > .coop-character-hp { position: relative; z-index: 2; }
+.coop-part::before { content: ""; position: absolute; inset: 20px -10% -3%; pointer-events: none; opacity: 0; background: radial-gradient(ellipse, transparent 35%, var(--enemy-aura-color, #b4f551) 65%, transparent 78%); filter: blur(6px); }
+.coop-part[data-active="true"]::before { opacity: calc(.25 + var(--enemy-charge, 0) * .4); }
+.coop-part[data-active="true"] > img { filter: drop-shadow(0 0 calc(3px + var(--enemy-charge, 0) * 8px) var(--enemy-aura-color, #b4f551)); }
+.coop-part[aria-pressed="true"]::after { content: ""; position: absolute; z-index: 4; top: -24px; left: 50%; transform: translateX(-50%); border-left: 11px solid transparent; border-right: 11px solid transparent; border-top: 18px solid #ffe884; filter: drop-shadow(0 2px 1px #554310); pointer-events: none; }
+.coop-part[data-attack="single"] > img { animation: coopTentacleWindup .7s ease-in-out infinite; }
+.coop-part[data-attack="all"] > img { animation: coopGiantSlamWindup .5s ease-in-out infinite; }
+.coop-part[data-attack="slow"] > img { animation: coopSlowCast .8s ease-in-out infinite; }
+.coop-part[data-strike="single"] > img { animation: coopTentacleStrike .6s ease-out both; }
+.coop-part[data-strike="all"] > img { animation: coopGiantSlam .6s ease-out both; }
+.coop-part[data-strike="slow"] > img { animation: coopSlowCast .6s ease-out both; }
+.coop-part.is-regrowing > img { animation: coopRegrow 1s ease-in-out infinite; }
+.coop-part.is-wilted > img { animation: none; transform: translateY(8%) rotate(-28deg) scaleY(.55); opacity: .55; filter: saturate(.3); }
+.coop-part.is-reviving::before { opacity: .5; background: radial-gradient(ellipse at bottom, #bcff82aa, transparent 70%); }
+.coop-regrowth { position: absolute; z-index: 3; top: 20px; left: 50%; transform: translateX(-50%); padding: 2px 5px; border-radius: 4px; white-space: nowrap; font-size: 16px; font-weight: 800; background: #245b31eb; color: #fff; pointer-events: none; }
+@keyframes coopRegrow { 50% { filter: drop-shadow(0 0 12px #c4ff78) brightness(1.25); } }
+.coop-boss[data-paused="true"] .coop-part > img { animation-play-state: paused; }
 .coop-boss[data-attack="slow"] .coop-warning { background: #542b78ed; }
-.coop-boss[data-strike="slow"] .coop-enemy::after { border-color: #dda6ff; box-shadow: 0 0 14px #ad60dd, inset 0 0 14px #ad60dd; animation: coopGiantShockwave .6s ease-out both; }
-.coop-boss[data-paused="true"] .coop-enemy > img, .coop-boss[data-paused="true"] .coop-enemy::after { animation-play-state: paused; }
-.coop-boss[data-stage="octopus"].is-defeated .coop-enemy > img { animation: none; transform: translateY(20px) rotate(-12deg); }
 .coop-slow { margin: 0 0 4px; color: #6a338d; font-size: 16px; font-weight: 800; text-align: center; }
 .coop-screen .online-input.is-slow .online-prompts { border-color: #9260ad; background: #fbf4ff; }
 .coop-actor.is-slow::before { box-shadow: 0 0 0 2px #ffffffaa, 0 0 12px 5px #b67bd9; }
@@ -6517,6 +6526,7 @@ html[data-flick-input="true"] .coop-screen .online-entry button { min-height: 30
   .coop-boss { --coop-hero-width: 44px; --coop-step-x: 26px; --coop-step-y: 22px; }
   .coop-screen.is-battle #coopBack { min-height: 36px; }
   .coop-actor.is-targeted .coop-target-cursor { --coop-cursor-x: 0%; top: 0; left: calc(100% + 8px); border-left-width: 15px; border-right-width: 15px; border-top-width: 22px; }
+  .coop-boss[data-stage="octopus"] .coop-actor.is-targeted .coop-target-cursor { --coop-cursor-x: -50%; top: 28px; left: 10px; border-left-width: 14px; border-right-width: 14px; }
   .coop-enemy { height: 58%; bottom: 40px; }
   .coop-boss[data-stage] .coop-enemy > .coop-character-hp { width: 65%; align-self: flex-end; justify-self: end; }
   .coop-warning p { margin: 4px 6px; }
@@ -6532,7 +6542,7 @@ html[data-flick-input="true"] .coop-screen .online-entry button { min-height: 30
   .coop-command-panel { display: grid; align-content: end; border-radius: 0 8px 8px 0; }
   html[data-flick-input="true"] .coop-screen .online-keyboard { grid-template-rows: repeat(4, 38px); }
 }
-@media (prefers-reduced-motion: reduce) { .coop-enemy > img { transition: none; } .coop-enemy > img, .coop-enemy::after, .coop-actor-image, .coop-target-cursor { animation: none !important; } }
+@media (prefers-reduced-motion: reduce) { .coop-enemy > img, .coop-part > img { transition: none; } .coop-enemy > img, .coop-enemy::after, .coop-part > img, .coop-actor-image, .coop-target-cursor { animation: none !important; } }
 .skill-panel #counterButton[data-ready="true"] { border-color: #f0bd4f; box-shadow: 0 0 0 2px #ffc95055; }
 .skill-panel #counterButton[data-free="true"] { color: #efffff; background: #176c80; border-color: #a9fbff; box-shadow: 0 0 12px #65e6f5; }
 html[data-flick-input="true"] .skill-panel #counterButton { min-width: 80px; padding: 0 8px; }

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { createGame } from "../../helpers/game.mjs";
 
-function battle(weaponId = "swordShield", speed = 3, mode = "roman") {
+function battle(weaponId = "swordShield", speed = 3, mode = "roman", stage = "giant") {
   const game = createGame();
   game.run(`const C=window.ONLINE_COOP,D=window.ONLINE_DUEL,N=window.COOP_NPC,W=window.ONLINE_PLAY.words;
     const config=${JSON.stringify({weaponId, speed})};
@@ -11,7 +11,7 @@ function battle(weaponId = "swordShield", speed = 3, mode = "roman") {
     C.addPlayer(match,{id:'1'.repeat(24),name:'NPC',mode:'${mode}'});
     C.chooseWeapon(match,1,config.weaponId,match.settingsRevision);
     match.players.forEach((p,i)=>C.ready(match,i,true,match.settingsRevision));
-    C.start(match,0,'giant',0,match.settingsRevision);
+    C.start(match,0,'${stage}',0,match.settingsRevision);
     const bot=N.create(match,config,()=>1);
     function frame(now){N.step(bot,match,W,now);C.tick(match,W,now,()=>0)}
   `);
@@ -47,8 +47,8 @@ test("all four NPC weapons attack the shared giant through normal input and atta
 
 test("slow makes NPCs type longer sentences in both modes, retains normal damage, survives pause and does not trigger spell guards", () => {
   for (const mode of ['roman', 'kana']) {
-    const game = battle('greatsword', 7, mode);
-    game.run(`match.stageId='octopus';frame(3000);match.boss.nextAttackAt=Infinity;
+    const game = battle('greatsword', 7, mode, 'octopus');
+    game.run(`frame(3000);match.boss.nextAttackAt=Infinity;match.boss.tentacles.forEach(part=>part.nextAttackAt=Infinity);
       const p=match.players[1];p.slowFrom=0;p.slowUntil=2;
       const profile=D.attackProfile(D.wordFor(match,W,0,1),p.mode),target=D.targetFor(C.wordFor(match,W,0,1),p.mode);
       const started=match.clockNow;bot.random=()=>0;
@@ -59,7 +59,7 @@ test("slow makes NPCs type longer sentences in both modes, retains normal damage
     game.run(`const before=p.value;N.resume(bot,match,4000,14000);
       for(let now=14050;p.attacks===0&&now<30000;now+=50)frame(now);`);
     assert.equal(game.run('p.attacks'), 1);
-    assert.equal(game.run('match.boss.hp'), game.run('1000-profile.damage'));
+    assert.equal(game.run('match.boss.tentacles[0].hp'), game.run('match.boss.tentacles[0].maxHp-profile.damage'));
     assert.ok(game.run('match.clockNow>=started+10000+target.length/7*1000+profile.windupMs'));
     assert.equal(game.run('C.validSnapshot(C.snapshot(match),W)'), true);
   }

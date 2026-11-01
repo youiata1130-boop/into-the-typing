@@ -174,6 +174,7 @@ test('octopus supports every difficulty and randomly warns for single, all, and 
     const game = battle({ count: 4, start: false });
     game.run(`C.chooseDifficulty(match,0,'${difficulty}',match.settingsRevision);readyAll();
       C.start(match,0,'octopus',0,match.settingsRevision);C.tick(match,W,3000);match.players[3].hp=0;
+      match.boss.tentacles.forEach(part=>part.nextAttackAt=Infinity);
       C.tick(match,W,match.boss.nextAttackAt,()=>${roll});`);
     assert.equal(game.run('match.boss.attack.kind'), kind);
     assert.equal(game.run('match.boss.attack.targets.length'), kind === 'single' ? 1 : 3);
@@ -193,6 +194,8 @@ test('slow keeps current input stable, uses longer sentences for the next two pr
     const game = battle({ start: false });
     game.run(`C.chooseWeapon(match,0,'${weapon}',match.settingsRevision);match.players[0].mode='${mode}';
       readyAll();C.start(match,0,'octopus',0,match.settingsRevision);C.tick(match,W,3000);
+      match.boss.tentacles.forEach(part=>part.nextAttackAt=Infinity);
+      C.chooseTarget(match,0,{match:match.id,index:0,seq:1,targetId:'body'});
       const p=match.players[0], initial=C.wordFor(match,W,0), first=D.targetFor(initial,p.mode);
       C.acceptInput(match,W,0,{match:match.id,index:0,seq:1,value:first[0]},3000);
       C.tick(match,W,6500,()=>.9);C.tick(match,W,9000);match.boss.nextAttackAt=Infinity;
@@ -310,6 +313,53 @@ function room(count = 2, options = {}) {
   }
   pump(); return { host, guests, pump };
 }
+
+test('four clients choose independent octopus targets, preserve prompts, lock partial input and synchronize wilt and one-by-one revival', () => {
+  const {host,guests,pump}=room(4,{touch:true}),all=[host,...guests],guest=guests[0];
+  const advance=ms=>{for(let elapsed=0;elapsed<ms;elapsed+=1000){all.forEach(g=>g.advance(Math.min(1000,ms-elapsed)));pump()}};
+  all.forEach(g=>g.run('P.ready()'));pump();host.run('P.start("octopus")');advance(3000);
+  all.forEach(g=>g.run('const beforeWord=document.querySelector("#coopWord").textContent;const beforePrompt=document.querySelector("#coopRemaining").textContent'));
+  host.run('document.dispatchEvent({type:"keydown",key:"Shift",preventDefault(){}})');
+  guest.run('document.querySelector("#coopPartRight").dispatchEvent({type:"click"})');
+  guests[1].run('P.chooseTarget("body")');pump();
+  assert.deepEqual(host.snapshot('P.session.match.players.map(p=>p.targetId)'),['right','right','body','left']);
+  for(const g of all){
+    assert.equal(g.run('document.querySelector("#coopWord").textContent'),g.run('beforeWord'));
+    assert.equal(g.run('document.querySelector("#coopRemaining").textContent'),g.run('beforePrompt'));
+  }
+  assert.equal(guest.run('document.querySelector("#coopPartRight").getAttribute("aria-pressed")'),'true');
+  guest.run(`const me=P.session.match.players.find(p=>p.id===P.session.selfId);
+    const prefix=D.targetFor(C.wordFor(P.session.match,W,me.index,1),me.mode)[0];P.applyKana(prefix);P.applyKana('');`);
+  assert.equal(guest.run('P.chooseTarget("body")'),false);pump();
+  // Host also rejects a forged switch after a guest has erased its first input.
+  guest.run(`connections.host.send({type:'target',match:P.session.match.id,index:me.index,seq:999,targetId:'body'})`);pump();
+  assert.equal(host.run('P.session.match.players[1].targetId'),'right');
+  guest.run('P.applyKana(prefix)');pump();
+  host.run(`const m=P.session.match; m.boss.tentacles[1].hp=1;
+    P.input(D.targetFor(C.wordFor(m,W,0),m.players[0].mode))`);advance(2500);
+  assert.equal(host.run('m.boss.tentacles[1].hp'),0);
+  for(const g of all){
+    assert.equal(g.run('P.session.match.players[1].targetId'),'body');
+    assert.equal(g.run('document.querySelector("#coopPartRight").classList.contains("is-wilted")'),true);
+    assert.equal(g.run('document.querySelector("#coopRightBar").value'),0);
+    assert.equal(g.run('document.querySelector("#coopRegrowth").hidden'),false);
+  }
+  assert.equal(guest.run('P.session.localValue'),guest.run('prefix'));
+  assert.equal(guest.run('document.querySelector("#coopWord").textContent'),guest.run('beforeWord'));
+  host.run(`m.boss.tentacles[0].hp=1;P.chooseTarget('left');P.input(D.targetFor(C.wordFor(m,W,m.players[0].index),m.players[0].mode))`);advance(2000);
+  assert.deepEqual(host.snapshot('m.boss.wiltedQueue'),['right','left']);
+  advance(4000);
+  for(const g of all){
+    assert.equal(g.run('C.enemyFor(P.session.match,"right").hp'),g.run('C.enemyFor(P.session.match,"right").maxHp'));
+    assert.equal(g.run('C.enemyFor(P.session.match,"left").hp'),0);
+    assert.equal(g.run('document.querySelector("#coopPartRight").classList.contains("is-wilted")'),false);
+    assert.equal(g.run('P.session.match.boss.regrowth.targetId'),'left');
+  }
+  advance(6000);
+  all.forEach(g=>assert.equal(g.run('P.session.match.boss.regrowth'),null));
+  host.run('m.boss.hp=0');advance(100);host.run('P.again()');pump();
+  all.forEach(g=>assert.deepEqual(g.snapshot('P.session.match.players.map(p=>[p.targetId,p.targetSeq,p.targetLocked])'),Array.from({length:4},()=>['body',0,false])));
+});
 
 test('four clients synchronize octopus selection, slow casting and longer prompts with in-flight roman/kana input and clean rematches', () => {
   const { host, guests, pump } = room(4, { touch: true }), all = [host, ...guests];
