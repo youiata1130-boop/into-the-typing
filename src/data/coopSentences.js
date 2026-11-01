@@ -1,0 +1,20 @@
+// Short original sentences for the co-op Slow spell, ordered from short to long.
+const coopSlowSentences = [
+  { translation: "雨が降る", reading: "あめがふる", text: "amegafuru" },
+  { translation: "風が吹く", reading: "かぜがふく", text: "kazegafuku" },
+  { translation: "花が咲いた", reading: "はながさいた", text: "hanagasaita" },
+  { translation: "星が光る", reading: "ほしがひかる", text: "hoshigahikaru" },
+  { translation: "鳥が空を飛ぶ", reading: "とりがそらをとぶ", text: "torigasorawotobu" },
+  { translation: "小鳥の歌を聞こう", reading: "ことりのうたをきこう", text: "kotorinoutawokikou" },
+  { translation: "風の流れを読む", reading: "かぜのながれをよむ", text: "kazenonagarewoyomu" },
+  { translation: "小さな花が咲いた", reading: "ちいさなはながさいた", text: "chiisanahanagasaita" },
+  { translation: "仲間と道を進もう", reading: "なかまとみちをすすもう", text: "nakamatomichiwosusumou" },
+  { translation: "森の奥に光が見える", reading: "もりのおくにひかりがみえる", text: "morinookunihikarigamieru" },
+  { translation: "川の向こうに橋が見える", reading: "かわのむこうにはしがみえる", text: "kawanomukounihashigamieru" },
+  { translation: "みんなで力を合わせて進もう", reading: "みんなでちからをあわせてすすもう", text: "minnadechikarawoawasetesusumou" },
+  { translation: "遠くの山から風が吹いてくる", reading: "とおくのやまからかぜがふいてくる", text: "tookunoyamakarakazegafuitekuru" },
+  { translation: "大きな木の下で少し休もう", reading: "おおきなきのしたですこしやすもう", text: "ookinakinoshitadesukoshiyasumou" },
+  { translation: "木の葉の間から光が差し込む", reading: "このはのあいだからひかりがさしこむ", text: "konohanoaidakarahikarigasashikomu" },
+  { translation: "夕焼けの空を見上げながら仲間と帰ろう", reading: "ゆうやけのそらをみあげながらなかまとかえろう", text: "yuuyakenosorawomiagenagaranakamatokaerou" },
+  { translation: "青い空を見上げながら仲間とゆっくり山道を進もう", reading: "あおいそらをみあげながらなかまとゆっくりやまみちをすすもう", text: "aoisorawomiagenagaranakamatoyukkuriyamamichiwosusumou" },
+];

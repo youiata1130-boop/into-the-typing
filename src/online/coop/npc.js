@@ -13,7 +13,7 @@ window.COOP_NPC = (() => {
     bot.lastAt = now;
     const player = match.players[1];
     if (match.phase !== "fighting" || now >= match.endsAt || !player.hp) { bot.credit = 0; return; }
-    const attack = match.boss.attack, targeted = attack?.targets.includes(player.id);
+    const attack = match.boss.attack, targeted = attack?.kind !== "slow" && attack?.targets.includes(player.id);
     const defend = action => coop.defense(match, words, 1,
       { match: match.id, seq: player.defenseSeq + 1, action }, now);
     const kind = duel.weapons[player.weaponId].defense;
@@ -34,7 +34,7 @@ window.COOP_NPC = (() => {
     }
     if (player.index !== bot.index) { bot.index = player.index; bot.credit = 0; }
     const countering = player.counterStartedAt !== null && now - player.counterStartedAt <= duel.rules.counterWindowMs;
-    const target = duel.targetFor(duel.wordFor(match, words, player.index, 1), player.mode, player.value);
+    const target = duel.targetFor(coop.wordFor(match, words, player.index, 1), player.mode, player.value);
     if (player.guarding || countering || player.attackAt !== null || player.value === target) { bot.credit = 0; return; }
     npc.typeNext(bot, match, words, target, elapsed, now, coop.acceptInput);
   }

@@ -45,6 +45,26 @@ test("all four NPC weapons attack the shared giant through normal input and atta
   }
 });
 
+test("slow makes NPCs type longer sentences in both modes, retains normal damage, survives pause and does not trigger spell guards", () => {
+  for (const mode of ['roman', 'kana']) {
+    const game = battle('greatsword', 7, mode);
+    game.run(`match.stageId='octopus';frame(3000);match.boss.nextAttackAt=Infinity;
+      const p=match.players[1];p.slowFrom=0;p.slowUntil=2;
+      const profile=D.attackProfile(D.wordFor(match,W,0,1),p.mode),target=D.targetFor(C.wordFor(match,W,0,1),p.mode);
+      const started=match.clockNow;bot.random=()=>0;
+      match.boss.attack={kind:'slow',targets:match.players.map(p=>p.id),hitsAt:4000};
+      for(let now=3050;now<=4000;now+=50)frame(now);`);
+    assert.equal(game.run('p.guarding'), false);
+    assert.deepEqual(game.snapshot('match.players.map(p=>p.hp)'), [1000,1000]);
+    game.run(`const before=p.value;N.resume(bot,match,4000,14000);
+      for(let now=14050;p.attacks===0&&now<30000;now+=50)frame(now);`);
+    assert.equal(game.run('p.attacks'), 1);
+    assert.equal(game.run('match.boss.hp'), game.run('1000-profile.damage'));
+    assert.ok(game.run('match.clockNow>=started+10000+target.length/7*1000+profile.windupMs'));
+    assert.equal(game.run('C.validSnapshot(C.snapshot(match),W)'), true);
+  }
+});
+
 test("late frames never burst type, and dead or finished NPCs stop acting", () => {
   const game = battle("greatsword", 60);
   game.run("frame(3000);frame(8000)");

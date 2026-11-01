@@ -6,7 +6,7 @@
     <title>Into the Typing</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='52'%3E%E2%9A%94%EF%B8%8F%3C/text%3E%3C/svg%3E">
     <link rel="preload" as="image" href="src/assets/images/backgrounds/shared/typing_rpg_background.webp">
-    <link rel="stylesheet" href="src/styles/main.css?v=20261101-giant-motion-v1">
+    <link rel="stylesheet" href="src/styles/main.css?v=20261101-coop-aura-v1">
   </head>
   <body>
     <section class="loading-screen" id="loadingScreen" aria-labelledby="loadingText" aria-busy="true">
@@ -146,16 +146,18 @@
             </div>
             <button id="coopReady" class="online-primary online-ready" type="button">準備完了にする</button>
           </div>
-          <div class="coop-stages" id="coopStages" hidden><h2>ステージ選択</h2><button class="online-primary" id="coopStart" type="button">巨人討伐</button></div>
+          <div class="coop-stages" id="coopStages" hidden><h2>ステージ選択</h2><button class="online-primary" id="coopStart" type="button">巨人討伐</button><button class="online-primary" id="coopStartOctopus" type="button">タコの滝</button></div>
           <div class="coop-battle" id="coopBattle" hidden>
             <div class="coop-boss" id="coopBoss">
               <time class="coop-clock" id="coopClock" aria-label="残り時間" hidden></time>
               <div class="coop-enemy">
                 <progress class="coop-character-hp" id="coopBossBar" max="1000" value="1000" aria-label="巨人の体力"></progress>
+                <img class="coop-tentacle coop-tentacle-left" id="coopTentacleLeft" alt="" hidden>
+                <img class="coop-tentacle coop-tentacle-right" id="coopTentacleRight" alt="" hidden>
                 <img id="coopBossImage" alt="岩の巨人">
               </div>
               <div class="coop-actors" id="coopActors" aria-label="仲間の配置"></div>
-              <div class="coop-warning"><p id="coopTarget" role="status"></p><progress id="coopAttackBar" max="2500" value="0" aria-label="巨人の攻撃まで" hidden></progress></div>
+              <div class="coop-warning"><p id="coopTarget" role="status"></p></div>
             </div>
             <div class="coop-command-panel">
             <div class="online-input" id="coopInput" tabindex="-1">
@@ -163,6 +165,7 @@
                 <span class="counter-energy" id="coopEnergy" role="meter" aria-label="あなたの気" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" hidden><span id="coopEnergyValue">気 0％</span><i><i id="coopEnergyFill"></i></i></span>
                 <button class="online-defense" id="coopDefense" type="button" hidden></button>
               </div>
+              <p class="coop-slow" id="coopSlow" role="status" hidden></p>
               <div class="online-prompts"><div class="online-current"><p class="online-letters"><span class="online-done" id="coopTyped"></span><span id="coopRemaining"></span></p><p class="online-word" id="coopWord"></p></div>
                 <div class="online-next" id="coopNext" aria-label="次の単語" hidden><span class="next-word-target" id="coopNextTarget"></span><span class="next-word-translation" id="coopNextWord"></span></div>
               </div>
@@ -726,6 +729,7 @@
     </main>
 
     <script src="src/data/words.js?v=20261025-everyday-words-v1"></script>
+    <script src="src/data/coopSentences.js?v=20261101-slow-sentences-v1"></script>
     <script src="src/data/capturePassages.js?v=20261024-passages-v2"></script>
     <script src="src/data/labels.js?v=20261024-enter-skill-v1"></script>
     <script src="src/config/weapons.js?v=20261031-mind-eye-v1"></script>
@@ -756,13 +760,13 @@
     <script src="src/app/battle/mindEye.js?v=20261031-mind-eye-v1"></script>
     <script src="src/config/counterRules.js?v=20261031-counter-energy-v1"></script>
     <script src="src/app/battle/counter.js?v=20261101-target-lesson-v1"></script>
-    <script src="src/online/duel/rules.js?v=20261101-duel-hp-v1"></script>
+    <script src="src/online/duel/rules.js?v=20261101-coop-octopus-v1"></script>
     <script src="src/online/connection.js?v=20261024-online-v1"></script>
     <script src="src/online/duel/npc.js?v=20261101-npc-levels-v1"></script>
     <script src="src/app/game.js?v=20261101-target-popup-v1"></script>
     <script src="src/online/duel/play.js?v=20261101-duel-stage-v1"></script>
-    <script src="src/online/coop/rules.js?v=20261101-coop-difficulty-v1"></script>
-    <script src="src/online/coop/npc.js?v=20261101-npc-levels-v1"></script>
-    <script src="src/online/coop/play.js?v=20261101-coop-difficulty-v1"></script>
+    <script src="src/online/coop/rules.js?v=20261101-slow-sentences-v1"></script>
+    <script src="src/online/coop/npc.js?v=20261101-coop-octopus-v1"></script>
+    <script src="src/online/coop/play.js?v=20261101-slow-sentences-v1"></script>
   </body>
 </html>

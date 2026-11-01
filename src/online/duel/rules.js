@@ -102,15 +102,15 @@ window.ONLINE_DUEL = (() => {
     return { damage: length * rules.damagePerCharacter, inputMs: length * rules.inputMsPerCharacter,
       windupMs: length * rules.windupMsPerCharacter };
   }
-  function acceptInput(match, words, seat, packet, now = match.clockNow) {
+  function acceptInput(match, words, seat, packet, now = match.clockNow, typing = {}) {
     const player = match.players[seat];
     if (match.phase !== "fighting" || !player || packet.match !== match.id
         || packet.index !== player.index || !Number.isSafeInteger(packet.seq) || packet.seq <= player.seq
-        || typeof packet.value !== "string" || packet.value.length > 40
+        || typeof packet.value !== "string" || packet.value.length > (typing.maxInputLength ?? rules.maxInputLength)
         || (packet.pending !== undefined && typeof packet.pending !== "boolean")) return false;
     if (expireCounter(player, now)) match.revision++;
     if (match.battleMode === "weapons" && (player.guarding || counterActive(player, now) || player.attackAt !== null)) return false;
-    const word = wordFor(match, words, player.index, seat);
+    const word = (typing.wordFor ?? wordFor)(match, words, player.index, seat);
     if (player.value === targetFor(word, player.mode, player.value)) return false;
     const target = targetFor(word, player.mode, packet.value);
     if (!target.startsWith(packet.value)) return false;
@@ -195,7 +195,7 @@ window.ONLINE_DUEL = (() => {
     settleCounter(player, false);
     return true;
   }
-  function defense(match, words, seat, packet, now) {
+  function defense(match, words, seat, packet, now, typing = {}) {
     const player = match.players[seat];
     if (match.battleMode !== "weapons" || match.phase !== "fighting" || !player || packet.match !== match.id
         || !Number.isSafeInteger(packet.seq) || packet.seq <= player.defenseSeq
@@ -212,7 +212,7 @@ window.ONLINE_DUEL = (() => {
         if (weapon.defense !== "counter" || now < player.counterReadyAt || player.counterEnergy < rules.counterMaxEnergy) return false;
         player.counterStartedAt = now; player.counterReadyAt = now + rules.counterCooldownMs;
       } else {
-        const word = wordFor(match, words, player.index, seat);
+        const word = (typing.wordFor ?? wordFor)(match, words, player.index, seat);
         const partial = player.value && player.value !== targetFor(word, player.mode, player.value);
         if (weapon.defense !== "guard" || player.guarding || (weapon.emptyGuard && (partial || player.pendingInput))) return false;
         player.guarding = true; player.guardStartedAt = now;
@@ -286,7 +286,8 @@ window.ONLINE_DUEL = (() => {
         counterWaitMs: Math.max(0, counterReadyAt - match.clockNow),
         attackWaitMs: attackAt === null ? null : Math.max(0, attackAt - match.clockNow) })) };
   }
-  function validSnapshot(data, words, baseHp = rules.hp) {
+  function validSnapshot(data, words, baseHp = rules.hp, typing = {}) {
+    const resolveWord = typing.wordFor ?? wordFor, maxInputLength = typing.maxInputLength ?? rules.maxInputLength;
     if (!data || typeof data.id !== "string" || !/^[a-f0-9]{24}$/.test(data.id)
         || !["lobby", "countdown", "fighting", "finished"].includes(data.phase)
         || !["simple", "weapons"].includes(data.battleMode)
@@ -314,16 +315,16 @@ window.ONLINE_DUEL = (() => {
       && Number.isInteger(player.feedbackId) && player.feedbackId >= 0 && player.feedbackId <= 10000
       && Number.isInteger(player.counterHits) && player.counterHits >= 0 && player.counterHits <= 1000
       && Number.isInteger(player.counterEnergy) && player.counterEnergy >= 0 && player.counterEnergy <= rules.counterMaxEnergy
-      && Number.isInteger(player.counterBestLength) && player.counterBestLength >= 0 && player.counterBestLength <= rules.maxInputLength
+      && Number.isInteger(player.counterBestLength) && player.counterBestLength >= 0 && player.counterBestLength <= maxInputLength
       && ((data.battleMode === "weapons" && player.weaponId === "sword") || (!player.counterEnergy && !player.counterBestLength))
       && (!player.guarding || (data.battleMode === "weapons" && weapons[player.weaponId].defense === "guard"))
       && (!player.countering || (data.battleMode === "weapons" && weapons[player.weaponId].defense === "counter" && player.counterEnergy === rules.counterMaxEnergy))
-      && typeof player.value === "string" && player.value.length <= 40
+      && typeof player.value === "string" && player.value.length <= maxInputLength
       && wordPool(data, words, seat).length > 0
-      && targetFor(wordFor(data, words, player.index, seat), player.mode, player.value).startsWith(player.value)
+      && targetFor(resolveWord(data, words, player.index, seat), player.mode, player.value).startsWith(player.value)
       && (player.attackWaitMs === null || (Number.isFinite(player.attackWaitMs) && player.attackWaitMs >= 0
-        && player.value === targetFor(wordFor(data, words, player.index, seat), player.mode, player.value)
-        && player.attackWaitMs <= attackProfile(wordFor(data, words, player.index, seat), player.mode, player.value).windupMs)));
+        && player.value === targetFor(resolveWord(data, words, player.index, seat), player.mode, player.value)
+        && player.attackWaitMs <= attackProfile(resolveWord(data, words, player.index, seat), player.mode, player.value).windupMs)));
   }
   return { rules, weapons, isWeapon, handicapRatios, validHandicap, setHandicap, makeWords, signature, shuffledOrder, create, chooseWeapon, wordPool, wordFor, targetFor, attackProfile,
     acceptInput, defense, ready, tick, snapshot, validSnapshot };
