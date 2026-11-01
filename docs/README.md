@@ -1,6 +1,7 @@
 # 開発資料
 
 オンライン対戦: [部屋番号・入力進捗・体力と通信の仕様](gameplay/online-duel.md)。
+オンライン協力: [2〜4人の部屋・武器選択・巨人討伐](gameplay/online-coop.md)。
 
 | フォルダ | 内容 |
 | --- | --- |
@@ -26,8 +27,8 @@
 
 森の最難関: [3-4 荊の深森](stages/thorn-depths.md)、[荊冠の魔鹿の素材・プロンプト](assets/enemies/thorn-stag-generation.md)。
 
-山道エリア: [4-1 鳥たちの山道・捕獲イベントと文章の出典](stages/mountain-path.md)、[山道と鳥の素材・プロンプト](assets/enemies/mountain-birds-generation.md)。
+山道エリア: [4-2 鳥たちの山道・捕獲イベントと文章の出典](stages/mountain-path.md)、[山道と鳥の素材・プロンプト](assets/enemies/mountain-birds-generation.md)。
 
-敵の選択: [4-2 つる草の峠・Shiftとタップでの部位選択](stages/vine-pass.md)、[植物の敵の素材・プロンプト](assets/enemies/octopus-plant-generation.md)。
+敵の選択: [4-1 つる草の峠・Shiftとタップでの部位選択](stages/vine-pass.md)、[植物の敵の素材・プロンプト](assets/enemies/octopus-plant-generation.md)。
 
 大鳥の飛来: [捕獲前の一枚絵・生成プロンプト](assets/enemies/mountain-capture-intro-generation.md)。

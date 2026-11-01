@@ -39,7 +39,7 @@ test('versus counter succeeds through 400ms, spends all ki, and otherwise spends
       D.tick(m,W,q.openedAt+profile.inputMs);const hitAt=q.attackAt;p.counterEnergy=100;counter(hitAt-${elapsed});D.tick(m,W,hitAt)`);
     assert.equal(g.run('p.counterEnergy'),elapsed<=400?0:50);
     assert.equal(g.run('p.counterHits'),elapsed<=400?1:0);
-    assert.equal(g.run('p.hp===1000'),elapsed<=400);
+    assert.equal(g.run('p.hp===800'),elapsed<=400);
     g.run('D.tick(m,W,m.clockNow+2000)');assert.equal(g.run('p.counterEnergy'),elapsed<=400?0:50);
   }
 });

@@ -152,7 +152,11 @@ test("iron sword, greatsword and dual blades attack only one bee per word", () =
     const game = battle({ weaponId, clearedStages: [...cleared, "flower_meadow"] }, false, "swarm_meadow");
     fillWave(game);
     game.run("const first = getInputEnemy(); const second = state.activeEnemies[1]; const third = state.activeEnemies[2]");
-    const length = game.run("first.matchedWord.length");
+    // Accepted spellings can add letters (e.g. bangohan -> banngohann).
+    // Only the greatsword selects words by the shortest accepted input.
+    const length = game.run(weaponId === "greatsword"
+      ? "Math.min(first.word.length, ...first.inputs.map(input => input.length))"
+      : "first.word.length");
     assert.ok(weaponId === "greatsword" ? length >= 12 : length >= 2 && length <= (weaponId === "dualBlades" ? 4 : 8));
     game.run("applyTypedValue(first, first.matchedWord); applyTypedValue(second, second.matchedWord)");
     assert.equal(game.run("first.hp"), 0);

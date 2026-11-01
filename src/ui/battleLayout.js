@@ -55,17 +55,20 @@ function fitBattleCharacters() {
 }
 
 function fitPlantCharacters(bounds) {
-  if (!state.activeEnemies.some(enemy => enemy.formation === "plant")) return;
+  const parts = state.activeEnemies.filter(enemy => ["plant", "target-lesson"].includes(enemy.formation));
+  if (!parts.length) return;
+  const slots = chooseEnemyWave()?.maxActive || 3;
   const playerRight = els.player.getBoundingClientRect().right - bounds.left;
   const available = Math.max(80, bounds.width - playerRight - 20);
   const travel = Math.min(40, available * 0.12);
-  const scale = Math.max(0.01, Math.min(0.32, (available - travel - 12) / 1536, (bounds.height - 70) / 1024));
-  const far = bounds.width - 8 - (1536 * scale + 12);
-  for (const enemy of state.activeEnemies.filter(enemy => enemy.formation === "plant")) {
-    const body = enemy.type === "octopus_plant_body";
-    const x = [0, 480, 1056][enemy.slot];
-    const values = { left: far + x * scale + enemy.slot * 6,
-      width: (body ? 576 : 480) * scale, height: 1024 * scale, travel };
+  const gap = parts[0].formation === "target-lesson" ? travel + 6 : 6;
+  const gaps = gap * (slots - 1);
+  const scale = Math.max(0.01, Math.min(0.32, (available - travel - gaps) / (512 * slots), (bounds.height - 70) / 768));
+  const far = bounds.width - 8 - (512 * slots * scale + gaps);
+  for (const enemy of parts) {
+    const x = 512 * enemy.slot;
+    const values = { left: far + x * scale + enemy.slot * gap,
+      width: 512 * scale, height: 768 * scale, travel };
     for (const [name, value] of Object.entries(values)) enemy.element.style.setProperty("--plant-" + name, value.toFixed(2) + "px");
   }
 }

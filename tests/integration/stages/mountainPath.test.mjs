@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 import { createGame } from "../../helpers/game.mjs";
 
-const cleared = ["forest_path", "mist_road", "sky_castle", "storm_cove", "grassland_path", "flower_meadow", "swarm_meadow", "mushroom_forest", "spore_path", "fairy_forest", "thorn_depths"];
+const cleared = ["forest_path", "mist_road", "sky_castle", "storm_cove", "grassland_path", "flower_meadow", "swarm_meadow", "mushroom_forest", "spore_path", "fairy_forest", "thorn_depths", "vine_pass"];
 const passageIds = ['kusamakura_hibari', 'kusamakura_birdsong', 'kusamakura_nanohana', 'kusamakura_kokoro', 'kusamakura_spring'];
 function battle({ touch = false, weaponId = "swordShield", unlocked = true, passageId = 'kusamakura_hibari', savedItems = {} } = {}) {
   const game = createGame({ "into-the-typing.player.v2": JSON.stringify({
@@ -47,13 +47,14 @@ function capture(game, { waitForIntro = true } = {}) {
   }
 }
 
-test("4-1 unlocks after 3-4 with its own mountain map, birds and stage-only capture artwork", () => {
+test("4-2 unlocks after 4-1 with its own mountain map, birds and stage-only capture artwork", () => {
   assert.equal(battle({ unlocked: false }).run('state.running'), false);
   const game = battle();
   assert.equal(game.run('state.stageId'), 'mountain_path');
   assert.equal(game.run('state.stageMapRegionId'), 'mountain');
   assert.equal(game.run('state.roundLimit'), 5);
-  assert.equal(game.run('getStageDefinition("thorn_depths").nextStageId'), 'mountain_path');
+  assert.equal(game.run('getStageDefinition("vine_pass").nextStageId'), 'mountain_path');
+  assert.equal(game.run('allowsEnemySelection()'), false);
   assert.equal(game.run('getCurrentEnemy().type'), 'mountain_bird_level_1');
   const sources = game.snapshot('collectStageImageSources("mountain_path")');
   for (const source of sources) assert.ok(existsSync(new URL(source).pathname.slice(1)), source);

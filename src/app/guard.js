@@ -11,7 +11,7 @@ function hasGuardWeapon() {
 }
 
 function canPlayerGuard() {
-  return state.running && !isMountainCaptureActive() && state.hp > 0 && hasGuardWeapon()
+  return state.running && !isTargetTutorialWaiting() && !isMountainCaptureActive() && state.hp > 0 && hasGuardWeapon()
     && !state.specialInProgress && !isStoryDialogueOpen()
     && (!getActiveWeapon().guardRequiresEmptyInput || !hasPlayerGuardBlockingInput());
 }

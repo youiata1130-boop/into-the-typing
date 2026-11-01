@@ -61,9 +61,9 @@ test('damage and minimum attack duration scale equally with actual roman or kana
     b.run('D.tick(match,W,3000+power.inputMs);const hitAt=match.players[0].attackAt');
     assert.equal(b.run('D.snapshot(match).players[0].attackWaitMs'),b.run('power.windupMs'));
     assert.equal(b.run('answer(0)'),false);
-    b.run('D.tick(match,W,hitAt-1)');assert.equal(b.run('match.players[1].hp'),1000);
+    b.run('D.tick(match,W,hitAt-1)');assert.equal(b.run('match.players[1].hp'),800);
     b.run('D.tick(match,W,hitAt);D.tick(match,W,hitAt+1)');
-    assert.equal(b.run('match.players[1].hp'),1000-b.run('power.damage'));
+    assert.equal(b.run('match.players[1].hp'),800-b.run('power.damage'));
     assert.equal(b.run('match.players[0].attacks'),1);
   }
 });
@@ -74,12 +74,12 @@ for(const elapsed of [201,200,1])test(`guard at ${elapsed} ms borrows exactly th
   assert.equal(g.run('typeFor(1,D.targetFor(word(1),"roman").slice(0,1),hitAt-1)'),false);
   g.run('D.tick(match,W,hitAt)');
   const power=g.run('power'),taken=Math.ceil(power*(elapsed>200?.5:.25)),cost=power-taken;
-  assert.equal(g.run('match.players[1].hp'),1000-taken);
+  assert.equal(g.run('match.players[1].hp'),800-taken);
   assert.equal(g.run('match.players[1].defenseCost'),cost);
   assert.equal(g.run('match.players[1].feedback'),elapsed>200?'guard':'justGuard');
   assert.equal(g.run('defend(1,"guard-start",hitAt+1)'),false);
   g.run('let repaid=0;while(match.players[1].defenseCost){const p=profile(1).damage;const at=launch(1);D.tick(match,W,at);repaid+=p}');
-  assert.equal(g.run('match.players[0].hp'),1000-(g.run('repaid')-cost));
+  assert.equal(g.run('match.players[0].hp'),800-(g.run('repaid')-cost));
   assert.equal(g.run('defend(1,"guard-start",match.clockNow+1)'),true);
 });
 
@@ -98,16 +98,16 @@ test('counter reflects up to 20, repays all prevented/reflected power and cannot
   assert.equal(g.run('answer(1)'),false);
   g.run('D.tick(match,W,hitAt)');
   const reflected=Math.min(20,g.run('power')),cost=g.run('power')+reflected;
-  assert.deepEqual(g.snapshot('match.players.map(p=>p.hp)'),[1000-reflected,1000]);
+  assert.deepEqual(g.snapshot('match.players.map(p=>p.hp)'),[800-reflected,800]);
   assert.equal(g.run('match.players[1].defenseCost'),cost);
   assert.equal(g.run('defend(1,"counter",hitAt+1)'),false);
   g.run('let paid=0;while(match.players[1].defenseCost){const power=profile(1).damage;const at=launch(1);D.tick(match,W,at);paid+=power}');
-  assert.equal(g.run('match.players[0].hp'),1000-reflected-(g.run('paid')-cost));
+  assert.equal(g.run('match.players[0].hp'),800-reflected-(g.run('paid')-cost));
 });
 
 test('expired counter fails, forbidden defenses and skills cannot be invoked',()=>{
   const g=battle(['swordShield','sword']);g.run('const power=profile(0).damage;const hitAt=launch(0);defend(1,"counter",hitAt-401);D.tick(match,W,hitAt)');
-  assert.deepEqual(g.snapshot('match.players.map(p=>p.hp)'),[1000,1000-g.run('power')]);
+  assert.deepEqual(g.snapshot('match.players.map(p=>p.hp)'),[800,800-g.run('power')]);
   assert.equal(g.run('match.players[1].counterEnergy'),50);
   assert.equal(g.run('defend(1,"counter",hitAt+199)'),false);
   g.run('match.players[1].counterEnergy=100');
@@ -120,7 +120,7 @@ test('simultaneous counter and just guard preserve both effects, and empty swing
   const g=battle(['sword','swordShield']);g.run('answer(0);answer(1);D.tick(match,W,3000+profile(0).inputMs);const at=match.players[0].attackAt;defend(0,"counter",at-100);defend(1,"guard-start",at-100);D.tick(match,W,at)');
   assert.deepEqual(g.snapshot('match.players.map(p=>p.feedback)'),['counter','justGuard']);
   const e=battle();e.run('match.players[0].defenseCost=profile(0).damage;const at=launch(0);defend(1,"guard-start",at-100);D.tick(match,W,at)');
-  assert.equal(e.run('match.players[1].guarding'),false);assert.equal(e.run('match.players[1].hp'),1000);
+  assert.equal(e.run('match.players[1].guarding'),false);assert.equal(e.run('match.players[1].hp'),800);
 });
 
 test('late and replayed defense cannot change state; debt is settled at timeout and knockout',()=>{
@@ -197,7 +197,7 @@ test('live controller synchronizes loadouts, ignores skills and releases held gu
   assert.equal(game.run('O.session.held.size'), 0);
   game.run(`O.receive({type:'skill',match:O.session.match.id,damage:99999});
     document.dispatchEvent({type:'keydown',key:'Enter',preventDefault(){}})`);
-  assert.deepEqual(game.snapshot('O.session.match.players.map(p=>p.hp)'), [1000, 1000]);
+  assert.deepEqual(game.snapshot('O.session.match.players.map(p=>p.hp)'), [800, 800]);
   assert.deepEqual(game.saved(), saved);
 });
 
@@ -224,7 +224,7 @@ test('rematch preserves weapons but clears guard, defense cost, keys, progress a
     O.session.match.phase='finished';O.session.match.winner=-1;O.session.held.add(' ');
     O.ready();O.receive({type:'again',match:O.session.match.id});`);
   assert.deepEqual(game.snapshot('O.session.match.players.map(p=>p.weaponId)'), ['greatsword', 'swordShield']);
-  assert.deepEqual(game.snapshot('O.session.match.players.map(p=>[p.hp,p.defenseCost,p.guarding,p.index,p.defenseSeq])'), [[1000,0,false,0,0],[1000,0,false,0,0]]);
+  assert.deepEqual(game.snapshot('O.session.match.players.map(p=>[p.hp,p.defenseCost,p.guarding,p.index,p.defenseSeq])'), [[800,0,false,0,0],[800,0,false,0,0]]);
   assert.equal(game.run('O.session.held.size'), 0);
   assert.equal(game.run('O.session.defensePending'), null);
   assert.equal(game.run('O.session.match.phase'), 'countdown');

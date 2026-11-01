@@ -6,7 +6,7 @@
     <title>Into the Typing</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='52'%3E%E2%9A%94%EF%B8%8F%3C/text%3E%3C/svg%3E">
     <link rel="preload" as="image" href="src/assets/images/backgrounds/shared/typing_rpg_background.webp">
-    <link rel="stylesheet" href="src/styles/main.css?v=20261031-mind-eye-v1">
+    <link rel="stylesheet" href="src/styles/main.css?v=20261101-plant-regrowth-v1">
   </head>
   <body>
     <section class="loading-screen" id="loadingScreen" aria-labelledby="loadingText" aria-busy="true">
@@ -26,6 +26,7 @@
             <button class="intro-start-button" id="introStartButton" type="button">初めから</button>
             <button class="intro-start-button" id="continueButton" type="button" disabled>続きから</button>
             <button class="intro-start-button" id="onlineButton" type="button">オンライン対戦</button>
+            <button class="intro-start-button" id="coopButton" type="button">オンライン協力</button>
             <button class="intro-start-button" id="npcButton" type="button">NPC戦</button>
           </div>
         </div>
@@ -57,7 +58,7 @@
         <div class="online-lobby" id="onlineLobby">
           <label for="onlineName">名前</label>
           <input id="onlineName" maxlength="20" autocomplete="off" value="プレイヤー">
-          <div class="online-rules"><span>基準HP <strong>1,000</strong></span><span>攻撃 <strong id="onlineDamageRule">40</strong></span></div>
+          <div class="online-rules"><span>基準HP <strong id="onlineHpRule">800</strong></span><span>攻撃 <strong id="onlineDamageRule">40</strong></span></div>
           <button id="onlineCreate" class="online-primary" type="button">部屋をつくる</button>
           <div class="online-join">
             <label for="onlineRoomInput">部屋番号</label>
@@ -72,14 +73,14 @@
             <article class="online-fighter online-self" id="onlineSelf">
               <span class="online-defense-effect" id="onlineSelfEffect" role="img" hidden></span>
               <img id="onlineSelfImage" alt="あなたの剣士">
-              <div><h2 id="onlineSelfName">あなた</h2><strong id="onlineSelfHp">1000 / 1000</strong><progress id="onlineSelfBar" max="1000" value="1000" aria-label="あなたの体力"></progress>
+              <div><h2 id="onlineSelfName">あなた</h2><strong id="onlineSelfHp">800 / 800</strong><progress id="onlineSelfBar" max="800" value="800" aria-label="あなたの体力"></progress>
                 <span class="counter-energy" id="onlineSelfEnergy" role="meter" aria-label="あなたの気" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" hidden><span id="onlineSelfEnergyValue">気 0％</span><i><i id="onlineSelfEnergyFill"></i></i></span>
               </div>
             </article>
             <article class="online-fighter online-other" id="onlineOther">
               <span class="online-defense-effect" id="onlineOtherEffect" role="img" hidden></span>
               <img id="onlineOtherImage" alt="相手の剣士">
-              <div><h2 id="onlineOtherName">相手</h2><strong id="onlineOtherHp">1000 / 1000</strong><progress id="onlineOtherBar" max="1000" value="1000" aria-label="相手の体力"></progress>
+              <div><h2 id="onlineOtherName">相手</h2><strong id="onlineOtherHp">800 / 800</strong><progress id="onlineOtherBar" max="800" value="800" aria-label="相手の体力"></progress>
                 <span class="counter-energy" id="onlineOtherEnergy" role="meter" aria-label="相手の気" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" hidden><span id="onlineOtherEnergyValue">気 0％</span><i><i id="onlineOtherEnergyFill"></i></i></span>
               </div>
             </article>
@@ -112,6 +113,51 @@
         <button id="onlineReady" class="online-primary online-ready" type="button" hidden>準備完了にする</button>
         <button id="npcSettings" class="online-ready" type="button" hidden>設定を変える</button>
         <div class="game-flick-popup online-flick-popup" id="onlineFlickPopup" aria-hidden="true" hidden></div>
+      </section>
+
+      <section class="online-screen coop-screen" id="coopScreen" aria-labelledby="coopTitle" hidden>
+        <header class="online-head"><h1 id="coopTitle">オンライン協力</h1><button id="coopBack" type="button">退出</button></header>
+        <div class="online-lobby" id="coopLobby">
+          <label for="coopName">名前</label><input id="coopName" maxlength="20" autocomplete="off" value="プレイヤー">
+          <button id="coopCreate" class="online-primary" type="button">部屋をつくる</button>
+          <div class="online-join"><label for="coopRoomInput">部屋番号</label>
+            <input id="coopRoomInput" inputmode="numeric" maxlength="12" autocomplete="off" placeholder="8桁の番号">
+            <button id="coopJoin" type="button">参加する</button>
+          </div>
+        </div>
+        <div class="online-room" id="coopRoom" hidden><span>部屋番号</span><strong id="coopCode"></strong><button id="coopCopy" type="button">コピー</button></div>
+        <p class="online-status" id="coopStatus" role="status"></p>
+        <div id="coopParty" hidden>
+          <div class="coop-party-head"><h2>参加者 <span id="coopCount"></span></h2><time id="coopClock" aria-label="残り時間" hidden></time></div>
+          <div class="coop-players" id="coopPlayers"></div>
+          <div id="coopLoadout">
+            <div class="online-setup"><label for="coopWeapon">あなたの武器</label>
+              <select id="coopWeapon"><option value="sword">鉄の剣</option><option value="greatsword">大剣</option><option value="dualBlades">双剣</option><option value="swordShield">片手剣</option></select>
+            </div>
+            <button id="coopReady" class="online-primary online-ready" type="button">準備完了にする</button>
+          </div>
+          <div class="coop-stages" id="coopStages" hidden><h2>ステージ選択</h2><button class="online-primary" id="coopStart" type="button">巨人討伐</button></div>
+          <div class="coop-battle" id="coopBattle" hidden>
+            <div class="coop-boss" id="coopBoss">
+              <div class="coop-boss-health"><h2>巨人</h2><strong id="coopBossHp"></strong><progress id="coopBossBar" max="1000" value="1000" aria-label="巨人の体力"></progress></div>
+              <img id="coopBossImage" alt="岩の巨人">
+              <div class="coop-warning"><p id="coopTarget" role="status"></p><progress id="coopAttackBar" max="2500" value="0" aria-label="巨人の攻撃まで" hidden></progress></div>
+            </div>
+            <div class="online-input" id="coopInput" tabindex="-1">
+              <div class="online-input-head"><h2 id="coopInputLabel">あなたの入力</h2><button class="online-defense" id="coopDefense" type="button" hidden></button></div>
+              <div class="online-prompts"><div class="online-current"><p class="online-word" id="coopWord"></p><p class="online-letters"><span class="online-done" id="coopTyped"></span><span id="coopRemaining"></span></p></div>
+                <div class="online-next" id="coopNext" aria-label="次の単語" hidden><span class="next-word-translation" id="coopNextWord"></span><span class="next-word-target" id="coopNextTarget"></span></div>
+              </div>
+            </div>
+            <div class="coop-controls" id="coopControls" hidden>
+              <div class="online-entry" id="coopEntry"><output aria-label="入力中のかな"></output><button id="coopErase" type="button" aria-label="1文字消す">⌫</button></div>
+              <div class="online-keyboard" id="coopKeyboard" role="group" aria-label="協力用フリックキーボード"></div>
+            </div>
+          </div>
+          <p class="online-banner" id="coopBanner" role="status" hidden></p>
+          <button class="online-ready" id="coopAgain" type="button" hidden>武器選択に戻る</button>
+        </div>
+        <div class="game-flick-popup online-flick-popup" id="coopFlickPopup" aria-hidden="true" hidden></div>
       </section>
 
       <section class="menu-screen save-screen" id="saveScreen" aria-labelledby="saveTitle" hidden>
@@ -238,13 +284,13 @@
               <span class="stage-circle"><strong class="stage-code">3-4</strong></span>
               <span class="stage-node-copy" aria-hidden="true"><span class="stage-name">荊の深森</span><em class="stage-meta">激ムズ</em></span>
             </button>
-            <button class="stage-choice" id="stageChoiceMountain" type="button" data-stage="mountain_path" aria-label="4-1 鳥たちの山道（ステージ3-4未クリア）" aria-controls="stageConfirm" aria-expanded="false" disabled aria-disabled="true" hidden>
+            <button class="stage-choice" id="stageChoiceVine" type="button" data-stage="vine_pass" aria-label="4-1 つる草の峠（ステージ3-4未クリア）" aria-controls="stageConfirm" aria-expanded="false" disabled aria-disabled="true" hidden>
               <span class="stage-circle"><strong class="stage-code">4-1</strong></span>
-              <span class="stage-node-copy" aria-hidden="true"><span class="stage-name">鳥たちの山道</span><em class="stage-meta"></em></span>
-            </button>
-            <button class="stage-choice" id="stageChoiceVine" type="button" data-stage="vine_pass" aria-label="4-2 つる草の峠（ステージ4-1未クリア）" aria-controls="stageConfirm" aria-expanded="false" disabled aria-disabled="true" hidden>
-              <span class="stage-circle"><strong class="stage-code">4-2</strong></span>
               <span class="stage-node-copy" aria-hidden="true"><span class="stage-name">つる草の峠</span><em class="stage-meta"></em></span>
+            </button>
+            <button class="stage-choice" id="stageChoiceMountain" type="button" data-stage="mountain_path" aria-label="4-2 鳥たちの山道（ステージ4-1未クリア）" aria-controls="stageConfirm" aria-expanded="false" disabled aria-disabled="true" hidden>
+              <span class="stage-circle"><strong class="stage-code">4-2</strong></span>
+              <span class="stage-node-copy" aria-hidden="true"><span class="stage-name">鳥たちの山道</span><em class="stage-meta"></em></span>
             </button>
           </div>
           <div class="stage-region-switch" id="stageRegionSwitch" role="group" aria-label="地図の切り替え">
@@ -580,6 +626,7 @@
         </section>
 
         <section class="control-panel">
+        <div class="target-tutorial" id="targetTutorial" role="status" hidden><p id="targetTutorialText"></p></div>
         <div class="capture-hud" id="captureHud" hidden>
           <div class="capture-heading"><strong id="captureHeading">入力して脱出！</strong><strong id="captureTime"></strong></div>
           <div class="capture-meter" id="captureMeter" role="meter" aria-label="脱出までの残り秒数" aria-valuemin="0" aria-valuemax="25" aria-valuenow="25"><i id="captureTimeFill"></i></div>
@@ -657,35 +704,39 @@
     <script src="src/data/capturePassages.js?v=20261024-passages-v2"></script>
     <script src="src/data/labels.js?v=20261024-enter-skill-v1"></script>
     <script src="src/config/weapons.js?v=20261031-mind-eye-v1"></script>
-    <script src="src/config/stages.js?v=20261031-plant-target-v1"></script>
+    <script src="src/config/stages.js?v=20261101-plant-regrowth-v1"></script>
     <script src="src/config/skills.js?v=20261031-mind-eye-v1"></script>
-    <script src="src/config/enemyAnimations.js?v=20261031-plant-target-v1"></script>
+    <script src="src/config/enemyAnimations.js?v=20261101-target-lesson-v1"></script>
     <script src="src/config/playerProgression.js?v=20261024-thorn-depths-v1"></script>
     <script src="src/config/saveSlots.js?v=20261024-thorn-depths-v1"></script>
     <script src="src/ui/saveMenu.js?v=20261024-thorn-depths-v1"></script>
     <script src="src/input/japanese.js?v=20261024-thorn-depths-v1"></script>
-    <script src="src/ui/battleLayout.js?v=20261031-plant-target-v1"></script>
-    <script src="src/input/mobile.js?v=20261024-thorn-depths-v1"></script>
+    <script src="src/ui/battleLayout.js?v=20261101-target-lesson-v1"></script>
+    <script src="src/input/mobile.js?v=20261101-target-input-lock-v1"></script>
     <script src="src/input/flickKeyboard.js?v=20261024-sword-counter-v1"></script>
     <script src="src/app/loading.js?v=20261024-capture-intro-v1"></script>
     <script src="src/app/sound.js?v=20261031-mind-eye-v1"></script>
     <script src="src/app/skills.js?v=20261031-mind-eye-v1"></script>
+    <script src="src/app/targetTutorial.js?v=20261101-target-lesson-v1"></script>
+    <script src="src/app/plantEnemy.js?v=20261101-plant-regrowth-v1"></script>
     <script src="src/app/enemyCharge.js?v=20261024-dual-time-stop-v1"></script>
-    <script src="src/app/enemyAttackCountdown.js?v=20261031-mind-eye-v1"></script>
+    <script src="src/app/enemyAttackCountdown.js?v=20261101-plant-regrowth-v1"></script>
     <script src="src/app/battleFeedback.js?v=20261024-healing-sword-v1"></script>
     <script src="src/app/mountainCapture.js?v=20261024-capture-intro-v1"></script>
-    <script src="src/app/guard.js?v=20261024-mountain-v1"></script>
-    <script src="src/app/dualBladePreview.js?v=20261031-plant-target-v1"></script>
+    <script src="src/app/guard.js?v=20261101-target-lesson-v1"></script>
+    <script src="src/app/dualBladePreview.js?v=20261101-plant-regrowth-v1"></script>
     <script src="src/ui/weaponMenu.js?v=20261031-mind-eye-v1"></script>
     <script src="src/app/enemyActionStop.js?v=20261024-dual-time-stop-v1"></script>
     <script src="src/app/attackBoost.js?v=20261024-shield-attack-boost-v1"></script>
     <script src="src/app/mindEye.js?v=20261031-mind-eye-v1"></script>
     <script src="src/config/counterRules.js?v=20261031-counter-energy-v1"></script>
-    <script src="src/app/counter.js?v=20261031-mind-eye-v1"></script>
-    <script src="src/online/duel.js?v=20261031-counter-energy-v1"></script>
+    <script src="src/app/counter.js?v=20261101-target-lesson-v1"></script>
+    <script src="src/online/duel.js?v=20261101-duel-hp-v1"></script>
     <script src="src/online/connection.js?v=20261024-online-v1"></script>
-    <script src="src/online/npc.js?v=20261031-counter-energy-v1"></script>
-    <script src="src/app/game.js?v=20261031-mind-eye-v1"></script>
-    <script src="src/online/play.js?v=20261031-counter-energy-v1"></script>
+    <script src="src/online/npc.js?v=20261101-duel-hp-v1"></script>
+    <script src="src/app/game.js?v=20261101-plant-regrowth-v1"></script>
+    <script src="src/online/play.js?v=20261101-duel-hp-v1"></script>
+    <script src="src/online/coop.js?v=20261101-duel-hp-v1"></script>
+    <script src="src/online/coopPlay.js?v=20261101-coop-v2"></script>
   </body>
 </html>

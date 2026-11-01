@@ -20,7 +20,7 @@ test('online prompts have valid Japanese and roman input, and fixed rules do not
   const game = duel();
   assert.ok(game.run('W.length') >= 30);
   assert.equal(game.run('D.wordPool(match,W).every(i => W[i].reading && W[i].roman.length >= 10 && W[i].roman.length <= 16)'), true);
-  assert.deepEqual(game.snapshot('match.players.map(p => p.hp)'), [1000, 1000]);
+  assert.deepEqual(game.snapshot('match.players.map(p => p.hp)'), [800, 800]);
   assert.equal(game.run('D.rules.damage'), 40);
   assert.equal(game.run('D.rules.attackMinMs'), 2000);
   assert.equal(game.run('D.signature(W) !== D.signature(W.slice(1))'), true);
@@ -50,32 +50,32 @@ test('partial typing changes progress without damage; backspace and alternative 
   assert.equal(game.run('typeFor(0, target.slice(0, 2))'), true);
   assert.equal(game.run('typeFor(0, "!!!!!!!!")'), false);
   game.run('D.tick(match,W,6000)');
-  assert.equal(game.run('match.players[1].hp'), 1000);
+  assert.equal(game.run('match.players[1].hp'), 800);
   assert.equal(game.run('typeFor(0, D.wordFor(match,W,0).inputs.at(-1))'), true);
   game.run('D.tick(match,W,6001)');
-  assert.equal(game.run('match.players[1].hp'), 960);
+  assert.equal(game.run('match.players[1].hp'), 760);
 });
 
 test('complete input waits for the minimum attack interval and deals damage only once', () => {
   const game = duel();
   game.run('answer(0); D.tick(match,W,4999)');
-  assert.equal(game.run('match.players[1].hp'), 1000);
+  assert.equal(game.run('match.players[1].hp'), 800);
   assert.equal(game.run('answer(0)'), false);
   game.run('D.tick(match,W,5000); D.tick(match,W,8000)');
-  assert.equal(game.run('match.players[1].hp'), 960);
+  assert.equal(game.run('match.players[1].hp'), 760);
   assert.equal(game.run('match.players[0].index'), 1);
   assert.equal(game.run('match.players[0].value'), '');
 });
 
-test('at least 25 complete attacks and 50 seconds are needed to defeat a full-health opponent', () => {
+test('at least 20 complete attacks and 40 seconds are needed to defeat a full-health opponent', () => {
   const game = duel();
   const saved = game.saved();
-  game.run('for(let i=1;i<=24;i++){answer(0);D.tick(match,W,3000+i*2000)}');
+  game.run('for(let i=1;i<=19;i++){answer(0);D.tick(match,W,3000+i*2000)}');
   assert.equal(game.run('match.phase'), 'fighting');
   assert.equal(game.run('match.players[1].hp'), 40);
-  game.run('answer(0); D.tick(match,W,52999)');
+  game.run('answer(0); D.tick(match,W,42999)');
   assert.equal(game.run('match.phase'), 'fighting');
-  game.run('D.tick(match,W,53000)');
+  game.run('D.tick(match,W,43000)');
   assert.equal(game.run('match.phase'), 'finished');
   assert.equal(game.run('match.winner'), 0);
   assert.equal(game.run('match.players[1].hp'), 0);
@@ -87,7 +87,7 @@ test('at least 25 complete attacks and 50 seconds are needed to defeat a full-he
 
 test('simultaneous finishing attacks produce one shared draw', () => {
   const game = duel();
-  game.run('for(let i=1;i<=25;i++){answer(0);answer(1);D.tick(match,W,3000+i*2000)}');
+  game.run('for(let i=1;i<=20;i++){answer(0);answer(1);D.tick(match,W,3000+i*2000)}');
   assert.equal(game.run('match.phase'), 'finished');
   assert.equal(game.run('match.winner'), -1);
   assert.deepEqual(game.snapshot('match.players.map(p => p.hp)'), [0, 0]);
@@ -100,15 +100,15 @@ test('time limit compares HP and cannot accept an attack after the deadline', ()
     game.run('answer(0);D.tick(match,W,183000)');
     assert.equal(game.run('match.phase'), 'finished');
     assert.equal(game.run('match.winner'), withAttack ? 1 : -1);
-    assert.equal(game.run('match.players[1].hp'), 1000);
+    assert.equal(game.run('match.players[1].hp'), 800);
   }
 });
 
 test('kana players share the same prompts and damage as roman players', () => {
   const game = duel({ modes: ['kana', 'roman'] });
   for (let index = 0; index < game.run('D.wordPool(match,W).length'); index++) {
-    game.run(`answer(0); answer(1); match.players.forEach(p=>p.hp=1000); D.tick(match,W,${5000 + index * 2000})`);
-    assert.deepEqual(game.snapshot('match.players.map(p=>p.hp)'), [960, 960]);
+    game.run(`answer(0); answer(1); match.players.forEach(p=>p.hp=800); D.tick(match,W,${5000 + index * 2000})`);
+    assert.deepEqual(game.snapshot('match.players.map(p=>p.hp)'), [760, 760]);
     assert.equal(game.run('match.players[0].index === match.players[1].index'), true);
   }
 });
@@ -121,7 +121,7 @@ test('old indices, repeated sequences, other matches, invalid text and supplied 
   }
   assert.equal(game.run('D.acceptInput(match,W,1,{...packet,hp:0,damage:999999})'), true);
   assert.equal(game.run('D.acceptInput(match,W,1,packet)'), false);
-  assert.deepEqual(game.snapshot('match.players.map(p=>p.hp)'), [1000, 1000]);
+  assert.deepEqual(game.snapshot('match.players.map(p=>p.hp)'), [800, 800]);
   game.run('answer(1);D.tick(match,W,5000)');
   assert.equal(game.run('D.acceptInput(match,W,1,{...packet,seq:999})'), false);
 });
@@ -132,7 +132,7 @@ test('snapshot validation bounds all peer-controlled fields and excludes host cl
   assert.equal(game.run('"openedAt" in D.snapshot(match).players[0]'), false);
   assert.equal(game.run('"endsAt" in D.snapshot(match)'), false);
   for (const change of ['s.id="bad"', 's.phase="win"', 's.order[0]=-1', 's.order[0]=s.order[1]', 's.remainingMs=Infinity',
-    's.players[0].hp=-1', 's.players[0].hp=1001', 's.players[0].index=1e9', 's.players[0].value="<img>"',
+    's.players[0].hp=-1', 's.players[0].hp=801', 's.players[0].index=1e9', 's.players[0].value="<img>"',
     's.players[0].name="x".repeat(21)', 's.players[0].mode="html"', 's.players=null', 's.winner=12']) {
     assert.equal(game.run(`(()=>{const s=D.snapshot(match);${change};return D.validSnapshot(s,W)})()`), false, change);
   }

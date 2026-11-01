@@ -1,6 +1,7 @@
 // Local opponent: uses the same input, attack and defense rules as a player.
 window.ONLINE_NPC = (() => {
   const duel = window.ONLINE_DUEL;
+  const playerHp = 1000;
   const hpChoices = Object.freeze([500, 1000, 1500, 2000, 2500, 3000]);
   const speeds = Object.freeze([1, 2, 3, 4, 6]);
   function validConfig(config) {
@@ -11,6 +12,7 @@ window.ONLINE_NPC = (() => {
     const match = duel.create(id, order, [name, "NPC"], [mode, mode],
       { battleMode: "weapons", weapons: [weaponId, config.weaponId] });
     // NPC health is local-only. Network snapshots keep their stricter handicap limits.
+    match.players[0].hp = match.players[0].maxHp = playerHp;
     match.players[1].hp = match.players[1].maxHp = config.hp;
     return match;
   }
@@ -63,5 +65,5 @@ window.ONLINE_NPC = (() => {
     for (const key of ["defendAt", "releaseAt"]) if (bot[key] !== null) bot[key] += elapsed;
     bot.lastAt = now; match.clockNow = now;
   }
-  return { hpChoices, speeds, validConfig, createMatch, create, step, resume };
+  return { playerHp, hpChoices, speeds, validConfig, createMatch, create, step, resume };
 })();

@@ -14,9 +14,12 @@ window.ENEMY_ANIMATIONS = {
     medaka_boss: { frameMs: 70, idleWhileStopped: true },
   },
   enemies: {
-    ...Object.fromEntries(["left", "body", "right"].map(part => ["octopus_plant_" + part,
+    ...Object.fromEntries(["mountain_guard", "mountain_raider"].map(type => [type,
       Object.fromEntries(["idle", "attack", "damage", "defeat"].map(animation =>
-        [animation, ["src/assets/images/enemies/octopus_plant/parts.webp?v=20261031-v1"]]))])),
+        [animation, [enemyFrame(type, "level_1", "idle", 1)]]))])),
+    ...Object.fromEntries(["left", "right", "body"].map(part => ["octopus_plant_" + part,
+      Object.fromEntries(["idle", "attack", "damage", "defeat"].map(animation =>
+        [animation, [`src/assets/images/enemies/octopus_plant/${part === "body" ? "body" : "tentacle"}-left-v2.webp`]]))])),
     mountain_bird_level_1: {
       idle: [enemyFrame("mountain_bird", "level_1", "idle", 1), enemyFrame("mountain_bird", "level_1", "idle", 2)],
       attack: [enemyFrame("mountain_bird", "level_1", "idle", 2)],

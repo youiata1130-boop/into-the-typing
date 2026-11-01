@@ -338,6 +338,8 @@ const state = {
 };
 
 function invalidateBattleGeneration() {
+  state.activeEnemies.forEach(stopPlantRegrowth);
+  clearTargetTutorial();
   clearMountainCapture();
   clearPlayerCounter();
   clearPlayerAttackBoost();
@@ -616,7 +618,7 @@ function resetSuccessStreak() {
 }
 
 function isSpecialReady() {
-  return canChargeSkill() && !isUnarmedStory()
+  return canChargeSkill() && !isUnarmedStory() && !getTargetTutorialPhase()
     && !state.activeEnemies.some(enemy => enemy.tutorial && isEnemyAlive(enemy))
     && (getActiveSkill().target !== "self" || state.hp < getMaxHp())
     && (getActiveSkill().target !== "battle" || !isEnemyActionStopped())
@@ -809,7 +811,9 @@ function startPlayerAttackCooldown(weaponId) {
 }
 
 function updateHud() {
+  updateTargetTutorial();
   state.activeEnemies.forEach(enemy => updateEnemyAttackCountdown(enemy));
+  updateEnemySelection();
   updatePlayerCounterHud();
   updateDualBladePreview();
   updateGuardHud();
@@ -827,6 +831,8 @@ function updateHud() {
 }
 
 function showScreen(screen) {
+  document.querySelector("#coopScreen").hidden = screen !== "coop";
+  if (screen !== "coop" && window.COOP_PLAY?.active) window.COOP_PLAY.close();
   document.querySelector("#onlineScreen").hidden = screen !== "online";
   if (screen !== "online" && window.ONLINE_PLAY?.active) window.ONLINE_PLAY.close();
   if (screen !== "weapons") state.weaponEquipGuideId = "";
@@ -916,7 +922,7 @@ function scheduleBufferedInputFlush() {
 }
 
 function enqueueBufferedInput(action, value = "") {
-  if (!state.running || mountainCapture.introActive || state.guarding || state.specialInProgress || isUnarmedStory() || isStoryDialogueOpen()) {
+  if (!state.running || isTargetTutorialWaiting() || mountainCapture.introActive || state.guarding || state.specialInProgress || isUnarmedStory() || isStoryDialogueOpen()) {
     return;
   }
 
@@ -1116,9 +1122,11 @@ function advanceStory() {
 
 function isStageAvailable(stageId, player = state) {
   const stage = stageDefinitions[stageId];
+  // Reordering stages must not lock a stage already cleared in an older save.
   return Boolean(stage?.enabled
     && (!stage.requiresTutorial || player.equipmentTutorialCompleted)
-    && (!stage.requiresStage || player.clearedStages.includes(stage.requiresStage)));
+    && (!stage.requiresStage || player.clearedStages.includes(stage.requiresStage)
+      || player.clearedStages.includes(stageId)));
 }
 
 function getHighestAvailableStageCode(player = state) {
@@ -1657,10 +1665,12 @@ function clearBossIntro() {
 }
 
 function renderWord() {
+  updateTargetTutorial();
   updateDualBladePreview();
   syncFlickInput();
   updateGuardHud();
-  const selectedEnemy = isBattleStartPending() || performance.now() < state.playerAttackReadyAt ? null : getCurrentEnemy();
+  updateEnemySelection();
+  const selectedEnemy = isBattleStartPending() || isTargetTutorialWaiting() || performance.now() < state.playerAttackReadyAt ? null : getCurrentEnemy();
 
   if (!selectedEnemy) {
     els.wordTranslation.textContent = state.running ? "" : state.currentTranslation;
@@ -1795,7 +1805,7 @@ function isBattleStartPending() {
 }
 
 function getInputEnemy() {
-  if (isBattleStartPending()) return null;
+  if (isBattleStartPending() || isTargetTutorialWaiting()) return null;
   if (isMountainCaptureActive()) {
     return state.running && !mountainCapture.introActive && !mountainCapture.prompt.resolving ? mountainCapture.prompt : null;
   }
@@ -1861,6 +1871,10 @@ function createEnemyElement(enemy) {
     </div>
     <span class="enemy-target-cursor" aria-hidden="true"></span>
     <span class="enemy-attack-countdown" hidden></span>
+    <div class="plant-regrowth" hidden>
+      <span>再生中</span>
+      <div class="plant-regrowth-track" role="progressbar" aria-label="触手の再生" aria-valuemin="0" aria-valuemax="100"><i></i></div>
+    </div>
     <button class="enemy-select" type="button"></button>
   `;
 
@@ -1872,6 +1886,10 @@ function createEnemyElement(enemy) {
   enemy.selectButton = element.querySelector(".enemy-select");
   enemy.attackCountdownEl = element.querySelector(".enemy-attack-countdown");
   enemy.attackCountdownEl.hidden = true;
+  enemy.regrowthEl = element.querySelector(".plant-regrowth");
+  enemy.regrowthEl.hidden = true;
+  enemy.regrowthTrack = element.querySelector(".plant-regrowth-track");
+  enemy.regrowthFill = element.querySelector(".plant-regrowth-track i");
   enemy.selectButton.hidden = !allowsEnemySelection();
   enemy.selectButton.setAttribute("aria-label", `${enemy.name || "敵"}を選択`);
   enemy.selectButton.setAttribute("aria-pressed", "false");
@@ -1930,7 +1948,7 @@ function updateEnemyHud(enemy) {
   enemy.hpTrack.setAttribute("aria-label", enemy.tutorial ? "敵のゲージ" : enemy.name ? `${enemy.name}のHP` : "敵の体力");
   enemy.hpTrack.setAttribute("aria-valuemax", String(maximum));
   enemy.hpTrack.setAttribute("aria-valuenow", String(value));
-  enemy.selectButton.disabled = !isEnemyAlive(enemy);
+  enemy.selectButton.disabled = !canSelectBattleEnemy() || !canSelectTutorialEnemy(enemy) || enemy.resolving || !isEnemyAlive(enemy);
   updateEnemyAttackCountdown(enemy);
 }
 
@@ -1952,12 +1970,13 @@ function setEnemyProgress(enemy, progress) {
     // Keep the three silhouettes in formation even when their attack clocks differ.
     const formationProgress = parts.length ? Math.min(...parts.map(part => part.progress)) : 0;
     els.arena.style.setProperty("--plant-progress", formationProgress.toFixed(3));
+  } else if (enemy.formation === "target-lesson") {
+    enemy.element.style.setProperty("--plant-progress", enemy.progress.toFixed(3));
   }
 }
 
 function allowsEnemySelection() {
-  const [area, number] = getStageDefinition(state.stageId).code.split("-").map(Number);
-  return area > 4 || (area === 4 && number >= 2);
+  return Boolean(getStageDefinition(state.stageId).enemySelection);
 }
 
 function nextBattleEnemy(after = getSelectedEnemy()) {
@@ -1965,40 +1984,57 @@ function nextBattleEnemy(after = getSelectedEnemy()) {
   return alive.find(enemy => enemy.slot > (after?.slot ?? -1)) || alive[0] || null;
 }
 
+function canSelectBattleEnemy() {
+  const selected = getSelectedEnemy();
+  return allowsEnemySelection() && state.running && state.hp > 0 && !isBattleStartPending()
+    && !isStoryDialogueOpen() && !isMountainCaptureActive() && !state.specialInProgress && !state.guarding
+    && !selected?.inputStarted && !selected?.resolving;
+}
+
+function updateEnemySelection() {
+  if (!allowsEnemySelection()) return;
+  const available = canSelectBattleEnemy();
+  state.activeEnemies.forEach(enemy => {
+    enemy.selectButton.disabled = !available || !canSelectTutorialEnemy(enemy) || enemy.resolving || !isEnemyAlive(enemy);
+  });
+}
+
+function lockBattleTarget(enemy) {
+  if (!allowsEnemySelection() || enemy.inputStarted) return;
+  enemy.inputStarted = true;
+  updateEnemySelection();
+}
+
 function selectBattleEnemy(enemy) {
-  if (!allowsEnemySelection() || !state.running || state.hp <= 0 || isBattleStartPending()
-      || isStoryDialogueOpen() || isMountainCaptureActive() || state.specialInProgress || state.guarding
-      || !enemy || !state.activeEnemies.includes(enemy) || !isEnemyAlive(enemy)) return false;
+  if (!canSelectBattleEnemy() || !enemy || !state.activeEnemies.includes(enemy)
+      || !isEnemyAlive(enemy) || enemy.resolving || enemy.inputStarted || !canSelectTutorialEnemy(enemy)) return false;
+  const previous = getSelectedEnemy();
+  if (previous && previous !== enemy) {
+    // Move the unanswered prompt with the cursor; selecting a target never rerolls it.
+    for (const key of ["word", "readingOverride", "inputs", "matchedWord", "translation", "nextWordPreview"]) {
+      [previous[key], enemy[key]] = [enemy[key], previous[key]];
+    }
+    for (const part of [previous, enemy]) {
+      part.inputRevision++;
+      part.flickRoman = "";
+      updateEnemyWordLabel(part);
+    }
+  }
   clearInputBuffer();
   cancelGameFlickGesture();
+  selectTutorialEnemy(enemy);
   setTargetEnemy(enemy);
   updateHud();
   return true;
 }
 
 function setTargetEnemy(enemy) {
-  const previous = getSelectedEnemy();
-  const changing = previous !== enemy;
-  if (flickState.enabled && allowsEnemySelection() && changing && previous && !previous.resolving) {
-    previous.selectionInput = { revision: previous.inputRevision, value: els.flickInput.value,
-      accepted: flickState.acceptedValue, pending: flickState.lastPending };
-  }
   state.selectedEnemyId = enemy?.id || "";
   state.activeEnemies.forEach((activeEnemy) => {
     activeEnemy.element.classList.toggle("is-targeted", activeEnemy.id === state.selectedEnemyId);
     activeEnemy.selectButton.setAttribute("aria-pressed", String(activeEnemy.id === state.selectedEnemyId));
   });
   renderWord();
-  const saved = enemy?.selectionInput;
-  if (flickState.enabled && changing && saved && saved.revision === enemy.inputRevision && !enemy.resolving) {
-    flickState.inputVersion += 1;
-    els.flickInput.value = saved.value;
-    flickState.lastValue = saved.value;
-    flickState.acceptedValue = saved.accepted;
-    flickState.lastPending = saved.pending;
-    if (!isBattleStartPending() && performance.now() >= state.playerAttackReadyAt) renderFlickPrompt(enemy);
-    syncGameFlickKeyboard();
-  }
 }
 
 function chooseEnemyWord(enemy) {
@@ -2032,6 +2068,7 @@ function setNextWord(enemy) {
   enemy.typingMisses = 0;
   enemy.chargeInputProgress = 0;
   enemy.typed = "";
+  enemy.inputStarted = false;
   updateEnemyWordLabel(enemy);
 }
 
@@ -2046,6 +2083,10 @@ function createEnemy(wave, index) {
     name: wave.name || "",
     slot,
     formation: wave.formation || "",
+    wilted: false,
+    wiltedTentacles: [],
+    tentacleReviveMs: wave.tentacleReviveMs || 6000,
+    tentacleReviveElapsedMs: 0,
     attackPower: normalizeAttackPower(wave.attackPower),
     approachMs: randomizeEnemyAttackMs(wave.approachMs ?? attackMs),
     repeatAttackMs: wave.repeatAttackMs ?? repeatAttackMs,
@@ -2198,11 +2239,13 @@ function enemyLoop(now) {
   updateAttackCooldown();
 
   state.activeEnemies.forEach((enemy) => {
+    if (isTargetTutorialEnemyPaused(enemy)) { enemy.lastTick = now; return; }
     if (isEnemyActionStopped()) { enemy.lastTick = now; return; }
     if (enemy.resolving || enemy.animation === "attack") {
       enemy.lastTick = now;
       return;
     }
+    if (advancePlantRegrowth(enemy, now)) return;
 
     if (enemy.attackStyle === "charge") {
       advanceEnemyCharge(enemy, now);
@@ -2249,7 +2292,7 @@ function startLoop() {
 }
 
 function enemyAttack(enemy) {
-  if (isEnemyActionStopped()) return;
+  if (isEnemyActionStopped() || isTargetTutorialEnemyPaused(enemy) || isPlantRegrowing(enemy)) return;
   if (!state.running || state.hp <= 0 || isStoryDialogueOpen() || enemy.resolving
       || enemy.animation === "attack" || !isEnemyAlive(enemy) || !state.activeEnemies.includes(enemy)) return;
   if (enemy.attackStyle === "charge") {
@@ -2301,7 +2344,7 @@ function enemyAttack(enemy) {
 
 function damageEnemy(enemy) {
   if (!state.running || state.hp <= 0 || state.guarding || isStoryDialogueOpen() || !isEnemyAlive(enemy) || enemy.resolving
-      || isBattleStartPending() || performance.now() < state.playerAttackReadyAt) return;
+      || !canTypeTutorialEnemy(enemy) || isBattleStartPending() || performance.now() < state.playerAttackReadyAt) return;
   const weapon = getWeaponDefinition(enemy.weaponId);
   const recoveryMs = Math.min(weapon.attackRecoveryMs ?? 220, state.stageAttackCooldowns[weapon.id]);
   if (enemy.tutorial) {
@@ -2361,7 +2404,7 @@ function resolveWeaponHit(enemy, damage, recoveryMs) {
   }
 
   scheduleBattleTimeout(() => {
-    if (state.running) {
+    if (state.running && state.activeEnemies.includes(enemy) && isEnemyAlive(enemy) && !enemy.experienceCounted) {
       enemy.element.classList.remove("hit");
       enemy.resolving = false;
       setNextWord(enemy);
@@ -2412,25 +2455,14 @@ function useSpecialMove() {
   });
   updateHud();
 
-  const remainingEnemies = targets.filter((enemy) => isEnemyAlive(enemy));
-  if (!remainingEnemies.length) {
-    scheduleBattleTimeout(() => {
-      if (state.running) {
-        clearInputBuffer();
-        state.specialInProgress = false;
-        targets.forEach((enemy) => {
-          enemy.element.classList.remove("special");
-          defeatEnemy(enemy);
-        });
-      }
-    }, skill.durationMs);
-    return true;
-  }
-
   scheduleBattleTimeout(() => {
     if (state.running) {
       clearInputBuffer();
-      state.specialInProgress = false;
+      targets.filter((enemy) => !isEnemyAlive(enemy)).forEach((enemy) => {
+        enemy.element.classList.remove("special");
+        defeatEnemy(enemy);
+      });
+      const remainingEnemies = targets.filter(enemy => isEnemyAlive(enemy) && !enemy.experienceCounted);
       remainingEnemies.forEach((enemy) => {
         enemy.element.classList.remove("special");
         enemy.resolving = false;
@@ -2438,13 +2470,10 @@ function useSpecialMove() {
         enemy.lastTick = performance.now();
         playEnemyAnimation(enemy, "idle");
       });
-      setTargetEnemy(remainingEnemies[0]);
+      state.specialInProgress = false;
+      setTargetEnemy(remainingEnemies[0] || nextBattleEnemy());
       updateHud();
       flushBufferedInput();
-      targets.filter((enemy) => !isEnemyAlive(enemy)).forEach((enemy) => {
-        enemy.element.classList.remove("special");
-        defeatEnemy(enemy);
-      });
     }
   }, skill.durationMs);
 
@@ -2455,6 +2484,9 @@ function defeatEnemy(enemy) {
   if (!state.running || !state.activeEnemies.includes(enemy) || isEnemyAlive(enemy) || enemy.experienceCounted) {
     return;
   }
+
+  if (wiltPlantTentacle(enemy)) return;
+  if (isPlantBody(enemy)) defeatPlantTentacles(enemy);
 
   enemy.resolving = true;
   if (state.selectedEnemyId === enemy.id) {
@@ -2755,11 +2787,12 @@ function applyTypedValue(enemy, value, { readingProgress } = {}) {
     return;
   }
   if (!state.running || state.guarding || isStoryDialogueOpen() || !enemy || enemy.resolving
-      || state.specialInProgress || state.hp <= 0 || isBattleStartPending() || performance.now() < state.playerAttackReadyAt) {
+      || !canTypeTutorialEnemy(enemy) || state.specialInProgress || state.hp <= 0 || isBattleStartPending() || performance.now() < state.playerAttackReadyAt) {
     return;
   }
 
   const nextValue = normalizeTypedValue(value);
+  if (nextValue) lockBattleTarget(enemy);
   const matchedWord = enemy.inputs.find((input) => input.startsWith(nextValue));
 
   if (!matchedWord) {
@@ -2821,7 +2854,7 @@ function isStartScreenVisible() {
 
 function handleTypingKeydown(event) {
   if (!assetLoadingState.ready) return;
-  if (document.documentElement.dataset.screen === "online") return;
+  if (["online", "coop"].includes(document.documentElement.dataset.screen)) return;
   if (event.target === els.flickInput || event.target?.closest?.("input, textarea, [contenteditable='true']")
       || event.isComposing || event.keyCode === 229 || flickState.composing) return;
   if (event.code === "Escape") {

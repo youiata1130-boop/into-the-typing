@@ -4,7 +4,7 @@ const counterWindowMs = counterRules.windowMs;
 const counterRearmMs = counterRules.rearmMs;
 
 function canPlayerCounter() {
-  return state.running && !isMountainCaptureActive() && state.hp > 0 && getBattleWeaponId() === "sword"
+  return state.running && !isTargetTutorialWaiting() && !isMountainCaptureActive() && state.hp > 0 && getBattleWeaponId() === "sword"
     && !isBattleStartPending() && !state.specialInProgress && !isStoryDialogueOpen()
     && state.activeEnemies.some(enemy => isEnemyAlive(enemy) && !enemy.tutorial);
 }

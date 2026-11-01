@@ -1,13 +1,13 @@
 // Shared, deterministic rules. Only the room owner applies damage and decides results.
 window.ONLINE_DUEL = (() => {
   const counter = window.COUNTER_RULES;
-  const rules = Object.freeze({ hp: 1000, damage: 40, attackMinMs: 2000, countdownMs: 3000, limitMs: 180000,
+  const rules = Object.freeze({ hp: 800, damage: 40, attackMinMs: 2000, countdownMs: 3000, limitMs: 180000,
     defenseWindowMs: 200, counterWindowMs: counter.windowMs, counterCooldownMs: counter.rearmMs, counterDamage: 20,
     counterMaxEnergy: counter.maxEnergy, counterEnergyPerCharacter: counter.energyPerCharacter,
-    damagePerCharacter: 4, inputMsPerCharacter: 200, windupMsPerCharacter: 40, maxInputLength: 40, version: 5 });
+    damagePerCharacter: 4, inputMsPerCharacter: 200, windupMsPerCharacter: 40, maxInputLength: 40, version: 6 });
   const handicapRatios = Object.freeze([1, 1.1, 1.2, 1.3, 1.4, 1.5, 2, 2.5, 3]);
   function validHandicap(ratio, seat) { return handicapRatios.includes(ratio) && (seat === 0 || seat === 1); }
-  function maxHpFor(match, seat) { return Math.round(rules.hp * (seat === match.handicapSeat ? match.handicapRatio : 1)); }
+  function maxHpFor(match, seat, baseHp = rules.hp) { return Math.round(baseHp * (seat === match.handicapSeat ? match.handicapRatio : 1)); }
   const weapons = Object.freeze({
     sword: Object.freeze({ name: "鉄の剣", defense: "counter", minLength: 2, maxLength: 8 }),
     greatsword: Object.freeze({ name: "大剣", defense: "guard", emptyGuard: true, minLength: 12, maxLength: 20 }),
@@ -286,7 +286,7 @@ window.ONLINE_DUEL = (() => {
         counterWaitMs: Math.max(0, counterReadyAt - match.clockNow),
         attackWaitMs: attackAt === null ? null : Math.max(0, attackAt - match.clockNow) })) };
   }
-  function validSnapshot(data, words) {
+  function validSnapshot(data, words, baseHp = rules.hp) {
     if (!data || typeof data.id !== "string" || !/^[a-f0-9]{24}$/.test(data.id)
         || !["lobby", "countdown", "fighting", "finished"].includes(data.phase)
         || !["simple", "weapons"].includes(data.battleMode)
@@ -301,7 +301,7 @@ window.ONLINE_DUEL = (() => {
     return data.players.every((player, seat) => player && typeof player.name === "string" && player.name.length <= 20
       && isWeapon(player.weaponId) && (data.battleMode !== "simple" || player.weaponId === "sword")
       && ["roman", "kana"].includes(player.mode) && typeof player.ready === "boolean"
-      && player.maxHp === maxHpFor(data, seat)
+      && player.maxHp === maxHpFor(data, seat, baseHp)
       && Number.isInteger(player.hp) && player.hp >= 0 && player.hp <= player.maxHp
       && Number.isSafeInteger(player.index) && player.index >= 0 && player.index <= 1000
       && Number.isSafeInteger(player.seq) && player.seq >= 0

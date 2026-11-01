@@ -1,9 +1,10 @@
 function getDualBladePreviewWord() {
-  if (isMountainCaptureActive() || isBattleStartPending()) return null;
+  if (isMountainCaptureActive() || isBattleStartPending() || isTargetTutorialWaiting()) return null;
   if (!state.running || getBattleWeaponId() !== "dualBlades" || isStoryDialogueOpen()
       || els.battleScreen.hidden || state.cleared >= state.roundLimit) return null;
   const enemy = getCurrentEnemy();
   if (!enemy) return state.dualNextSpawnWord;
+  if (isPlantBody(enemy) && enemy.hp <= getPlayerAttackDamage(enemy)) return null;
   if (isEnemyAlive(enemy)) {
     // Recovery may already have assigned the upcoming word while it is hidden.
     if (performance.now() < state.playerAttackReadyAt && !enemy.resolving && !enemy.typed) {

@@ -17,7 +17,7 @@
     popup: $("onlineFlickPopup"), setup: $("onlineSetup"), battleMode: $("onlineBattleMode"),
     weapon: $("onlineWeapon"), weaponLabel: $("onlineWeaponLabel"), next: $("onlineNext"), opponent: $("onlineOpponent"),
     nextTranslation: $("onlineNextTranslation"), nextTarget: $("onlineNextTarget"),
-    defense: $("onlineDefense"), touchDefense: $("onlineTouchDefense"), damageRule: $("onlineDamageRule"),
+    defense: $("onlineDefense"), touchDefense: $("onlineTouchDefense"), damageRule: $("onlineDamageRule"), hpRule: $("onlineHpRule"),
     handicapRatio: $("onlineHandicapRatio"), handicapSeat: $("onlineHandicapSeat"), handicapSeatLabel: $("onlineHandicapSeatLabel"),
     handicapHost: $("onlineHandicapHost"), handicapGuest: $("onlineHandicapGuest"),
     title: $("onlineTitle"), battleModeLabel: $("onlineBattleModeLabel"), handicapRatioLabel: $("onlineHandicapRatioLabel"),
@@ -395,6 +395,7 @@
     const npcMode = session.opponent === "npc";
     const busy = Boolean(session.peer || session.connectTimer), weaponMode = npcMode || (match?.battleMode || session.battleMode) === "weapons";
     ui.damageRule.textContent = weaponMode ? "文字数に応じて変化" : String(duel.rules.damage);
+    ui.hpRule.textContent = (npcMode ? npc.playerHp : duel.rules.hp).toLocaleString("ja-JP");
     ui.title.textContent = npcMode ? "NPC戦" : "オンライン対戦";
     ui.battleMode.hidden = ui.battleModeLabel.hidden = npcMode;
     ui.handicapRatio.hidden = ui.handicapRatioLabel.hidden = npcMode;

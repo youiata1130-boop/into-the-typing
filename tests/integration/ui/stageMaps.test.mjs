@@ -121,3 +121,52 @@ test("map selection is restored from each save's progression without leaking bet
   assert.equal(game.run("state.stageMapRegionId"), "grassland");
   assert.deepEqual(visibleStages(game), ["grassland_path", "flower_meadow", "swarm_meadow"]);
 });
+
+const beforeMountain = [...progress.clearedStages, "grassland_path", "flower_meadow", "swarm_meadow",
+  "mushroom_forest", "spore_path", "fairy_forest", "thorn_depths"];
+const mountainProgress = { ...progress, totalExperience: 2850, dualBladesObtained: true,
+  swordShieldObtained: true, clearedStages: beforeMountain };
+
+test("mountain stages run from 4-1 plant to 4-2 birds, including map labels and the clear action", () => {
+  const game = setup({ "into-the-typing.player.v2": JSON.stringify(mountainProgress) });
+  assert.deepEqual(visibleStages(game), ["vine_pass", "mountain_path"]);
+  assert.equal(game.run('getHighestAvailableStageCode()'), "4-1");
+  assert.deepEqual(game.snapshot(`mapButtons.filter(b=>!b.hidden).map(b=>[
+    b.querySelector('.stage-code').textContent,b.querySelector('.stage-name').textContent,b.disabled])`),
+    [["4-1","つる草の峠",false],["4-2","鳥たちの山道",true]]);
+  assert.match(game.run('mapButtons.find(b=>b.dataset.stage==="mountain_path").getAttribute("aria-label")'), /4-1未クリア/);
+  game.run('showStageConfirm("vine_pass");startConfirmedStage()');
+  assert.equal(game.run('getCurrentEnemy().type'), "mountain_guard");
+  assert.equal(game.run('allowsEnemySelection()'), true);
+  game.advance(850);
+  game.run('selectBattleEnemy(state.activeEnemies[1]);[...state.activeEnemies].reverse().forEach(enemy=>{enemy.hp=0;defeatEnemy(enemy)})');
+  game.advance(1000);
+  game.run('state.activeEnemies.forEach(enemy=>{enemy.hp=0;defeatEnemy(enemy)})');
+  game.advance(1200);
+  assert.equal(game.run('els.noticeButton.textContent'), "ステージ4-2へ");
+  assert.equal(game.run('getHighestAvailableStageCode()'), "4-2");
+  game.run('continueAfterResult()');
+  assert.equal(game.run('state.stageId'), "mountain_path");
+  assert.equal(game.run('getCurrentEnemy().type'), "mountain_bird_level_1");
+  assert.equal(game.run('getStageDefinition("mountain_path").nextStageId'), undefined);
+  const reloaded = setup(game.saved());
+  assert.equal(reloaded.run('isStageAvailable("mountain_path")'), true);
+  assert.equal(reloaded.run('getHighestAvailableStageCode()'), "4-2");
+});
+
+test("swapping mountain stages preserves older clear records and replay access without granting a clear", () => {
+  for (const completed of [["mountain_path"], ["mountain_path","vine_pass"]]) {
+    const savedProgress = { ...mountainProgress, totalExperience: 3310,
+      clearedStages: [...beforeMountain, ...completed] };
+    const game = setup({ "into-the-typing.player.v2": JSON.stringify(savedProgress) });
+    assert.equal(game.run('isStageAvailable("vine_pass")'), true);
+    assert.equal(game.run('isStageAvailable("mountain_path")'), true);
+    assert.equal(game.run('getHighestAvailableStageCode()'), "4-2");
+    assert.deepEqual(game.snapshot('state.clearedStages'), savedProgress.clearedStages);
+    game.run('showStageConfirm("mountain_path");startConfirmedStage()');
+    assert.equal(game.run('state.stageId'), "mountain_path");
+    assert.equal(game.run('state.running'), true);
+    assert.deepEqual(game.savedProgress().clearedStages, savedProgress.clearedStages);
+    assert.equal(game.savedProgress().totalExperience, savedProgress.totalExperience);
+  }
+});

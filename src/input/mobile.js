@@ -217,6 +217,7 @@ function applyFlickValue(value, key = flickPromptKey(), { composing = false, inp
     return;
   }
   if (flickState.lastValue === value && !(flickState.lastPending && !composing)) return;
+  if (value && getInputEnemy() === enemy) lockBattleTarget(enemy);
   flickState.lastValue = value;
   const parsed = getFlickReading(enemy);
   let roman = getFlickRoman(value, enemy, parsed);

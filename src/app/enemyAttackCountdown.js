@@ -10,8 +10,8 @@ function updateEnemyAttackCountdown(enemy, now = performance.now()) {
   const impact = now < (enemy.attackCountdownUntil || 0);
   // Remove sub-millisecond floating-point noise from movement-based timing.
   const remaining = Math.round(getEnemyAttackRemainingMs(enemy, now));
-  const visible = state.running && !isBattleStartPending() && !isStoryDialogueOpen()
-    && !isMountainCaptureActive() && !enemy.tutorial && isEnemyAlive(enemy)
+  const visible = state.running && isMindEyeActive() && !isBattleStartPending() && !isStoryDialogueOpen()
+    && !isMountainCaptureActive() && !isTargetTutorialEnemyPaused(enemy) && !isPlantRegrowing(enemy) && !enemy.tutorial && isEnemyAlive(enemy)
     && (impact || (!enemy.resolving && enemy.animation !== "attack" && remaining <= 3000));
   enemy.attackCountdownEl.hidden = !visible;
   if (!visible) return;
