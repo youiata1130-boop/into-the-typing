@@ -1670,7 +1670,7 @@ function renderWord() {
   syncFlickInput();
   updateGuardHud();
   updateEnemySelection();
-  const selectedEnemy = isBattleStartPending() || isTargetTutorialWaiting() || performance.now() < state.playerAttackReadyAt ? null : getCurrentEnemy();
+  const selectedEnemy = isBattleStartPending() || performance.now() < state.playerAttackReadyAt ? null : getCurrentEnemy();
 
   if (!selectedEnemy) {
     els.wordTranslation.textContent = state.running ? "" : state.currentTranslation;

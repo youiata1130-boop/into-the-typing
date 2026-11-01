@@ -1,5 +1,5 @@
 function getDualBladePreviewWord() {
-  if (isMountainCaptureActive() || isBattleStartPending() || isTargetTutorialWaiting()) return null;
+  if (isMountainCaptureActive() || isBattleStartPending()) return null;
   if (!state.running || getBattleWeaponId() !== "dualBlades" || isStoryDialogueOpen()
       || els.battleScreen.hidden || state.cleared >= state.roundLimit) return null;
   const enemy = getCurrentEnemy();

@@ -2,6 +2,7 @@
 
 オンライン対戦: [部屋番号・入力進捗・体力と通信の仕様](gameplay/online-duel.md)。
 オンライン協力: [2〜4人の部屋・武器選択・巨人討伐](gameplay/online-coop.md)。
+NPC協力: [NPCと2人で巨人討伐](gameplay/online-coop.md#npc協力)。
 
 | フォルダ | 内容 |
 | --- | --- |
@@ -20,7 +21,9 @@
 実際に使う画像は `src/assets/images/`、未使用素材は [archive](../archive/README.md) に保存する。検証用の一時ログ・画像・スクリプトはGit対象外の `tmp/verification/` にまとめる。
 
 - 素材生成スクリプト: `scripts/assets/`。
-- 結合テスト: `tests/integration/` 内の `battle/`・`input/`・`progression/`・`stages/`・`ui/`。
+- 戦闘処理: `src/app/battle/`。ステージ固有の処理: `src/app/stages/`。
+- 対戦モード: `src/online/duel/`。協力モード: `src/online/coop/`。各フォルダの `rules.js` がルール、`play.js` が画面と操作、`npc.js` がNPCの動作を扱う。
+- 結合テスト: `tests/integration/` 内の `battle/`・`input/`・`online/`・`progression/`・`stages/`・`ui/`。
 - 一時検証ファイル: `tmp/verification/` 内の `scripts/`・`logs/`・`screenshots/`・`profiles/`。
 
 画像の段階読み込み: [起動・地図・ステージごとの読み込み](testing/stage-loading.md)。

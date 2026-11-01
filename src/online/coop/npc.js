@@ -36,10 +36,7 @@ window.COOP_NPC = (() => {
     const countering = player.counterStartedAt !== null && now - player.counterStartedAt <= duel.rules.counterWindowMs;
     const target = duel.targetFor(duel.wordFor(match, words, player.index, 1), player.mode, player.value);
     if (player.guarding || countering || player.attackAt !== null || player.value === target) { bot.credit = 0; return; }
-    bot.credit = Math.min(2, bot.credit + elapsed * bot.speed / 1000);
-    if (bot.credit + 1e-9 < 1) return;
-    if (coop.acceptInput(match, words, 1, { match: match.id, index: player.index, seq: player.seq + 1,
-      value: target.slice(0, player.value.length + 1) }, now)) bot.credit = Math.max(0, bot.credit - 1);
+    npc.typeNext(bot, match, words, target, elapsed, now, coop.acceptInput);
   }
   function resume(bot, match, pausedAt, now) {
     npc.resume(bot, match, pausedAt, now);

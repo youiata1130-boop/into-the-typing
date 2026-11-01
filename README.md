@@ -27,8 +27,8 @@ The workflow in `.github/workflows/pages.yml` builds `dist/` and deploys only th
 
 For Netlify, Vercel, Cloudflare Pages, Firebase Hosting, or similar services:
 
-- Build command: leave empty.
-- Publish directory: `.`.
+- Build command: `npm run build`.
+- Publish directory: `dist`.
 - Entry file: `index.html`.
 
 ## Folder Structure
@@ -37,17 +37,26 @@ For Netlify, Vercel, Cloudflare Pages, Firebase Hosting, or similar services:
 into-the-typing/
 ├── index.html              # App entry point and script loading order
 ├── src/
-│   ├── app/                # Asset loading, game state, story, and battle flow
+│   ├── app/                # Game state, asset loading, and sound
+│   │   ├── battle/         # Combat skills, defense, attack warnings, and effects
+│   │   └── stages/         # Target-selection lesson, plant boss, and bird capture
 │   ├── config/             # Stage, weapon, animation, progression, and save-slot storage
 │   ├── data/               # Typing words and interface text
 │   ├── input/              # Japanese reading matching and mobile keyboard
+│   ├── online/
+│   │   ├── connection.js   # Shared room connection and PeerJS loading
+│   │   ├── duel/           # Duel rules, screen/controller, and NPC opponent
+│   │   └── coop/           # Co-op rules, screen/controller, and NPC ally
 │   ├── ui/                 # Save selection and battle layout
 │   ├── styles/main.css     # Layout and visual effects
+│   ├── vendor/             # Third-party browser libraries
 │   └── assets/images/      # Images used by the game
 │       ├── backgrounds/    # Shared, status, and stage-map backgrounds
 │       ├── player/         # Player frames by weapon and state
 │       ├── items/          # Weapon illustrations for story scenes
-│       └── enemies/        # Enemy frames by type, level, and state
+│       ├── enemies/        # Enemy frames by type, level, and state
+│       ├── events/         # Event illustrations
+│       └── story/          # Story illustrations
 ├── dist/                   # Generated publish files (Git-ignored)
 ├── scripts/                # Build, local server and syntax checking
 │   └── assets/             # Asset-generation utilities
@@ -56,13 +65,14 @@ into-the-typing/
 │   ├── integration/
 │   │   ├── battle/         # Weapons, cooldowns, skills, and animation
 │   │   ├── input/          # Typing, flick keyboard, and word selection
+│   │   ├── online/         # Online/NPC duel and co-op modes
 │   │   ├── progression/    # Saves, growth, rewards, and skill tutorial
 │   │   ├── stages/         # Story, enemy waves, and balance
 │   │   └── ui/             # Loading screen and stage maps
-│   ├── fixtures/          # Shared reference data
+│   ├── fixtures/           # Shared reference data
 │   └── helpers/            # Shared DOM and clock fixture
 ├── docs/
-│   ├── gameplay/           # Weapons, cooldowns, and combat skills
+│   ├── gameplay/           # Weapons, skills, duel, and co-op specifications
 │   ├── stages/             # Regional maps, enemy waves, and rewards
 │   ├── assets/             # Art-generation records and prompts
 │   └── testing/            # Layout and interaction verification notes
@@ -71,7 +81,7 @@ into-the-typing/
 │   ├── scripts/            # One-off browser checks
 │   ├── logs/               # Check and test logs
 │   ├── screenshots/        # Screen captures and previews
-│   └── profiles/           # Performance measurements
+│   └── profiles/           # Optional performance measurements
 └── .github/workflows/      # GitHub Pages deployment
 ```
 
@@ -79,10 +89,14 @@ into-the-typing/
 | --- | --- |
 | Startup image loading | `src/app/loading.js` |
 | Game behavior | `src/app/game.js` |
-| Sword-and-shield guarding and input | `src/app/guard.js` |
-| Stationary enemy charging and attack warnings | `src/app/enemyCharge.js` |
+| Sword-and-shield guarding and input | `src/app/battle/guard.js` |
+| Stationary enemy charging and attack warnings | `src/app/battle/enemyCharge.js` |
 | Combat skills and gauge settings | `src/config/skills.js` |
-| Skill effect handlers and gauge display | `src/app/skills.js` |
+| Skill effect handlers and gauge display | `src/app/battle/skills.js` |
+| Stage-specific battle events | `src/app/stages/` |
+| Online and NPC duel | `src/online/duel/` |
+| Online and NPC co-op | `src/online/coop/` |
+| Shared room connections | `src/online/connection.js` |
 | Three save slots and legacy migration | `src/config/saveSlots.js` |
 | New / Continue and player names | `src/ui/saveMenu.js` |
 | Typing words | `src/data/words.js` |
@@ -95,9 +109,11 @@ into-the-typing/
 
 Scripts load in the order listed in `index.html`. They remain classic browser scripts so opening `index.html` directly still works without a build step. The integration-test helper follows that same script order.
 
+Each mode folder uses `rules.js` for combat rules, `play.js` for its screen and controller, and `npc.js` for computer-controlled players. Co-op also uses the shared typing and weapon rules from `duel/rules.js`. Keep corresponding mode tests in `tests/integration/online/`; cross-mode battle tests remain in `tests/integration/battle/`.
+
 - Player images: `src/assets/images/player/{weapon}/{state}/frame_{nn}.webp`.
 - Enemy images: `src/assets/images/enemies/{enemy}/level_{n}/{state}/frame_{nn}.webp`.
-- Backgrounds: `src/assets/images/backgrounds/{shared,status,stage_map}`.
+- Backgrounds: `src/assets/images/backgrounds/{shared,status,stage_map,stages}`.
 - Art records: [greatsword](docs/assets/player/greatsword-generation.md), [unarmed](docs/assets/player/unarmed-generation.md), and [wooden branch](docs/assets/player/branch-generation.md).
 - Legacy images: see the [archive guide](archive/README.md).
 - Specifications and generation records: see the [documentation index](docs/README.md).
@@ -121,9 +137,10 @@ Scripts load in the order listed in `index.html`. They remain classic browser sc
 
 ## Current Gameplay
 
-- `オンライン協力` supports 2–4 players in a friend room. Everyone selects a weapon and readies before the host can select `巨人討伐`. One giant randomly telegraphs single-target or party-wide attacks; target names and highlighted player cards are synchronized for everyone. Host-authoritative combat supports roman and flick input, guards, counters, disconnect handling and returning to weapon selection. Adventure saves are unchanged. See [cooperative rules](docs/gameplay/online-coop.md).
-- `オンライン対戦` creates or joins a two-player friend room using an eight-digit code. The host selects simple or weapon mode. Weapon mode offers the iron sword, greatsword, dual blades and sword/shield, with guards and counters but no skills. Greatswords use long prompts, dual blades short prompts, and both swords medium prompts. Weapon damage and attack timing scale with typed characters, while defense borrows future attack power. Simple mode retains shared prompts and 40 damage per answer. Base HP is 1,000; either player can receive an HP handicap up to 3× before the match. Each fighter’s typing is displayed underneath them. Desktop roman input and the mobile flick keyboard are supported. Adventure saves are unchanged. See [online duel rules and connection requirements](docs/gameplay/online-duel.md).
-- `NPC戦` uses the weapon-duel rules with a local computer opponent. Choose its weapon, HP (500–3,000), and typing speed (1, 2, 3, 4 or 6 characters/second). NPC typing progress is visible, defenses obey the same rules as players, and hidden tabs pause the match. Rematch with the same settings or change them after a result. No PeerJS connection or adventure-save changes are involved.
+- `オンライン協力` supports 2–4 players in a friend room. The host chooses `やさしい`, `普通` or `難しい`; everyone selects a weapon and readies before the host can select `巨人討伐`. One giant randomly telegraphs single-target or party-wide attacks; target names and the same triangular cursors used in solo play are synchronized for everyone. Host-authoritative combat supports roman and flick input, guards, counters, disconnect handling and returning to weapon selection. Adventure saves are unchanged. See [cooperative rules](docs/gameplay/online-coop.md).
+- `オンライン対戦` creates or joins a two-player friend room using an eight-digit code. The host selects simple or weapon mode. Weapon mode offers the iron sword, greatsword, dual blades and sword/shield, with guards and counters but no skills. Greatswords use long prompts, dual blades short prompts, and both swords medium prompts. Weapon damage and attack timing scale with typed characters, while defense borrows future attack power. Simple mode retains shared prompts and 40 damage per answer. Base HP is 800; either player can receive an HP handicap up to 3× before the match. Both fighters appear on a shared stage with health gauges. Desktop roman input and the mobile flick keyboard are supported. Adventure saves are unchanged. See [online duel rules and connection requirements](docs/gameplay/online-duel.md).
+- `NPC戦` uses the weapon-duel rules with a local computer opponent. Choose its weapon, HP (500–3,000), and strength (`弱い`, `普通`, `強い`, `師匠`, `最強`). NPC typing progress is visible, defenses obey the same rules as players, and hidden tabs pause the match. Rematch with the same settings or change them after a result. No PeerJS connection or adventure-save changes are involved.
+- `NPC協力` pairs one player with one local NPC ally for giant hunting. Choose both weapons and the NPC's strength and the giant's difficulty (`やさしい`, `普通`, `難しい`), ready, then select the stage. The NPC attacks and defends through the normal co-op rules. Hidden tabs pause combat, and rematches retain the loadouts, ally strength and enemy difficulty. See [NPC co-op](docs/gameplay/online-coop.md#npc協力).
 
 - The title screen offers `初めから` and `続きから`. Choose one of three slots and enter a player name (1–20 characters) for a new adventure. Slot cards show the name, level, and highest available stage. Creating a save writes it before opening the map; overwriting an occupied slot requires the explicitly labeled confirmation button. Canceling leaves the existing data untouched.
 - `続きから` opens the map with the selected player's saved growth and equipment. Battles restart when entered. The map's `タイトル` button returns to player selection.

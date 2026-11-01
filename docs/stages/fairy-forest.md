@@ -10,7 +10,7 @@
 - 合計480EXPは木の妖精を倒してステージをクリアした時に保存する。失敗・中断・再開始で途中の報酬を破棄する。武器報酬はない。クリア後は3-4「荊の深森」へ進める。
 - 森背景を共用し、[木の妖精の専用素材](../assets/enemies/tree-fairy-generation.md)を追加した。
 
-設定: `src/config/stages.js`。攻撃予告: `src/app/enemyCharge.js`。テスト: `tests/integration/stages/fairyForest.test.mjs` と `tests/integration/ui/stageMaps.test.mjs`。
+設定: `src/config/stages.js`。攻撃予告: `src/app/battle/enemyCharge.js`。テスト: `tests/integration/stages/fairyForest.test.mjs` と `tests/integration/ui/stageMaps.test.mjs`。
 
 - 敵の溜め時間は各回の開始時に基準値の±10％で抽選する。オーラと振りかぶりは抽選後の時間に追従する。接近型の敵も接近時間と攻撃後の待機時間を同じ範囲で抽選する。
 

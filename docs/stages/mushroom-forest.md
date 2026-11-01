@@ -13,7 +13,7 @@
 ## 実装と検証
 
 - ステージ設定: `src/config/stages.js` の `attackStyle: "charge"`、`chargeMs`、`fixedProgress`。
-- 溜めと予告表示: `src/app/enemyCharge.js`。戦闘ループと同じ経過時間を使う。
+- 溜めと予告表示: `src/app/battle/enemyCharge.js`。戦闘ループと同じ経過時間を使う。
 - 自動テスト: `tests/integration/stages/mushroomForest.test.mjs`、`tests/integration/ui/stageMaps.test.mjs`。
 - 画像と生成プロンプト: [森の素材](../assets/enemies/mushroom-generation.md)。
 

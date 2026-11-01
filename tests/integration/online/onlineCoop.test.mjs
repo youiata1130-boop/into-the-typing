@@ -42,6 +42,46 @@ test('co-op requires 2–4 players, all ready, then a host stage selection; chan
   game.run('C.tick(match,W,3100)'); assert.equal(game.run('match.phase'), 'fighting');
 });
 
+test('difficulty changes require the host in the lobby and invalidate old readiness', () => {
+  const game = battle({ start: false });
+  game.run('readyAll();const revision=match.settingsRevision');
+  for (const difficulty of ['unknown','__proto__','toString',null,1]) {
+    assert.equal(game.run(`C.chooseDifficulty(match,0,${JSON.stringify(difficulty)},match.settingsRevision)`), false);
+  }
+  assert.equal(game.run('C.chooseDifficulty(match,1,"hard",revision)'), false);
+  assert.equal(game.run('C.chooseDifficulty(match,0,"normal",revision)'), true);
+  assert.equal(game.run('C.canStart(match)'), true);
+  assert.equal(game.run('C.chooseDifficulty(match,0,"hard",revision)'), true);
+  assert.deepEqual(game.snapshot('match.players.map(p=>p.ready)'), [false,false]);
+  assert.equal(game.run('C.ready(match,0,true,revision)'), false);
+  assert.equal(game.run('C.chooseDifficulty(match,0,"easy",revision)'), false);
+  game.run('readyAll();C.start(match,0,"giant",0,match.settingsRevision)');
+  assert.equal(game.run('C.chooseDifficulty(match,0,"easy",match.settingsRevision)'), false);
+});
+
+test('each difficulty applies its HP, warnings, damage and interval for 2–4 players and validates snapshots', () => {
+  for (const [difficulty,hp,interval,warning,single,area] of [
+    ['easy',350,8000,3000,100,50], ['normal',500,6000,2500,160,80], ['hard',750,4500,1800,240,120],
+  ]) for (const count of [2,3,4]) {
+    const game = battle({ count, start: false });
+    game.run(`C.chooseDifficulty(match,0,'${difficulty}',match.settingsRevision);readyAll();C.start(match,0,'giant',0,match.settingsRevision);C.tick(match,W,3000)`);
+    assert.equal(game.run('match.boss.maxHp'), hp*count);
+    assert.equal(game.run('match.boss.nextAttackAt'), 3000+interval-warning);
+    game.run(`C.tick(match,W,${3000+interval-warning},()=>0)`);
+    assert.equal(game.run('C.snapshot(match).boss.attack.remainingMs'), warning);
+    assert.equal(game.run('C.validSnapshot(C.snapshot(match),W)'), true);
+    for (const edit of ['copy.difficulty="__proto__"','delete copy.difficulty','copy.boss.maxHp++',`copy.boss.attack.remainingMs=${warning+1}`]) {
+      assert.equal(game.run(`(()=>{const copy=C.snapshot(match);${edit};return C.validSnapshot(copy,W)})()`),false);
+    }
+    game.run(`C.tick(match,W,${3000+interval-1},()=>0)`);
+    assert.equal(game.run('match.players[0].hp'),1000);
+    game.run(`C.tick(match,W,${3000+interval},()=>0)`);
+    assert.equal(game.run('match.players[0].hp'),1000-single);
+    game.run(`C.tick(match,W,${3000+2*interval-warning},()=>.8);C.tick(match,W,${3000+2*interval},()=>.8)`);
+    assert.deepEqual(game.snapshot('match.players.map(p=>p.hp)'),[1000-single-area,...Array(count-1).fill(1000-area)]);
+  }
+});
+
 test('correct answers damage the one shared giant once, never allies, and honor each weapon and kana', () => {
   const game = battle({ count: 4, start: false }), saved = game.saved();
   game.run(`['sword','greatsword','dualBlades','swordShield'].forEach((w,i)=>C.chooseWeapon(match,i,w,match.settingsRevision));
@@ -200,6 +240,61 @@ test('four clients synchronize weapons, readiness, host-only stage, target marke
     assert.equal(g.run('P.session.match.players.every(p=>!p.ready&&p.hp===1000)'), true);
   });
   all.forEach((g, i) => { g.run('P.leave()'); assert.deepEqual(g.saved(), saved[i]); });
+});
+
+test('host and guest show distinct giant windups, one confirmed impact, and cancel them on victory and rematch', () => {
+  const { host, guests: [guest], pump } = room();
+  const all = [host, guest];
+  all.forEach(g => g.run('P.ready()')); pump(); host.run('P.start()'); host.advance(3000); pump();
+  for (const kind of ['single', 'all']) {
+    host.run(`P.session.match.boss.nextAttackAt=performance.now();C.tick(P.session.match,W,performance.now(),()=>${kind === 'single' ? 0 : .8})`);
+    host.advance(100); pump();
+    all.forEach(g => {
+      assert.equal(g.run('document.querySelector("#coopBoss").dataset.attack'), kind);
+      assert.equal(g.run('document.querySelector("#coopBossImage").getAttribute("src")'), `src/assets/images/enemies/giant/windup-${kind}.webp`);
+      assert.equal(g.run('document.querySelector("#coopBoss").dataset.strike'), '');
+    });
+    host.advance(2500); pump();
+    all.forEach(g => {
+      assert.equal(g.run('document.querySelector("#coopBoss").dataset.attack'), '');
+      assert.equal(g.run('document.querySelector("#coopBoss").dataset.strike'), kind);
+      assert.equal(g.run('document.querySelector("#coopBossImage").getAttribute("src")'), 'src/assets/images/enemies/giant/idle.webp');
+      g.advance(700);
+    });
+    pump();
+    all.forEach(g => assert.equal(g.run('document.querySelector("#coopBoss").dataset.strike'), ''));
+  }
+  host.run('P.session.match.boss.nextAttackAt=performance.now();C.tick(P.session.match,W,performance.now(),()=>.8)');
+  host.advance(100); pump();
+  host.run('P.session.match.boss.hp=0'); host.advance(100); pump();
+  all.forEach(g => {
+    assert.equal(g.run('document.querySelector("#coopBoss").dataset.attack'), '');
+    assert.equal(g.run('document.querySelector("#coopBoss").dataset.strike'), '');
+  });
+  host.run('P.again()'); pump(); all.forEach(g => g.run('P.ready()')); pump(); host.run('P.start()'); pump();
+  all.forEach(g => {
+    assert.equal(g.run('document.querySelector("#coopBoss").dataset.strike'), '');
+    assert.equal(g.run('document.querySelector("#coopBossImage").getAttribute("src")'), 'src/assets/images/enemies/giant/idle.webp');
+  });
+});
+
+test('difficulty is shared with guests, rejects guest changes, controls the warning meter, and survives rematch', () => {
+  const { host, guests: [guest], pump } = room();
+  assert.equal(guest.run('P.chooseDifficulty("hard")'),false);
+  host.run('P.chooseDifficulty("easy")');pump();
+  assert.equal(guest.run('document.querySelector("#coopDifficulty").value'),'easy');
+  assert.equal(guest.run('document.querySelector("#coopDifficulty").disabled'),true);
+  guest.run('connections.host.send({type:"difficulty",match:P.session.match.id,difficulty:"hard",settingsRevision:P.session.match.settingsRevision})');pump();
+  assert.equal(host.run('P.session.match.difficulty'),'easy');
+  host.run('P.ready()');guest.run('P.ready()');pump();host.run('P.start()');host.advance(3000);pump();
+  host.run('P.session.match.boss.nextAttackAt=performance.now()');host.advance(100);pump();
+  for(const g of [host,guest]) {
+    assert.equal(g.run('P.session.match.boss.maxHp'),700);
+    assert.equal(g.run('document.querySelector("#coopAttackBar").max'),3000);
+    assert.equal(g.run('document.querySelector("#coopDifficulty").disabled'),true);
+  }
+  host.run('P.session.match.boss.hp=0');host.advance(100);pump();host.run('P.again()');pump();
+  for(const g of [host,guest])assert.equal(g.run('P.session.match.difficulty'),'easy');
 });
 
 test('kana guests type with the shared Japanese matcher and reset partial input on the next word', () => {

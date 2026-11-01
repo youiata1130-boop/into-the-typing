@@ -6,7 +6,7 @@
     <title>Into the Typing</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='52'%3E%E2%9A%94%EF%B8%8F%3C/text%3E%3C/svg%3E">
     <link rel="preload" as="image" href="src/assets/images/backgrounds/shared/typing_rpg_background.webp">
-    <link rel="stylesheet" href="src/styles/main.css?v=20261101-duel-stage-v1">
+    <link rel="stylesheet" href="src/styles/main.css?v=20261101-giant-motion-v1">
   </head>
   <body>
     <section class="loading-screen" id="loadingScreen" aria-labelledby="loadingText" aria-busy="true">
@@ -52,8 +52,8 @@
           <select id="npcWeapon" hidden><option value="sword">鉄の剣</option><option value="greatsword">大剣</option><option value="dualBlades">双剣</option><option value="swordShield">片手剣</option></select>
           <label id="npcHpLabel" for="npcHp" hidden>NPCのHP</label>
           <select id="npcHp" hidden><option value="500">500</option><option value="1000" selected>1,000</option><option value="1500">1,500</option><option value="2000">2,000</option><option value="2500">2,500</option><option value="3000">3,000</option></select>
-          <label id="npcSpeedLabel" for="npcSpeed" hidden>NPCの入力速度</label>
-          <select id="npcSpeed" hidden><option value="1">1文字/秒</option><option value="2">2文字/秒</option><option value="3" selected>3文字/秒</option><option value="4">4文字/秒</option><option value="6">6文字/秒</option></select>
+          <label id="npcSpeedLabel" for="npcSpeed" hidden>NPCの強さ</label>
+          <select id="npcSpeed" hidden><option value="1">弱い</option><option value="3" selected>普通</option><option value="7">強い</option><option value="20">師匠</option><option value="60">最強</option></select>
         </div>
         <button id="npcStart" class="online-primary online-ready" type="button" hidden>対戦開始</button>
         <div class="online-lobby" id="onlineLobby">
@@ -129,30 +129,40 @@
         <div class="online-room" id="coopRoom" hidden><span>部屋番号</span><strong id="coopCode"></strong><button id="coopCopy" type="button">コピー</button></div>
         <p class="online-status" id="coopStatus" role="status"></p>
         <div id="coopParty" hidden>
-          <div class="coop-party-head"><h2>参加者 <span id="coopCount"></span></h2><time id="coopClock" aria-label="残り時間" hidden></time></div>
+          <div class="coop-party-head" id="coopPartyHead"><h2>参加者 <span id="coopCount"></span></h2></div>
           <div class="coop-players" id="coopPlayers"></div>
           <div id="coopLoadout">
+            <div class="online-setup"><label for="coopDifficulty">難易度</label>
+              <select id="coopDifficulty"><option value="easy">やさしい</option><option value="normal" selected>普通</option><option value="hard">難しい</option></select>
+            </div>
             <div class="online-setup"><label for="coopWeapon">あなたの武器</label>
               <select id="coopWeapon"><option value="sword">鉄の剣</option><option value="greatsword">大剣</option><option value="dualBlades">双剣</option><option value="swordShield">片手剣</option></select>
             </div>
             <div class="online-setup" id="coopNpcSetup" hidden>
               <label for="coopNpcWeapon">NPCの武器</label>
               <select id="coopNpcWeapon"><option value="sword">鉄の剣</option><option value="greatsword">大剣</option><option value="dualBlades">双剣</option><option value="swordShield" selected>片手剣</option></select>
-              <label for="coopNpcSpeed">NPCの入力速度</label>
-              <select id="coopNpcSpeed"><option value="1">1文字/秒</option><option value="2">2文字/秒</option><option value="3" selected>3文字/秒</option><option value="4">4文字/秒</option><option value="6">6文字/秒</option></select>
+              <label for="coopNpcSpeed">NPCの強さ</label>
+              <select id="coopNpcSpeed"><option value="1">弱い</option><option value="3" selected>普通</option><option value="7">強い</option><option value="20">師匠</option><option value="60">最強</option></select>
             </div>
             <button id="coopReady" class="online-primary online-ready" type="button">準備完了にする</button>
           </div>
           <div class="coop-stages" id="coopStages" hidden><h2>ステージ選択</h2><button class="online-primary" id="coopStart" type="button">巨人討伐</button></div>
           <div class="coop-battle" id="coopBattle" hidden>
             <div class="coop-boss" id="coopBoss">
-              <div class="coop-boss-health"><h2>巨人</h2><strong id="coopBossHp"></strong><progress id="coopBossBar" max="1000" value="1000" aria-label="巨人の体力"></progress></div>
-              <img id="coopBossImage" alt="岩の巨人">
+              <time class="coop-clock" id="coopClock" aria-label="残り時間" hidden></time>
+              <div class="coop-enemy">
+                <progress class="coop-character-hp" id="coopBossBar" max="1000" value="1000" aria-label="巨人の体力"></progress>
+                <img id="coopBossImage" alt="岩の巨人">
+              </div>
               <div class="coop-actors" id="coopActors" aria-label="仲間の配置"></div>
               <div class="coop-warning"><p id="coopTarget" role="status"></p><progress id="coopAttackBar" max="2500" value="0" aria-label="巨人の攻撃まで" hidden></progress></div>
             </div>
+            <div class="coop-command-panel">
             <div class="online-input" id="coopInput" tabindex="-1">
-              <div class="online-input-head"><h2 id="coopInputLabel">あなたの入力</h2><button class="online-defense" id="coopDefense" type="button" hidden></button></div>
+              <div class="online-input-head"><h2 id="coopInputLabel" hidden>戦闘不能</h2>
+                <span class="counter-energy" id="coopEnergy" role="meter" aria-label="あなたの気" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" hidden><span id="coopEnergyValue">気 0％</span><i><i id="coopEnergyFill"></i></i></span>
+                <button class="online-defense" id="coopDefense" type="button" hidden></button>
+              </div>
               <div class="online-prompts"><div class="online-current"><p class="online-letters"><span class="online-done" id="coopTyped"></span><span id="coopRemaining"></span></p><p class="online-word" id="coopWord"></p></div>
                 <div class="online-next" id="coopNext" aria-label="次の単語" hidden><span class="next-word-target" id="coopNextTarget"></span><span class="next-word-translation" id="coopNextWord"></span></div>
               </div>
@@ -161,9 +171,12 @@
               <div class="online-entry" id="coopEntry"><output aria-label="入力中のかな"></output><button id="coopErase" type="button" aria-label="1文字消す">⌫</button></div>
               <div class="online-keyboard" id="coopKeyboard" role="group" aria-label="協力用フリックキーボード"></div>
             </div>
+            </div>
           </div>
+          <div class="coop-result" id="coopResult" hidden>
           <p class="online-banner" id="coopBanner" role="status" hidden></p>
           <button class="online-ready" id="coopAgain" type="button" hidden>武器選択に戻る</button>
+          </div>
         </div>
         <div class="game-flick-popup online-flick-popup" id="coopFlickPopup" aria-hidden="true" hidden></div>
       </section>
@@ -633,8 +646,12 @@
         </div>
         </section>
 
+        <dialog class="target-tutorial" id="targetTutorial" aria-labelledby="targetTutorialTitle" aria-describedby="targetTutorialText" hidden>
+          <h2 id="targetTutorialTitle">攻撃先の選び方</h2>
+          <p id="targetTutorialText"></p>
+          <button id="targetTutorialDismiss" type="button">わかった</button>
+        </dialog>
         <section class="control-panel">
-        <div class="target-tutorial" id="targetTutorial" role="status" hidden><p id="targetTutorialText"></p></div>
         <div class="capture-hud" id="captureHud" hidden>
           <div class="capture-heading"><strong id="captureHeading">入力して脱出！</strong><strong id="captureTime"></strong></div>
           <div class="capture-meter" id="captureMeter" role="meter" aria-label="脱出までの残り秒数" aria-valuemin="0" aria-valuemax="25" aria-valuenow="25"><i id="captureTimeFill"></i></div>
@@ -724,28 +741,28 @@
     <script src="src/input/flickKeyboard.js?v=20261024-sword-counter-v1"></script>
     <script src="src/app/loading.js?v=20261024-capture-intro-v1"></script>
     <script src="src/app/sound.js?v=20261031-mind-eye-v1"></script>
-    <script src="src/app/skills.js?v=20261031-mind-eye-v1"></script>
-    <script src="src/app/targetTutorial.js?v=20261101-target-lesson-v1"></script>
-    <script src="src/app/plantEnemy.js?v=20261101-plant-regrowth-v1"></script>
-    <script src="src/app/enemyCharge.js?v=20261024-dual-time-stop-v1"></script>
-    <script src="src/app/enemyAttackCountdown.js?v=20261101-plant-regrowth-v1"></script>
-    <script src="src/app/battleFeedback.js?v=20261024-healing-sword-v1"></script>
-    <script src="src/app/mountainCapture.js?v=20261024-capture-intro-v1"></script>
-    <script src="src/app/guard.js?v=20261101-target-lesson-v1"></script>
-    <script src="src/app/dualBladePreview.js?v=20261101-plant-regrowth-v1"></script>
+    <script src="src/app/battle/skills.js?v=20261031-mind-eye-v1"></script>
+    <script src="src/app/stages/targetTutorial.js?v=20261101-target-popup-v1"></script>
+    <script src="src/app/stages/plantEnemy.js?v=20261101-plant-regrowth-v1"></script>
+    <script src="src/app/battle/enemyCharge.js?v=20261024-dual-time-stop-v1"></script>
+    <script src="src/app/battle/enemyAttackCountdown.js?v=20261101-plant-regrowth-v1"></script>
+    <script src="src/app/battle/battleFeedback.js?v=20261024-healing-sword-v1"></script>
+    <script src="src/app/stages/mountainCapture.js?v=20261024-capture-intro-v1"></script>
+    <script src="src/app/battle/guard.js?v=20261101-target-lesson-v1"></script>
+    <script src="src/app/battle/dualBladePreview.js?v=20261101-target-popup-v1"></script>
     <script src="src/ui/weaponMenu.js?v=20261031-mind-eye-v1"></script>
-    <script src="src/app/enemyActionStop.js?v=20261024-dual-time-stop-v1"></script>
-    <script src="src/app/attackBoost.js?v=20261024-shield-attack-boost-v1"></script>
-    <script src="src/app/mindEye.js?v=20261031-mind-eye-v1"></script>
+    <script src="src/app/battle/enemyActionStop.js?v=20261024-dual-time-stop-v1"></script>
+    <script src="src/app/battle/attackBoost.js?v=20261024-shield-attack-boost-v1"></script>
+    <script src="src/app/battle/mindEye.js?v=20261031-mind-eye-v1"></script>
     <script src="src/config/counterRules.js?v=20261031-counter-energy-v1"></script>
-    <script src="src/app/counter.js?v=20261101-target-lesson-v1"></script>
-    <script src="src/online/duel.js?v=20261101-duel-hp-v1"></script>
+    <script src="src/app/battle/counter.js?v=20261101-target-lesson-v1"></script>
+    <script src="src/online/duel/rules.js?v=20261101-duel-hp-v1"></script>
     <script src="src/online/connection.js?v=20261024-online-v1"></script>
-    <script src="src/online/npc.js?v=20261101-duel-hp-v1"></script>
-    <script src="src/app/game.js?v=20261101-plant-regrowth-v1"></script>
-    <script src="src/online/play.js?v=20261101-duel-stage-v1"></script>
-    <script src="src/online/coop.js?v=20261101-duel-hp-v1"></script>
-    <script src="src/online/coopNpc.js?v=20261101-npc-coop-v1"></script>
-    <script src="src/online/coopPlay.js?v=20261101-npc-coop-v1"></script>
+    <script src="src/online/duel/npc.js?v=20261101-npc-levels-v1"></script>
+    <script src="src/app/game.js?v=20261101-target-popup-v1"></script>
+    <script src="src/online/duel/play.js?v=20261101-duel-stage-v1"></script>
+    <script src="src/online/coop/rules.js?v=20261101-coop-difficulty-v1"></script>
+    <script src="src/online/coop/npc.js?v=20261101-npc-levels-v1"></script>
+    <script src="src/online/coop/play.js?v=20261101-coop-difficulty-v1"></script>
   </body>
 </html>

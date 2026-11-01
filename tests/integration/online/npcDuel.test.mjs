@@ -16,10 +16,11 @@ function fixture(config = { weaponId: 'dualBlades', hp: 1000, speed: 3 }, mode =
   return game;
 }
 
-test('NPC settings accept four weapons, six HP choices and five speeds without adventure stats', () => {
+test('NPC settings accept four weapons, six HP choices and five strength presets without adventure stats', () => {
   const game = fixture(), saved = game.saved();
   assert.deepEqual(game.snapshot('N.hpChoices'), [500,1000,1500,2000,2500,3000]);
-  assert.deepEqual(game.snapshot('N.speeds'), [1,2,3,4,6]);
+  assert.deepEqual(game.snapshot('N.speeds'), [1,3,7,20,60]);
+  assert.deepEqual(game.snapshot('N.levels.map(level=>level.name)'), ['弱い','普通','強い','師匠','最強']);
   game.run(`for(const weaponId of Object.keys(D.weapons)) for(const hp of N.hpChoices) for(const speed of N.speeds){
     const m=N.createMatch(match.id,order,'あなた','roman','greatsword',{weaponId,hp,speed});
     if(m.players[0].hp!==1000 || m.players[1].hp!==hp || m.players[1].maxHp!==hp || m.players[1].weaponId!==weaponId)throw Error('NPC setup mismatch');
@@ -31,24 +32,37 @@ test('NPC settings accept four weapons, six HP choices and five speeds without a
   assert.deepEqual(game.saved(), saved);
 });
 
-test('NPC types one character at a time at the selected rate in roman and kana modes', () => {
-  for (const mode of ['roman','kana']) for (const speed of [1,2,3,4,6]) {
+test('NPC strength presets type at their selected rates, including multiple keys per frame for strongest', () => {
+  for (const mode of ['roman','kana']) for (const speed of [1,3,7,20,60]) {
     const game = fixture({weaponId:'greatsword',hp:1000,speed}, mode);
-    game.run('for(let now=0;now<=4000;now+=50)frame(now)');
-    assert.equal(game.run('match.players[1].value.length'), speed, `${mode} ${speed} chars/sec`);
-    assert.equal(game.run('match.players[1].seq'), speed);
+    const duration = speed >= 20 ? 100 : 1000, count = speed * duration / 1000;
+    game.run(`for(let now=0;now<=${3000 + duration};now+=50)frame(now)`);
+    assert.equal(game.run('match.players[1].value.length'), count, `${mode} ${speed} chars/sec`);
+    assert.equal(game.run('match.players[1].seq'), speed === 60 ? 2 : count);
     assert.equal(game.run('match.players[0].hp'), 1000);
   }
 });
 
+test('each stronger NPC starts its actual attack sooner, with master and strongest above the human timing ceiling', () => {
+  const times=[];
+  for(const speed of [1,3,7,20,60]) {
+    const game=fixture({weaponId:'greatsword',hp:1000,speed});
+    game.run('for(let now=0;match.players[1].attacks===0&&now<40000;now+=50)frame(now)');
+    times.push(game.run('match.clockNow-3000'));
+    assert.equal(game.run('match.players[1].attacks'),1);
+  }
+  for(let i=1;i<times.length;i++)assert.ok(times[i]<times[i-1],JSON.stringify(times));
+  assert.ok(times[4]<times[3]*.75,JSON.stringify(times));
+});
+
 test('NPC waits for countdown and uses its own weapon prompt, attack timing and damage', () => {
-  const game = fixture({weaponId:'dualBlades',hp:500,speed:6});
+  const game = fixture({weaponId:'dualBlades',hp:500,speed:7});
   game.run('for(let now=0;now<3000;now+=50)frame(now)');
   assert.equal(game.run('match.players[1].value'), '');
   game.run('const length=D.targetFor(D.wordFor(match,W,0,1),"roman").length;for(let now=3000;match.players[1].index===0&&now<9000;now+=50)frame(now)');
   assert.equal(game.run('match.players[1].index'), 1);
-  assert.ok(game.run('match.clockNow-3000>=length*240'));
-  assert.ok(game.run('match.clockNow-3000<=length*240+100'));
+  assert.ok(game.run('match.clockNow-3000>=length*(1000/7+40)'));
+  assert.ok(game.run('match.clockNow-3000<=length*(1000/7+40)+100'));
   assert.equal(game.run('match.players[0].hp'), 1000-game.run('length')*4);
   assert.equal(game.run('match.players[1].value'), '');
   game.run('frame(match.clockNow+50)');
@@ -56,9 +70,9 @@ test('NPC waits for countdown and uses its own weapon prompt, attack timing and 
 });
 
 test('a stalled frame cannot burst-type a whole prompt or advance a finished battle', () => {
-  const game = fixture({weaponId:'dualBlades',hp:1000,speed:6});
+  const game = fixture({weaponId:'greatsword',hp:1000,speed:60});
   game.run('frame(3000);frame(10000)');
-  assert.equal(game.run('match.players[1].value.length'), 1);
+  assert.equal(game.run('match.players[1].value.length'), 3);
   game.run('D.tick(match,W,match.endsAt);const seq=match.players[1].seq;N.step(bot,match,W,999999)');
   assert.equal(game.run('match.players[1].seq===seq'), true);
   assert.equal(game.run('match.phase'), 'finished');
@@ -79,7 +93,7 @@ for (const weapon of ['sword','greatsword','swordShield']) {
 
 test('NPC greatsword cannot guard midway through a word and defense is not guaranteed', () => {
   const game = fixture({weaponId:'greatsword',hp:1000,speed:3});
-  game.run('frame(3000);const damage=D.targetFor(D.wordFor(match,W,0,0),"roman").length*4;answer();D.tick(match,W,5000);bot.random=()=>0;N.step(bot,match,W,5000);N.step(bot,match,W,5200);N.step(bot,match,W,5250)');
+  game.run('frame(3000);for(let now=3050;now<5000;now+=50)frame(now);const damage=D.targetFor(D.wordFor(match,W,0,0),"roman").length*4;answer();D.tick(match,W,5000);bot.random=()=>0;N.step(bot,match,W,5000);N.step(bot,match,W,5200);N.step(bot,match,W,5250)');
   assert.ok(game.run('match.players[1].value.length') > 0);
   assert.equal(game.run('match.players[1].guarding'), false);
   game.run('D.tick(match,W,5400)');
@@ -101,17 +115,17 @@ function localGame(touch = false) {
 test('NPC starts without a connection and keeps online handicaps out of local NPC health', () => {
   const game = localGame();
   game.run(`O.session.handicapRatio=3;O.session.handicapSeat=0;O.chooseWeapon('greatsword');
-    O.setNpcConfig({weaponId:'swordShield',hp:500,speed:2});O.startNpc();O.connect(true);`);
+    O.setNpcConfig({weaponId:'swordShield',hp:500,speed:3});O.startNpc();O.connect(true);`);
   assert.equal(game.run('O.session.peer'), null);
   assert.equal(game.run('O.session.conn'), null);
   assert.equal(game.run('document.querySelector("#onlineTitle").textContent'), 'NPC戦');
   assert.equal(game.run('document.querySelector("#onlineLobby").hidden'), true);
   assert.deepEqual(game.snapshot('O.session.match.players.map(p=>[p.weaponId,p.hp,p.maxHp])'), [['greatsword',1000,1000],['swordShield',500,500]]);
-  assert.equal(game.run('O.setNpcConfig({weaponId:"sword",hp:1000,speed:6})'), false);
+  assert.equal(game.run('O.setNpcConfig({weaponId:"sword",hp:1000,speed:7})'), false);
   assert.equal(game.run('O.startNpc()'), false, 'cannot restart an active fight');
   game.advance(4000);
-  assert.equal(game.run('O.session.match.players[1].value.length'), 2);
-  assert.equal(game.run('document.querySelector("#onlineOpponentTyped").textContent.length'), 2);
+  assert.equal(game.run('O.session.match.players[1].value.length'), 3);
+  assert.equal(game.run('document.querySelector("#onlineOpponentTyped").textContent.length'), 3);
   assert.equal(game.run('document.querySelector("#onlineOtherBar").max'), 500);
 });
 
@@ -160,14 +174,14 @@ test('NPC countdown resumes after returning from a hidden tab', () => {
 
 test('NPC rematch restores chosen HP and settings; setup can be changed after a result', () => {
   const game = localGame(), saved = game.saved();
-  game.run('O.setNpcConfig({weaponId:"dualBlades",hp:2500,speed:4});O.startNpc()');game.advance(3000);
+  game.run('O.setNpcConfig({weaponId:"dualBlades",hp:2500,speed:20});O.startNpc()');game.advance(3000);
   game.run('const oldId=O.session.match.id;O.session.match.players[1].hp=0');game.advance(50);
   assert.equal(game.run('document.querySelector("#onlineBanner").textContent'), '勝利！');
   assert.equal(game.run('document.querySelector("#npcSettings").hidden'), false);
   game.run('O.ready()');
   assert.equal(game.run('O.session.match.id!==oldId'), true);
   assert.deepEqual(game.snapshot('O.session.match.players.map(p=>p.hp)'), [1000,2500]);
-  assert.equal(game.run('O.session.npcBot.speed'), 4);
+  assert.equal(game.run('O.session.npcBot.speed'), 20);
   game.advance(3000);game.run('O.session.match.players[0].hp=0');game.advance(50);
   assert.equal(game.run('document.querySelector("#onlineBanner").textContent'), '敗北');
   game.run('O.npcSettings();O.setNpcConfig({weaponId:"greatsword",hp:500,speed:1})');

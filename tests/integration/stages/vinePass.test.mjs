@@ -5,16 +5,17 @@ import { createGame } from '../../helpers/game.mjs';
 
 const cleared = ['forest_path','mist_road','sky_castle','storm_cove','grassland_path','flower_meadow',
   'swarm_meadow','mushroom_forest','spore_path','fairy_forest','thorn_depths'];
-function battle({ touch = false, unlocked = true, weaponId = 'swordShield', wait = true, opening = false } = {}) {
+function battle({ touch = false, unlocked = true, weaponId = 'swordShield', wait = true, opening = false, dismiss = true } = {}) {
   const game = createGame({ 'into-the-typing.player.v2': JSON.stringify({ version: 2, totalExperience: 3310,
     stats: { attack: 7, agility: 3 }, weaponId, introCompleted: true, equipmentTutorialCompleted: true,
     ironSwordObtained: true, greatswordObtained: true, dualBladesObtained: true, swordShieldObtained: true,
     skillTutorialCompleted: true, clearedStages: unlocked ? cleared : cleared.slice(0, -1) }) }, { touch });
   game.run(`startGame('vine_pass');const shift=(extra={})=>handleTypingKeydown({key:'Shift',code:'ShiftLeft',preventDefault(){},...extra});`);
   if (wait) game.advance(game.run('startNoticeMs'));
+  if (wait && dismiss) game.run('dismissTargetTutorial()');
   if (unlocked && !opening) {
     if (!wait) game.advance(game.run('startNoticeMs'));
-    game.run('shift();[...state.activeEnemies].reverse().forEach(enemy=>{enemy.hp=0;defeatEnemy(enemy)})');
+    game.run('dismissTargetTutorial();shift();[...state.activeEnemies].reverse().forEach(enemy=>{enemy.hp=0;defeatEnemy(enemy)})');
     game.advance(1000);
   }
   return game;
@@ -56,6 +57,32 @@ test('the opening explains Shift, shows the durable enemy on the left, and safel
   assert.equal(game.run('beginPlayerGuard("keyboard")'), false);
   assert.equal(game.run('useSpecialMove()'), false);
   assert.equal(game.run('state.specialGauge'), 100);
+});
+
+test('the opening popup waits for the start notice and must close before choosing a target', () => {
+  const game = battle({ opening: true, wait: false, dismiss: false });
+  assert.equal(game.run('targetTutorialUi.panel.hidden'), true);
+  game.advance(game.run('startNoticeMs'));
+  assert.equal(game.run('targetTutorialUi.panel.hidden'), false);
+  assert.ok(game.run('els.remainingWord.textContent.length') > 0);
+  game.run('shift();state.activeEnemies[1].selectButton.dispatchEvent({type:"click"})');
+  assert.equal(game.run('getSelectedEnemy().slot'), 0);
+  game.run('targetTutorialUi.dismiss.dispatchEvent({type:"click"});updateHud()');
+  assert.equal(game.run('targetTutorialUi.panel.hidden'), true);
+  assert.equal(game.run('getTargetTutorialPhase()'), 'select');
+  assert.equal(game.run('getInputEnemy()'), null);
+  game.run('shift()');
+  assert.equal(game.run('getSelectedEnemy().slot'), 1);
+  assert.equal(game.run('getTargetTutorialPhase()'), 'attack');
+  assert.equal(game.run('targetTutorialUi.panel.hidden'), true);
+});
+
+test('Escape closes the tutorial popup without leaving the battle', () => {
+  const game = battle({ opening: true, dismiss: false });
+  game.run('targetTutorialUi.panel.dispatchEvent({type:"cancel",preventDefault(){}})');
+  assert.equal(game.run('targetTutorialUi.panel.hidden'), true);
+  assert.equal(game.run('state.running'), true);
+  assert.equal(game.run('getTargetTutorialPhase()'), 'select');
 });
 
 for (const touch of [false,true]) test(`${touch ? 'touch' : 'Shift'} selects the right enemy, defeats it first and releases the left enemy`, () => {
@@ -105,7 +132,8 @@ test('restarting or leaving the lesson discards its selection, inputs and pendin
   assert.equal(game.run('getSelectedEnemy().slot'), 0);
   assert.deepEqual(game.snapshot('state.activeEnemies.map(e=>e.hp)'), [96,24]);
   assert.equal(game.run('state.pendingExperience'), 0);
-  game.run('shift();getSelectedEnemy().hp=0;defeatEnemy(getSelectedEnemy());showStageSelect()');
+  assert.equal(game.run('targetTutorialUi.panel.hidden'), false);
+  game.run('dismissTargetTutorial();shift();getSelectedEnemy().hp=0;defeatEnemy(getSelectedEnemy());showStageSelect()');
   game.advance(2000);
   assert.equal(game.run('targetTutorialUi.panel.hidden'), true);
   assert.equal(game.run('getTargetTutorialPhase()'), '');

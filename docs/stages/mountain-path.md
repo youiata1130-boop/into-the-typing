@@ -37,5 +37,5 @@
 - 利用条件の確認: [青空文庫収録ファイルの取り扱い規準](https://www.aozora.gr.jp/guide/kijyunn.html)（2026-10-24確認）。保護期間終了作品の複製・再利用が可能。出典をこの文書と捕獲中の作者・作品リンクに明示する。
 - 原文のルビは本文から分離し、句読点を入力対象から除外する。音は原文のルビどおり「ね」、判然は「はんぜん」と読む。表示する原文の文言は変更していない。
 
-文章データは `src/data/capturePassages.js`、捕獲処理は `src/app/mountainCapture.js`。
+文章データは `src/data/capturePassages.js`、捕獲処理は `src/app/stages/mountainCapture.js`。
 画像と生成プロンプトは [山道と鳥の素材記録](../assets/enemies/mountain-birds-generation.md)。
