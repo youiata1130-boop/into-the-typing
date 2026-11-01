@@ -89,7 +89,7 @@ for (const [method, weaponId] of [['attack', 'swordShield'], ['counter', 'sword'
     game.run('getCurrentEnemy().hp = 1');
     if (method === 'attack') game.run('applyTypedValue(getInputEnemy(), getInputEnemy().matchedWord)');
     if (method === 'counter') {
-      game.run('beginPlayerCounter(); setEnemyProgress(getCurrentEnemy(), 1); enemyAttack(getCurrentEnemy())');
+      game.run('chargePlayerCounter(10); beginPlayerCounter(); setEnemyProgress(getCurrentEnemy(), 1); enemyAttack(getCurrentEnemy())');
     }
     if (method === 'skill') {
       game.run('state.specialGauge = 100');

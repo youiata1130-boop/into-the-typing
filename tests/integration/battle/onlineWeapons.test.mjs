@@ -16,7 +16,7 @@ function battle(weapons = ['sword', 'swordShield'], modes = ['roman', 'roman'], 
     function defend(seat,action,now){return D.defense(match,W,seat,{match:match.id,seq:match.players[seat].defenseSeq+1,action},now)}
     function launch(seat){answer(seat);const p=match.players[seat];D.tick(match,W,Math.max(match.clockNow,p.openedAt+profile(seat).inputMs));return p.attackAt}
   `);
-  if(start)game.run('D.ready(match,0,0);D.ready(match,1,0);D.tick(match,W,3000)');
+  if(start)game.run('D.ready(match,0,0);D.ready(match,1,0);D.tick(match,W,3000);match.players.filter(p=>p.weaponId==="sword").forEach(p=>p.counterEnergy=100)');
   return game;
 }
 
@@ -106,10 +106,12 @@ test('counter reflects up to 20, repays all prevented/reflected power and cannot
 });
 
 test('expired counter fails, forbidden defenses and skills cannot be invoked',()=>{
-  const g=battle(['swordShield','sword']);g.run('const power=profile(0).damage;const hitAt=launch(0);defend(1,"counter",hitAt-201);D.tick(match,W,hitAt)');
+  const g=battle(['swordShield','sword']);g.run('const power=profile(0).damage;const hitAt=launch(0);defend(1,"counter",hitAt-401);D.tick(match,W,hitAt)');
   assert.deepEqual(g.snapshot('match.players.map(p=>p.hp)'),[1000,1000-g.run('power')]);
-  assert.equal(g.run('defend(1,"counter",hitAt+398)'),false);
-  assert.equal(g.run('defend(1,"counter",hitAt+399)'),true);
+  assert.equal(g.run('match.players[1].counterEnergy'),50);
+  assert.equal(g.run('defend(1,"counter",hitAt+199)'),false);
+  g.run('match.players[1].counterEnergy=100');
+  assert.equal(g.run('defend(1,"counter",hitAt+199)'),true);
   const d=battle(['dualBlades','sword']);
   for(const [seat,action] of [[0,'guard-start'],[0,'counter'],[1,'guard-start'],[1,'skill']])assert.equal(d.run(`defend(${seat},'${action}',3001)`),false);
 });

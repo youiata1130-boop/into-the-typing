@@ -39,9 +39,10 @@ function fitBattleCharacters() {
   arena.style.setProperty("--player-headroom", `${Math.max(8, backBottom + 6) + (chargeHeight > 0 ? chargeHeight + 24 : 0)}px`);
   if (!flickState.enabled) {
     fitSwarmCharacters(bounds);
+    fitPlantCharacters(bounds);
     return;
   }
-  const slots = Math.max(1, ...state.activeEnemies.map(enemy => (enemy.slot || 0) + 1));
+  const slots = Math.max(1, ...state.activeEnemies.map(enemy => enemy.formation ? 1 : (enemy.slot || 0) + 1));
   const enemySize = state.activeEnemies.some(enemy => enemy.type === "thorn_stag_boss") ? 1.6
     : state.activeEnemies.some(enemy => ["medaka_boss", "crab_boss", "snake_boss", "mushroom_boss", "tree_fairy_boss"].includes(enemy.type)) ? 1.3 : 1;
   const layout = calculateBattleLayout(arena.clientWidth, arena.clientHeight, backBottom, slots, enemySize, chargeHeight);
@@ -50,6 +51,23 @@ function fitBattleCharacters() {
     arena.style.setProperty("--fit-" + cssName, value.toFixed(2) + "px");
   }
   fitSwarmCharacters(bounds);
+  fitPlantCharacters(bounds);
+}
+
+function fitPlantCharacters(bounds) {
+  if (!state.activeEnemies.some(enemy => enemy.formation === "plant")) return;
+  const playerRight = els.player.getBoundingClientRect().right - bounds.left;
+  const available = Math.max(80, bounds.width - playerRight - 20);
+  const travel = Math.min(40, available * 0.12);
+  const scale = Math.max(0.01, Math.min(0.32, (available - travel - 12) / 1536, (bounds.height - 70) / 1024));
+  const far = bounds.width - 8 - (1536 * scale + 12);
+  for (const enemy of state.activeEnemies.filter(enemy => enemy.formation === "plant")) {
+    const body = enemy.type === "octopus_plant_body";
+    const x = [0, 480, 1056][enemy.slot];
+    const values = { left: far + x * scale + enemy.slot * 6,
+      width: (body ? 576 : 480) * scale, height: 1024 * scale, travel };
+    for (const [name, value] of Object.entries(values)) enemy.element.style.setProperty("--plant-" + name, value.toFixed(2) + "px");
+  }
 }
 
 function calculateSwarmLayout(arenaWidth, arenaHeight, player, backRight, slots, size = 1) {

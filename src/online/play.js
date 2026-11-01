@@ -25,7 +25,8 @@
     npcWeapon: $("npcWeapon"), npcHp: $("npcHp"), npcSpeed: $("npcSpeed"),
     npcFields: ["npcWeapon", "npcWeaponLabel", "npcHp", "npcHpLabel", "npcSpeed", "npcSpeedLabel"].map($),
     players: ["Self", "Other"].map(side => ({ card: $("online" + side), name: $("online" + side + "Name"),
-      hp: $("online" + side + "Hp"), bar: $("online" + side + "Bar"), image: $("online" + side + "Image"), effect: $("online" + side + "Effect") })),
+      hp: $("online" + side + "Hp"), bar: $("online" + side + "Bar"), image: $("online" + side + "Image"), effect: $("online" + side + "Effect"),
+      energy: $("online" + side + "Energy"), energyValue: $("online" + side + "EnergyValue"), energyFill: $("online" + side + "EnergyFill") })),
   };
   const session = { active: false, generation: 0, peer: null, conn: null, host: false, seat: 0, match: null,
     room: "", mode: "roman", name: "", remote: null, timer: 0, connectTimer: 0, lastSeen: 0, lastSent: 0,
@@ -311,7 +312,7 @@
     // The reliable channel delivers release before subsequent typing. Do not
     // discard the first character while waiting for the release acknowledgment.
     if (session.match.battleMode === "weapons" && ((player.guarding && !releasing) || player.countering
-        || (session.host && player.counterStartedAt !== null && performance.now() - player.counterStartedAt <= duel.rules.defenseWindowMs)
+        || (session.host && player.counterStartedAt !== null && performance.now() - player.counterStartedAt <= duel.rules.counterWindowMs)
         || (session.defensePending && !releasing) || (session.host ? player.attackAt !== null : player.attackWaitMs !== null))) return false;
     return session.localValue !== duel.targetFor(duel.wordFor(session.match, words, player.index, session.seat), player.mode, session.localValue);
   }
@@ -363,6 +364,7 @@
         || (session.opponent !== "npc" && !session.conn?.open)) return false;
     const player = match.players[session.seat];
     // Include kana which is still awaiting a dakuten/small-letter correction.
+    if (action === "counter" && player.counterEnergy < duel.rules.counterMaxEnergy) return false;
     const partial = session.localValue && session.localValue !== duel.targetFor(duel.wordFor(match, words, player.index, session.seat), player.mode, session.localValue);
     if (action === "guard-start" && player.weaponId === "greatsword" && (partial || session.pending)) return false;
     const packet = { type: "defense", match: match.id, seq: ++session.defenseSeq, action };
@@ -461,6 +463,7 @@
       button.textContent = self.defenseCost ? `防御コスト ${self.defenseCost}` : kind === "counter" ? "カウンター" : "ガード";
       if (button === ui.defense && !self.defenseCost) button.textContent += " ［Space］";
       button.disabled = Boolean(self.defenseCost || self.counterWaitMs || session.defensePending
+        || (kind === "counter" && self.counterEnergy < duel.rules.counterMaxEnergy)
         || (self.weaponId === "greatsword" && (partial || session.pending)));
       button.setAttribute("aria-pressed", String(self.guarding || self.countering));
     }
@@ -471,6 +474,10 @@
       card.name.textContent = `${weaponMode ? weapon.name : index ? "相手" : "あなた"}：${player.name}`;
       card.name.setAttribute("title", `${index ? "相手" : "あなた"}：${player.name}${weaponMode ? " / " + weapon.name : ""}`);
       card.hp.textContent = `${player.hp} / ${player.maxHp}`;
+      card.energy.hidden = !weaponMode || player.weaponId !== "sword";
+      card.energyValue.textContent = `気 ${player.counterEnergy}％`;
+      card.energy.setAttribute("aria-valuenow", String(player.counterEnergy));
+      card.energyFill.style.width = `${player.counterEnergy}%`;
       card.bar.max = player.maxHp; card.bar.value = player.hp;
       if (before && before.hp > player.hp && (!weaponMode || player.feedback === "hit")) visual.hurtUntil = now + 350;
       if (before && (before.attacks < player.attacks || before.counterHits < player.counterHits)) {

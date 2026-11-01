@@ -1,8 +1,10 @@
 // Shared, deterministic rules. Only the room owner applies damage and decides results.
 window.ONLINE_DUEL = (() => {
+  const counter = window.COUNTER_RULES;
   const rules = Object.freeze({ hp: 1000, damage: 40, attackMinMs: 2000, countdownMs: 3000, limitMs: 180000,
-    defenseWindowMs: 200, counterCooldownMs: 600, counterDamage: 20,
-    damagePerCharacter: 4, inputMsPerCharacter: 200, windupMsPerCharacter: 40, maxInputLength: 40, version: 4 });
+    defenseWindowMs: 200, counterWindowMs: counter.windowMs, counterCooldownMs: counter.rearmMs, counterDamage: 20,
+    counterMaxEnergy: counter.maxEnergy, counterEnergyPerCharacter: counter.energyPerCharacter,
+    damagePerCharacter: 4, inputMsPerCharacter: 200, windupMsPerCharacter: 40, maxInputLength: 40, version: 5 });
   const handicapRatios = Object.freeze([1, 1.1, 1.2, 1.3, 1.4, 1.5, 2, 2.5, 3]);
   function validHandicap(ratio, seat) { return handicapRatios.includes(ratio) && (seat === 0 || seat === 1); }
   function maxHpFor(match, seat) { return Math.round(rules.hp * (seat === match.handicapSeat ? match.handicapRatio : 1)); }
@@ -46,6 +48,7 @@ window.ONLINE_DUEL = (() => {
         weaponId: battleMode === "weapons" ? loadouts[index] : "sword",
         index: 0, value: "", seq: 0, attacks: 0, openedAt: 0, pendingInput: false,
         defenseSeq: 0, guarding: false, guardStartedAt: null, counterStartedAt: null, counterReadyAt: 0,
+        counterEnergy: 0, counterBestLength: 0,
         attackAt: null, defenseCost: 0, feedback: "", feedbackId: 0, counterHits: 0 })) };
   }
   function chooseWeapon(match, seat, id) {
@@ -105,11 +108,17 @@ window.ONLINE_DUEL = (() => {
         || packet.index !== player.index || !Number.isSafeInteger(packet.seq) || packet.seq <= player.seq
         || typeof packet.value !== "string" || packet.value.length > 40
         || (packet.pending !== undefined && typeof packet.pending !== "boolean")) return false;
+    if (expireCounter(player, now)) match.revision++;
     if (match.battleMode === "weapons" && (player.guarding || counterActive(player, now) || player.attackAt !== null)) return false;
     const word = wordFor(match, words, player.index, seat);
     if (player.value === targetFor(word, player.mode, player.value)) return false;
     const target = targetFor(word, player.mode, packet.value);
     if (!target.startsWith(packet.value)) return false;
+    if (match.battleMode === "weapons" && player.weaponId === "sword") {
+      const gained = Math.max(0, packet.value.length - player.counterBestLength);
+      player.counterBestLength = Math.max(player.counterBestLength, packet.value.length);
+      player.counterEnergy = Math.min(rules.counterMaxEnergy, player.counterEnergy + gained * rules.counterEnergyPerCharacter);
+    }
     player.value = packet.value;
     player.seq = packet.seq;
     player.pendingInput = Boolean(packet.pending);
@@ -164,7 +173,7 @@ window.ONLINE_DUEL = (() => {
       if (match.battleMode === "weapons") match.players.forEach(player => {
         player.hp = Math.max(0, player.hp - player.defenseCost);
         player.defenseCost = 0; player.guarding = false; player.guardStartedAt = null;
-        player.counterStartedAt = null; player.counterReadyAt = 0; player.attackAt = null;
+        settleCounter(player, false); player.counterReadyAt = 0; player.attackAt = null;
       });
       const [a, b] = match.players;
       match.winner = a.hp === b.hp ? -1 : a.hp > b.hp ? 0 : 1;
@@ -174,7 +183,17 @@ window.ONLINE_DUEL = (() => {
     return true;
   }
   function counterActive(player, now) {
-    return player.counterStartedAt !== null && now >= player.counterStartedAt && now - player.counterStartedAt <= rules.defenseWindowMs;
+    return player.counterStartedAt !== null && now >= player.counterStartedAt && now - player.counterStartedAt <= rules.counterWindowMs;
+  }
+  function settleCounter(player, success) {
+    if (player.counterStartedAt === null) return;
+    player.counterEnergy = success ? 0 : Math.floor(player.counterEnergy / 2);
+    player.counterStartedAt = null;
+  }
+  function expireCounter(player, now) {
+    if (player.counterStartedAt === null || now - player.counterStartedAt <= rules.counterWindowMs) return false;
+    settleCounter(player, false);
+    return true;
   }
   function defense(match, words, seat, packet, now) {
     const player = match.players[seat];
@@ -183,13 +202,14 @@ window.ONLINE_DUEL = (() => {
         || !["guard-start", "guard-end", "counter"].includes(packet.action)
         || !Number.isFinite(now) || now >= match.endsAt) return false;
     const weapon = weapons[player.weaponId];
+    if (expireCounter(player, now)) match.revision++;
     if (packet.action === "guard-end") {
       if (weapon.defense !== "guard") return false;
       player.guarding = false; player.guardStartedAt = null;
     } else {
       if (player.defenseCost > 0) return false;
       if (packet.action === "counter") {
-        if (weapon.defense !== "counter" || now < player.counterReadyAt) return false;
+        if (weapon.defense !== "counter" || now < player.counterReadyAt || player.counterEnergy < rules.counterMaxEnergy) return false;
         player.counterStartedAt = now; player.counterReadyAt = now + rules.counterCooldownMs;
       } else {
         const word = wordFor(match, words, player.index, seat);
@@ -204,7 +224,7 @@ window.ONLINE_DUEL = (() => {
   function feedback(player, type) { player.feedback = type; player.feedbackId++; }
   function tickWeapons(match, words, now) {
     for (const [seat, player] of match.players.entries()) {
-      if (player.counterStartedAt !== null && !counterActive(player, now)) { player.counterStartedAt = null; match.revision++; }
+      if (expireCounter(player, now)) match.revision++;
       if (player.counterReadyAt && now >= player.counterReadyAt) { player.counterReadyAt = 0; match.revision++; }
       const word = wordFor(match, words, player.index, seat);
       const profile = attackProfile(word, player.mode, player.value);
@@ -221,6 +241,7 @@ window.ONLINE_DUEL = (() => {
       const spent = Math.min(power, player.defenseCost);
       player.defenseCost -= spent;
       player.index++; player.attacks++; player.value = ""; player.pendingInput = false;
+      player.counterBestLength = 0;
       player.openedAt = now; player.attackAt = null;
       match.revision++;
       return power - spent;
@@ -233,14 +254,14 @@ window.ONLINE_DUEL = (() => {
       // A fully spent attack still ends the defense against that swing. Otherwise
       // an empty swing could leave a held guard blocking the next typing prompt.
       if (!damage) {
-        defender.guarding = false; defender.guardStartedAt = null; defender.counterStartedAt = null;
+        defender.guarding = false; defender.guardStartedAt = null; settleCounter(defender, false);
         return;
       }
       if (counterActive(defender, now)) {
         const reflected = Math.min(rules.counterDamage, damage);
         attacker.hp = Math.max(0, attacker.hp - reflected);
         defender.defenseCost += damage + reflected;
-        defender.counterStartedAt = null; defender.counterHits++;
+        settleCounter(defender, true); defender.counterHits++;
         effect(1 - seat, "counter"); effect(seat, "hit");
       } else if (defender.guarding) {
         const just = now - defender.guardStartedAt <= rules.defenseWindowMs;
@@ -292,8 +313,11 @@ window.ONLINE_DUEL = (() => {
       && ["", "hit", "guard", "justGuard", "counter"].includes(player.feedback)
       && Number.isInteger(player.feedbackId) && player.feedbackId >= 0 && player.feedbackId <= 10000
       && Number.isInteger(player.counterHits) && player.counterHits >= 0 && player.counterHits <= 1000
+      && Number.isInteger(player.counterEnergy) && player.counterEnergy >= 0 && player.counterEnergy <= rules.counterMaxEnergy
+      && Number.isInteger(player.counterBestLength) && player.counterBestLength >= 0 && player.counterBestLength <= rules.maxInputLength
+      && ((data.battleMode === "weapons" && player.weaponId === "sword") || (!player.counterEnergy && !player.counterBestLength))
       && (!player.guarding || (data.battleMode === "weapons" && weapons[player.weaponId].defense === "guard"))
-      && (!player.countering || (data.battleMode === "weapons" && weapons[player.weaponId].defense === "counter"))
+      && (!player.countering || (data.battleMode === "weapons" && weapons[player.weaponId].defense === "counter" && player.counterEnergy === rules.counterMaxEnergy))
       && typeof player.value === "string" && player.value.length <= 40
       && wordPool(data, words, seat).length > 0
       && targetFor(wordFor(data, words, player.index, seat), player.mode, player.value).startsWith(player.value)

@@ -40,6 +40,7 @@ function getSkillDamage(effect) {
 
 // New effect types belong here; gauge consumption and battle timing stay shared.
 const skillEffectHandlers = {
+  freeCounter(effect) { startMindEye(effect.durationMs); },
   attackBoost(effect) { startPlayerAttackBoost(effect); },
   stopActions(effect) { startEnemyActionStop(effect.durationMs); },
   heal(effect) {
@@ -69,7 +70,9 @@ function updateSkillHud() {
   els.skillGauge.setAttribute("aria-valuetext", `${percent}％${els.specialButton.disabled ? "" : "、発動可能"}`);
   els.skillGaugeFill.style.width = `${percent}%`;
   els.skillGaugeValue.textContent = `${percent}％`;
-  els.skillName.textContent = skill.name;
+  const mindEyeActive = skill.id === "mind_eye" && isMindEyeActive();
+  els.skillName.textContent = mindEyeActive ? "心眼中" : skill.name;
+  els.specialButton.dataset.active = String(mindEyeActive);
   els.specialButton.setAttribute("aria-label", `${skill.name}を発動`);
   const shortcut = "Enter";
   els.specialShortcut.textContent = shortcut;

@@ -13,8 +13,9 @@ function getDualBladePreviewWord() {
       return enemy.nextWordPreview ||= chooseEnemyWord(enemy);
     }
   }
-  const following = state.activeEnemies.find(other => other !== enemy && isEnemyAlive(other));
-  if (following) return { text: following.word, translation: following.translation, reading: following.readingOverride };
+  const following = allowsEnemySelection() ? nextBattleEnemy(enemy)
+    : state.activeEnemies.find(other => other !== enemy && isEnemyAlive(other));
+  if (following && following !== enemy) return { text: following.word, translation: following.translation, reading: following.readingOverride };
   if (state.cleared + (isEnemyAlive(enemy) ? 1 : 0) >= state.roundLimit) return null;
   return state.dualNextSpawnWord ||= chooseEnemyWord(enemy);
 }

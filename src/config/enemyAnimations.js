@@ -14,6 +14,9 @@ window.ENEMY_ANIMATIONS = {
     medaka_boss: { frameMs: 70, idleWhileStopped: true },
   },
   enemies: {
+    ...Object.fromEntries(["left", "body", "right"].map(part => ["octopus_plant_" + part,
+      Object.fromEntries(["idle", "attack", "damage", "defeat"].map(animation =>
+        [animation, ["src/assets/images/enemies/octopus_plant/parts.webp?v=20261031-v1"]]))])),
     mountain_bird_level_1: {
       idle: [enemyFrame("mountain_bird", "level_1", "idle", 1), enemyFrame("mountain_bird", "level_1", "idle", 2)],
       attack: [enemyFrame("mountain_bird", "level_1", "idle", 2)],

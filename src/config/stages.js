@@ -222,6 +222,7 @@ const stageDefinitions = {
   mountain_path: {
     regionId: "mountain", code: "4-1", name: "鳥たちの山道", meta: "",
     enabled: true, requiresTutorial: true, requiresStage: "thorn_depths",
+    nextStageId: "vine_pass",
     background: "src/assets/images/backgrounds/stages/mountain.webp",
     wordLength: { normalMin: 0 },
     capture: {
@@ -239,5 +240,23 @@ const stageDefinitions = {
         attackPower: { min: 26, max: 32 }, count: 3, experience: 100,
         approachMs: 8500, repeatAttackMs: 1700 },
     ],
+  },
+  vine_pass: {
+    regionId: "mountain", code: "4-2", name: "つる草の峠", meta: "",
+    enabled: true, requiresTutorial: true, requiresStage: "mountain_path",
+    background: "src/assets/images/backgrounds/stages/mountain.webp",
+    wordLength: { normalMin: 0 },
+    waves: [{
+      types: ["octopus_plant_left", "octopus_plant_body", "octopus_plant_right"],
+      count: 3, maxActive: 3, simultaneous: true, formation: "plant",
+      hp: 30, attackPower: { min: 14, max: 18 }, experience: 100,
+      approachMs: 16000, repeatAttackMs: 5000,
+      parts: [
+        { name: "左の触手" },
+        { name: "タコツル草の本体", hp: 60, attackPower: { min: 20, max: 26 },
+          experience: 240, approachMs: 20000, repeatAttackMs: 6000 },
+        { name: "右の触手" },
+      ],
+    }],
   },
 };

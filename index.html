@@ -6,7 +6,7 @@
     <title>Into the Typing</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='52'%3E%E2%9A%94%EF%B8%8F%3C/text%3E%3C/svg%3E">
     <link rel="preload" as="image" href="src/assets/images/backgrounds/shared/typing_rpg_background.webp">
-    <link rel="stylesheet" href="src/styles/main.css?v=20261026-dual-preview-v1">
+    <link rel="stylesheet" href="src/styles/main.css?v=20261031-mind-eye-v1">
   </head>
   <body>
     <section class="loading-screen" id="loadingScreen" aria-labelledby="loadingText" aria-busy="true">
@@ -72,12 +72,16 @@
             <article class="online-fighter online-self" id="onlineSelf">
               <span class="online-defense-effect" id="onlineSelfEffect" role="img" hidden></span>
               <img id="onlineSelfImage" alt="あなたの剣士">
-              <div><h2 id="onlineSelfName">あなた</h2><strong id="onlineSelfHp">1000 / 1000</strong><progress id="onlineSelfBar" max="1000" value="1000" aria-label="あなたの体力"></progress></div>
+              <div><h2 id="onlineSelfName">あなた</h2><strong id="onlineSelfHp">1000 / 1000</strong><progress id="onlineSelfBar" max="1000" value="1000" aria-label="あなたの体力"></progress>
+                <span class="counter-energy" id="onlineSelfEnergy" role="meter" aria-label="あなたの気" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" hidden><span id="onlineSelfEnergyValue">気 0％</span><i><i id="onlineSelfEnergyFill"></i></i></span>
+              </div>
             </article>
             <article class="online-fighter online-other" id="onlineOther">
               <span class="online-defense-effect" id="onlineOtherEffect" role="img" hidden></span>
               <img id="onlineOtherImage" alt="相手の剣士">
-              <div><h2 id="onlineOtherName">相手</h2><strong id="onlineOtherHp">1000 / 1000</strong><progress id="onlineOtherBar" max="1000" value="1000" aria-label="相手の体力"></progress></div>
+              <div><h2 id="onlineOtherName">相手</h2><strong id="onlineOtherHp">1000 / 1000</strong><progress id="onlineOtherBar" max="1000" value="1000" aria-label="相手の体力"></progress>
+                <span class="counter-energy" id="onlineOtherEnergy" role="meter" aria-label="相手の気" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" hidden><span id="onlineOtherEnergyValue">気 0％</span><i><i id="onlineOtherEnergyFill"></i></i></span>
+              </div>
             </article>
           </div>
           <div class="online-input" id="onlineInput" tabindex="-1">
@@ -237,6 +241,10 @@
             <button class="stage-choice" id="stageChoiceMountain" type="button" data-stage="mountain_path" aria-label="4-1 鳥たちの山道（ステージ3-4未クリア）" aria-controls="stageConfirm" aria-expanded="false" disabled aria-disabled="true" hidden>
               <span class="stage-circle"><strong class="stage-code">4-1</strong></span>
               <span class="stage-node-copy" aria-hidden="true"><span class="stage-name">鳥たちの山道</span><em class="stage-meta"></em></span>
+            </button>
+            <button class="stage-choice" id="stageChoiceVine" type="button" data-stage="vine_pass" aria-label="4-2 つる草の峠（ステージ4-1未クリア）" aria-controls="stageConfirm" aria-expanded="false" disabled aria-disabled="true" hidden>
+              <span class="stage-circle"><strong class="stage-code">4-2</strong></span>
+              <span class="stage-node-copy" aria-hidden="true"><span class="stage-name">つる草の峠</span><em class="stage-meta"></em></span>
             </button>
           </div>
           <div class="stage-region-switch" id="stageRegionSwitch" role="group" aria-label="地図の切り替え">
@@ -400,6 +408,7 @@
               <span class="greatsword-charge-spark greatsword-charge-spark-c"></span>
               <span class="greatsword-charge-spark greatsword-charge-spark-d"></span>
             </div>
+            <div class="mind-eye-aura" aria-hidden="true"></div>
             <div class="player-art">
               <img class="player-image player-frame player-frame-idle" id="playerFrameIdle" alt="剣を構えるプレイヤー剣士">
               <img class="player-image player-frame player-frame-charge" id="playerFrameCharge" alt="" aria-hidden="true">
@@ -581,7 +590,9 @@
             <div class="skill-gauge" id="skillGauge" role="progressbar" aria-label="スキルゲージ" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="skillGaugeFill"></i></div>
           </div>
           <button id="guardButton" type="button" aria-keyshortcuts="Space" aria-pressed="false" hidden><span id="guardButtonText">ガード</span><kbd>Space</kbd></button>
-          <button id="counterButton" type="button" aria-keyshortcuts="Space" hidden><span>カウンター</span><kbd>Space</kbd></button>
+          <button id="counterButton" type="button" aria-keyshortcuts="Space" hidden>
+            <span class="counter-button-body"><span>カウンター</span><span class="counter-energy" id="counterEnergy" role="meter" aria-label="カウンターの気" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="counterEnergyValue">気 0％</span><i><i id="counterEnergyFill"></i></i></span></span><kbd>Space</kbd>
+          </button>
           <button id="specialButton" type="button" aria-keyshortcuts="Enter" disabled><span id="skillName">強撃</span><kbd id="specialShortcut">Enter</kbd></button>
         </div>
         <div class="story-dialog" id="storyDialog" role="region" aria-label="会話" hidden>
@@ -645,33 +656,36 @@
     <script src="src/data/words.js?v=20261025-everyday-words-v1"></script>
     <script src="src/data/capturePassages.js?v=20261024-passages-v2"></script>
     <script src="src/data/labels.js?v=20261024-enter-skill-v1"></script>
-    <script src="src/config/weapons.js?v=20261024-greatsword-hero-v1"></script>
-    <script src="src/config/stages.js?v=20261024-capture-intro-v1"></script>
-    <script src="src/config/skills.js?v=20261024-faster-heal-gauge-v1"></script>
-    <script src="src/config/enemyAnimations.js?v=20261024-mountain-v1"></script>
+    <script src="src/config/weapons.js?v=20261031-mind-eye-v1"></script>
+    <script src="src/config/stages.js?v=20261031-plant-target-v1"></script>
+    <script src="src/config/skills.js?v=20261031-mind-eye-v1"></script>
+    <script src="src/config/enemyAnimations.js?v=20261031-plant-target-v1"></script>
     <script src="src/config/playerProgression.js?v=20261024-thorn-depths-v1"></script>
     <script src="src/config/saveSlots.js?v=20261024-thorn-depths-v1"></script>
     <script src="src/ui/saveMenu.js?v=20261024-thorn-depths-v1"></script>
     <script src="src/input/japanese.js?v=20261024-thorn-depths-v1"></script>
-    <script src="src/ui/battleLayout.js?v=20261024-thorn-depths-v1"></script>
+    <script src="src/ui/battleLayout.js?v=20261031-plant-target-v1"></script>
     <script src="src/input/mobile.js?v=20261024-thorn-depths-v1"></script>
     <script src="src/input/flickKeyboard.js?v=20261024-sword-counter-v1"></script>
     <script src="src/app/loading.js?v=20261024-capture-intro-v1"></script>
-    <script src="src/app/sound.js?v=20261024-sword-counter-v1"></script>
-    <script src="src/app/skills.js?v=20261024-shield-attack-boost-v1"></script>
+    <script src="src/app/sound.js?v=20261031-mind-eye-v1"></script>
+    <script src="src/app/skills.js?v=20261031-mind-eye-v1"></script>
     <script src="src/app/enemyCharge.js?v=20261024-dual-time-stop-v1"></script>
+    <script src="src/app/enemyAttackCountdown.js?v=20261031-mind-eye-v1"></script>
     <script src="src/app/battleFeedback.js?v=20261024-healing-sword-v1"></script>
     <script src="src/app/mountainCapture.js?v=20261024-capture-intro-v1"></script>
     <script src="src/app/guard.js?v=20261024-mountain-v1"></script>
-    <script src="src/app/dualBladePreview.js?v=20261027-start-prompts-v1"></script>
-    <script src="src/ui/weaponMenu.js?v=20261024-sword-counter-v1"></script>
+    <script src="src/app/dualBladePreview.js?v=20261031-plant-target-v1"></script>
+    <script src="src/ui/weaponMenu.js?v=20261031-mind-eye-v1"></script>
     <script src="src/app/enemyActionStop.js?v=20261024-dual-time-stop-v1"></script>
     <script src="src/app/attackBoost.js?v=20261024-shield-attack-boost-v1"></script>
-    <script src="src/app/counter.js?v=20261024-mountain-v1"></script>
-    <script src="src/online/duel.js?v=20261026-weapon-words-v1"></script>
+    <script src="src/app/mindEye.js?v=20261031-mind-eye-v1"></script>
+    <script src="src/config/counterRules.js?v=20261031-counter-energy-v1"></script>
+    <script src="src/app/counter.js?v=20261031-mind-eye-v1"></script>
+    <script src="src/online/duel.js?v=20261031-counter-energy-v1"></script>
     <script src="src/online/connection.js?v=20261024-online-v1"></script>
-    <script src="src/online/npc.js?v=20261026-weapon-words-v1"></script>
-    <script src="src/app/game.js?v=20261027-start-prompts-v1"></script>
-    <script src="src/online/play.js?v=20261027-start-prompts-v1"></script>
+    <script src="src/online/npc.js?v=20261031-counter-energy-v1"></script>
+    <script src="src/app/game.js?v=20261031-mind-eye-v1"></script>
+    <script src="src/online/play.js?v=20261031-counter-energy-v1"></script>
   </body>
 </html>

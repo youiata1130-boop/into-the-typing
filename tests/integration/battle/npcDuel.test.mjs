@@ -67,6 +67,7 @@ test('a stalled frame cannot burst-type a whole prompt or advance a finished bat
 for (const weapon of ['sword','greatsword','swordShield']) {
   test(`NPC ${weapon} reacts to the visible windup using legal defense and its usual cost`, () => {
     const game = fixture({weaponId:weapon,hp:1000,speed:1});
+    if (weapon === 'sword') game.run('match.players[1].counterEnergy=100');
     game.run('frame(3000);const damage=D.targetFor(D.wordFor(match,W,0,0),"roman").length*4;answer();D.tick(match,W,5000);bot.random=()=>0;N.step(bot,match,W,5000);N.step(bot,match,W,5250)');
     assert.equal(game.run(weapon === 'sword' ? 'match.players[1].counterStartedAt!==null' : 'match.players[1].guarding'), true);
     game.run('D.tick(match,W,5400)');
@@ -122,11 +123,13 @@ test('local roman and flick input, guarding and counter work without a fake conn
     assert.equal(game.run('O.input("a")'), false);
     assert.equal(game.run('O.defense("guard-end")'), true);
     assert.equal(game.run('(()=>{const t=D.targetFor(D.wordFor(O.session.match,W,0),O.session.mode);return O.session.mode==="kana"?O.applyKana(t):O.input(t)})()'), true);
-    game.advance(2450);
+    game.advance(game.run('(()=>{const m=O.session.match,p=m.players[0],profile=D.attackProfile(D.wordFor(m,W,p.index,0),p.mode,p.value);return profile.inputMs+profile.windupMs+100})()'));
     assert.equal(game.run('O.session.match.players[0].index'), 1);
     assert.equal(game.run('document.querySelector("#onlineKeyboard").hidden'), !touch);
   }
   const game = localGame();game.run('O.startNpc()');game.advance(3000);
+  assert.equal(game.run('O.defense("counter")'), false);
+  game.run('O.session.match.players[0].counterEnergy=100');
   assert.equal(game.run('O.defense("counter")'), true);
   assert.equal(game.run('O.session.match.players[0].counterStartedAt!==null'), true);
 });

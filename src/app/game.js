@@ -382,6 +382,9 @@ const els = {
   guardButton: document.querySelector("#guardButton"),
   guardButtonText: document.querySelector("#guardButtonText"),
   counterButton: document.querySelector("#counterButton"),
+  counterEnergy: document.querySelector("#counterEnergy"),
+  counterEnergyValue: document.querySelector("#counterEnergyValue"),
+  counterEnergyFill: document.querySelector("#counterEnergyFill"),
   counterDamage: document.querySelector("#counterDamage"),
   skillPanel: document.querySelector("#skillPanel"),
   skillName: document.querySelector("#skillName"),
@@ -618,6 +621,7 @@ function isSpecialReady() {
     && (getActiveSkill().target !== "self" || state.hp < getMaxHp())
     && (getActiveSkill().target !== "battle" || !isEnemyActionStopped())
     && (getActiveSkill().target !== "playerBuff" || !isPlayerAttackBoosted())
+    && (getActiveSkill().target !== "counterBuff" || (!isMindEyeActive() && !isBattleStartPending()))
     && state.specialGauge >= specialGaugeMax;
 }
 
@@ -805,6 +809,7 @@ function startPlayerAttackCooldown(weaponId) {
 }
 
 function updateHud() {
+  state.activeEnemies.forEach(enemy => updateEnemyAttackCountdown(enemy));
   updatePlayerCounterHud();
   updateDualBladePreview();
   updateGuardHud();
@@ -1801,6 +1806,7 @@ function getInputEnemy() {
   if (selectedEnemy && isEnemyAlive(selectedEnemy) && !selectedEnemy.resolving) {
     return selectedEnemy;
   }
+  if (allowsEnemySelection() && selectedEnemy) return null;
 
   return state.activeEnemies.find((enemy) => isEnemyAlive(enemy) && !enemy.resolving) || null;
 }
@@ -1834,6 +1840,8 @@ function createEnemyElement(enemy) {
   element.dataset.enemyId = enemy.id;
   element.dataset.enemyType = enemy.type;
   element.dataset.attackStyle = enemy.attackStyle;
+  element.dataset.formation = enemy.formation;
+  element.classList.toggle("is-selectable", allowsEnemySelection());
   element.style.setProperty("--enemy-slot", String(enemy.slot));
 
   element.innerHTML = `
@@ -1851,6 +1859,9 @@ function createEnemyElement(enemy) {
       <img class="enemy-image" alt="">
       <span class="enemy-time-stop-mark" aria-hidden="true">Ⅱ</span>
     </div>
+    <span class="enemy-target-cursor" aria-hidden="true"></span>
+    <span class="enemy-attack-countdown" hidden></span>
+    <button class="enemy-select" type="button"></button>
   `;
 
   enemy.element = element;
@@ -1858,6 +1869,18 @@ function createEnemyElement(enemy) {
   enemy.image = element.querySelector(".enemy-image");
   enemy.hpFill = element.querySelector(".character-hp-track i");
   enemy.hpTrack = element.querySelector(".character-hp-track");
+  enemy.selectButton = element.querySelector(".enemy-select");
+  enemy.attackCountdownEl = element.querySelector(".enemy-attack-countdown");
+  enemy.attackCountdownEl.hidden = true;
+  enemy.selectButton.hidden = !allowsEnemySelection();
+  enemy.selectButton.setAttribute("aria-label", `${enemy.name || "敵"}を選択`);
+  enemy.selectButton.setAttribute("aria-pressed", "false");
+  enemy.selectButton.addEventListener("click", () => {
+    if (selectBattleEnemy(enemy)) focusGameSurface({ userGesture: true });
+  });
+  enemy.selectButton.addEventListener("keydown", event => {
+    if (event.key === "Enter" || event.key === " ") event.stopPropagation();
+  });
   if (enemy.attackStyle === "charge") {
     element.setAttribute("role", "group");
   }
@@ -1907,6 +1930,8 @@ function updateEnemyHud(enemy) {
   enemy.hpTrack.setAttribute("aria-label", enemy.tutorial ? "敵のゲージ" : enemy.name ? `${enemy.name}のHP` : "敵の体力");
   enemy.hpTrack.setAttribute("aria-valuemax", String(maximum));
   enemy.hpTrack.setAttribute("aria-valuenow", String(value));
+  enemy.selectButton.disabled = !isEnemyAlive(enemy);
+  updateEnemyAttackCountdown(enemy);
 }
 
 function updateEnemyWordLabel(enemy) {
@@ -1918,16 +1943,62 @@ function updateEnemyWordLabel(enemy) {
 function setEnemyProgress(enemy, progress) {
   if (enemy.attackStyle === "charge") progress = enemy.fixedProgress;
   enemy.progress = Math.max(0, Math.min(progress, 1));
+  // Do not delay arrival by a frame because of accumulated floating-point noise.
+  if (1 - enemy.progress < 1e-9) enemy.progress = 1;
   if (enemy.progress < 1) enemy.atBase = false;
   enemy.element.style.setProperty("--enemy-progress", enemy.progress.toFixed(3));
+  if (enemy.formation === "plant") {
+    const parts = state.activeEnemies.filter(part => part.formation === "plant" && isEnemyAlive(part));
+    // Keep the three silhouettes in formation even when their attack clocks differ.
+    const formationProgress = parts.length ? Math.min(...parts.map(part => part.progress)) : 0;
+    els.arena.style.setProperty("--plant-progress", formationProgress.toFixed(3));
+  }
+}
+
+function allowsEnemySelection() {
+  const [area, number] = getStageDefinition(state.stageId).code.split("-").map(Number);
+  return area > 4 || (area === 4 && number >= 2);
+}
+
+function nextBattleEnemy(after = getSelectedEnemy()) {
+  const alive = state.activeEnemies.filter(isEnemyAlive).sort((a, b) => a.slot - b.slot);
+  return alive.find(enemy => enemy.slot > (after?.slot ?? -1)) || alive[0] || null;
+}
+
+function selectBattleEnemy(enemy) {
+  if (!allowsEnemySelection() || !state.running || state.hp <= 0 || isBattleStartPending()
+      || isStoryDialogueOpen() || isMountainCaptureActive() || state.specialInProgress || state.guarding
+      || !enemy || !state.activeEnemies.includes(enemy) || !isEnemyAlive(enemy)) return false;
+  clearInputBuffer();
+  cancelGameFlickGesture();
+  setTargetEnemy(enemy);
+  updateHud();
+  return true;
 }
 
 function setTargetEnemy(enemy) {
+  const previous = getSelectedEnemy();
+  const changing = previous !== enemy;
+  if (flickState.enabled && allowsEnemySelection() && changing && previous && !previous.resolving) {
+    previous.selectionInput = { revision: previous.inputRevision, value: els.flickInput.value,
+      accepted: flickState.acceptedValue, pending: flickState.lastPending };
+  }
   state.selectedEnemyId = enemy?.id || "";
   state.activeEnemies.forEach((activeEnemy) => {
     activeEnemy.element.classList.toggle("is-targeted", activeEnemy.id === state.selectedEnemyId);
+    activeEnemy.selectButton.setAttribute("aria-pressed", String(activeEnemy.id === state.selectedEnemyId));
   });
   renderWord();
+  const saved = enemy?.selectionInput;
+  if (flickState.enabled && changing && saved && saved.revision === enemy.inputRevision && !enemy.resolving) {
+    flickState.inputVersion += 1;
+    els.flickInput.value = saved.value;
+    flickState.lastValue = saved.value;
+    flickState.acceptedValue = saved.accepted;
+    flickState.lastPending = saved.pending;
+    if (!isBattleStartPending() && performance.now() >= state.playerAttackReadyAt) renderFlickPrompt(enemy);
+    syncGameFlickKeyboard();
+  }
 }
 
 function chooseEnemyWord(enemy) {
@@ -1957,6 +2028,7 @@ function setNextWord(enemy) {
   enemy.matchedWord = enemy.inputs[0] || next.text;
   enemy.translation = next.translation;
   enemy.bestLength = 0;
+  enemy.counterBestLength = 0;
   enemy.typingMisses = 0;
   enemy.chargeInputProgress = 0;
   enemy.typed = "";
@@ -1964,6 +2036,7 @@ function setNextWord(enemy) {
 }
 
 function createEnemy(wave, index) {
+  wave = { ...wave, ...wave.parts?.[index] };
   const usedSlots = new Set(state.activeEnemies.map(enemy => enemy.slot));
   let slot = 0;
   while (usedSlots.has(slot)) slot++;
@@ -1972,6 +2045,7 @@ function createEnemy(wave, index) {
     type: getEnemyTypeForWave(wave, index),
     name: wave.name || "",
     slot,
+    formation: wave.formation || "",
     attackPower: normalizeAttackPower(wave.attackPower),
     approachMs: randomizeEnemyAttackMs(wave.approachMs ?? attackMs),
     repeatAttackMs: wave.repeatAttackMs ?? repeatAttackMs,
@@ -2069,8 +2143,11 @@ function spawnNextEnemy() {
     return;
   }
 
-  state.currentWaveSpawned += 1;
-  addEnemyToWave(wave, index);
+  do {
+    const spawnIndex = state.currentWaveSpawned++;
+    addEnemyToWave(wave, spawnIndex);
+  } while (wave.simultaneous && state.currentWaveSpawned < wave.count
+      && state.activeEnemies.length < (wave.maxActive || 1));
   if (wave.spawnIntervalMs && state.currentWaveSpawned < wave.count) queueEnemySpawn(wave.spawnIntervalMs);
 }
 
@@ -2109,7 +2186,7 @@ function removeEnemy(enemy) {
   scheduleBattleLayout();
 
   if (state.selectedEnemyId === enemy.id) {
-    setTargetEnemy(null);
+    setTargetEnemy(allowsEnemySelection() ? nextBattleEnemy(enemy) : null);
   }
 }
 
@@ -2158,6 +2235,7 @@ function enemyLoop(now) {
     }
   });
 
+  state.activeEnemies.forEach(enemy => updateEnemyAttackCountdown(enemy, now));
   state.rafId = requestAnimationFrame(enemyLoop);
 }
 
@@ -2176,9 +2254,12 @@ function enemyAttack(enemy) {
       || enemy.animation === "attack" || !isEnemyAlive(enemy) || !state.activeEnemies.includes(enemy)) return;
   if (enemy.attackStyle === "charge") {
     if (performance.now() < state.battleStartsAt || enemy.chargeElapsedMs < enemy.chargeDurationMs) return;
+  } else if (enemy.progress < 1) return;
+  showEnemyAttackCountdownImpact(enemy);
+  if (enemy.attackStyle === "charge") {
     resetEnemyCharge(enemy);
     aimEnemySpores(enemy);
-  } else if (enemy.progress < 1) return;
+  }
   if (tryPlayerCounter(enemy)) return;
   enemy.atBase = enemy.attackStyle !== "charge";
   enemy.nextAttackAt = performance.now() + enemyAttackRecoveryMs + randomizeEnemyAttackMs(enemy.repeatAttackMs);
@@ -2304,6 +2385,7 @@ function useSpecialMove() {
   if (skill.target === "self") return useHealingSkill(skill);
   if (skill.target === "battle") return useEnemyStopSkill(skill);
   if (skill.target === "playerBuff") return useAttackBoostSkill(skill);
+  if (skill.target === "counterBuff") return useMindEyeSkill(skill);
   const targets = getSkillTargets(skill);
   if (!targets.length || targets.some((enemy) => enemy.resolving)) {
     updateHud();
@@ -2376,7 +2458,8 @@ function defeatEnemy(enemy) {
 
   enemy.resolving = true;
   if (state.selectedEnemyId === enemy.id) {
-    setTargetEnemy(state.activeEnemies.find(other => other !== enemy && isEnemyAlive(other)) || null);
+    setTargetEnemy(allowsEnemySelection() ? nextBattleEnemy(enemy)
+      : state.activeEnemies.find(other => other !== enemy && isEnemyAlive(other)) || null);
   }
   enemy.experienceCounted = true;
   window.GAME_SOUND.play("defeat");
@@ -2613,6 +2696,8 @@ function startGame(stageId = state.stageId) {
       return;
     }
 
+    // Browser timer rounding can put this callback just before the deadline.
+    state.battleStartsAt = performance.now();
     renderWord();
     startLoop();
     focusGameSurface();
@@ -2687,6 +2772,11 @@ function applyTypedValue(enemy, value, { readingProgress } = {}) {
   enemy.chargeInputProgress = readingProgress ?? nextValue.length / Math.max(1, matchedWord.length);
   enemy.typed = nextValue;
   enemy.matchedWord = matchedWord;
+  const counterLength = readingProgress === undefined ? nextValue.length
+    : Math.round(readingProgress * (getFlickReading(enemy)?.reading.length || 0));
+  const counterGain = Math.max(0, counterLength - (enemy.counterBestLength || 0));
+  enemy.counterBestLength = Math.max(enemy.counterBestLength || 0, counterLength);
+  chargePlayerCounter(counterGain);
   updateEnemyWordLabel(enemy);
   renderWord();
 
@@ -2780,6 +2870,13 @@ function handleTypingKeydown(event) {
   }
 
   if (!state.running) {
+    return;
+  }
+
+  if ((event.key === "Shift" || event.code === "ShiftLeft" || event.code === "ShiftRight")
+      && !event.altKey && !event.ctrlKey && !event.metaKey && allowsEnemySelection()) {
+    event.preventDefault();
+    if (!event.repeat) selectBattleEnemy(nextBattleEnemy());
     return;
   }
 
