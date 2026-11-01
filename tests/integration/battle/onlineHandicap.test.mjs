@@ -119,7 +119,7 @@ test('host publishes handicap changes, rejects stale ready packets and ignores g
     O.receive({type:'handicap',match:O.session.match.id,handicapRatio:3,handicapSeat:1});`);
   assert.deepEqual(game.snapshot('O.session.match.players.map(p=>[p.hp,p.ready])'), [[2400,false],[800,false]]);
   assert.equal(game.run('O.session.readyPending'), false);
-  assert.equal(game.run('document.querySelector("#onlineSelfHp").textContent'), '2400 / 2400');
+  assert.equal(game.run('document.querySelector("#onlineSelfBar").value'), 2400);
   assert.equal(game.run('document.querySelector("#onlineSelfBar").max'), 2400);
   assert.deepEqual(game.snapshot('conn.sent.filter(p=>p.type==="state").at(-1).match.players.map(p=>p.maxHp)'), [2400,800]);
 });
@@ -135,8 +135,7 @@ test('guest sees shared settings, cannot edit them and must ready again after a 
   assert.equal(game.run('O.session.readyPending'), false);
   assert.equal(game.run('document.querySelector("#onlineHandicapRatio").value'), '2');
   assert.equal(game.run('document.querySelector("#onlineHandicapRatio").disabled'), true);
-  assert.equal(game.run('document.querySelector("#onlineSelfHp").textContent'), '1600 / 1600');
-  assert.equal(game.run('document.querySelector("#onlineOtherHp").textContent'), '800 / 800');
+  assert.deepEqual(game.snapshot('["Self", "Other"].map(side => { const bar = document.querySelector("#online" + side + "Bar"); return [bar.value, bar.max]; })'), [[1600,1600],[800,800]]);
   assert.equal(game.run('document.querySelector("#onlineHandicapGuest").textContent'), 'あなた：乙');
   assert.equal(game.run('O.setHandicap(3,0)'), false);
   assert.equal(game.run('O.session.match.handicapRatio'), 2);

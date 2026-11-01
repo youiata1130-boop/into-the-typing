@@ -4,12 +4,13 @@
   const npc = window.ONLINE_NPC;
   const words = duel.makeWords(wordSets.ja, getWordInputs, window.JAPANESE_INPUT);
   const protocol = duel.signature(words);
+  const stageBackground = "src/assets/images/backgrounds/stages/grassland.webp";
   const $ = id => document.querySelector("#" + id);
   const ui = {
     screen: $("onlineScreen"), enter: $("onlineButton"), back: $("onlineBack"), lobby: $("onlineLobby"),
     name: $("onlineName"), roomInput: $("onlineRoomInput"), create: $("onlineCreate"), join: $("onlineJoin"),
     status: $("onlineStatus"), room: $("onlineRoom"), code: $("onlineCode"), copy: $("onlineCopy"),
-    ready: $("onlineReady"), arena: $("onlineArena"), banner: $("onlineBanner"), clock: $("onlineClock"),
+    ready: $("onlineReady"), arena: $("onlineArena"), stage: $("onlineStage"), banner: $("onlineBanner"), clock: $("onlineClock"),
     target: $("onlineTarget"), typed: $("onlineTyped"), remaining: $("onlineRemaining"),
     opponentTarget: $("onlineOpponentTarget"), opponentTyped: $("onlineOpponentTyped"), opponentRemaining: $("onlineOpponentRemaining"),
     opponentCount: $("onlineOpponentCount"), opponentProgress: $("onlineOpponentProgress"),
@@ -25,7 +26,7 @@
     npcWeapon: $("npcWeapon"), npcHp: $("npcHp"), npcSpeed: $("npcSpeed"),
     npcFields: ["npcWeapon", "npcWeaponLabel", "npcHp", "npcHpLabel", "npcSpeed", "npcSpeedLabel"].map($),
     players: ["Self", "Other"].map(side => ({ card: $("online" + side), name: $("online" + side + "Name"),
-      hp: $("online" + side + "Hp"), bar: $("online" + side + "Bar"), image: $("online" + side + "Image"), effect: $("online" + side + "Effect"),
+      bar: $("online" + side + "Bar"), image: $("online" + side + "Image"), effect: $("online" + side + "Effect"),
       energy: $("online" + side + "Energy"), energyValue: $("online" + side + "EnergyValue"), energyFill: $("online" + side + "EnergyFill") })),
   };
   const session = { active: false, generation: 0, peer: null, conn: null, host: false, seat: 0, match: null,
@@ -69,13 +70,14 @@
   }
   function open(opponent = "online") {
     if (!assetLoadingState.ready) return;
-    const sources = imageSources(Object.keys(duel.weapons).map(id => Object.values(getPlayerWeaponAssets(id))));
+    const sources = imageSources([stageBackground, Object.keys(duel.weapons).map(id => Object.values(getPlayerWeaponAssets(id)))]);
     if (ensureGameAssets(sources, () => open(opponent))) return;
     close(); session.active = true;
     session.opponent = opponent === "npc" ? "npc" : "online";
     session.mode = flickState.enabled ? "kana" : "roman";
     ui.name.value = state.playerName || "プレイヤー";
     ui.roomInput.value = "";
+    ui.stage.style.backgroundImage = `url("${stageBackground}")`;
     ui.players.forEach(player => { player.image.src = getPlayerWeaponAssets("sword").idle; });
     showScreen("online"); render(); status("");
     (session.opponent === "npc" ? ui.npcStart : ui.create).focus({ preventScroll: true });
@@ -474,7 +476,6 @@
       const weapon = duel.weapons[player.weaponId], visual = session.visual[index], now = performance.now();
       card.name.textContent = `${weaponMode ? weapon.name : index ? "相手" : "あなた"}：${player.name}`;
       card.name.setAttribute("title", `${index ? "相手" : "あなた"}：${player.name}${weaponMode ? " / " + weapon.name : ""}`);
-      card.hp.textContent = `${player.hp} / ${player.maxHp}`;
       card.energy.hidden = !weaponMode || player.weaponId !== "sword";
       card.energyValue.textContent = `気 ${player.counterEnergy}％`;
       card.energy.setAttribute("aria-valuenow", String(player.counterEnergy));

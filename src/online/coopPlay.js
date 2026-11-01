@@ -1,14 +1,15 @@
 (() => {
-  const coop = window.ONLINE_COOP, duel = window.ONLINE_DUEL, transport = window.ONLINE_CONNECTION;
+  const coop = window.ONLINE_COOP, duel = window.ONLINE_DUEL, transport = window.ONLINE_CONNECTION, npc = window.COOP_NPC;
   const words = window.ONLINE_PLAY.words, protocol = "coop-1-" + duel.signature(words);
   const prefix = transport.prefix + "coop-", $ = name => document.querySelector("#coop" + name);
-  const ui = Object.fromEntries(["Screen", "Button", "Back", "Lobby", "Name", "Create", "Join", "RoomInput", "Room", "Code", "Copy",
-    "Status", "Party", "Count", "Clock", "Players", "Loadout", "Weapon", "Ready", "Stages", "Start", "Battle", "Boss", "BossHp",
+  const ui = Object.fromEntries(["Screen", "Title", "Button", "NpcButton", "NpcSetup", "NpcWeapon", "NpcSpeed", "Back", "Lobby", "Name", "Create", "Join", "RoomInput", "Room", "Code", "Copy",
+    "Status", "Party", "Count", "Clock", "Players", "Actors", "Loadout", "Weapon", "Ready", "Stages", "Start", "Battle", "Boss", "BossHp",
     "BossBar", "BossImage", "Target", "AttackBar", "Input", "InputLabel", "Word", "Typed", "Remaining", "Next", "NextWord", "NextTarget",
     "Defense", "Controls", "Entry", "Erase", "Keyboard", "Banner", "Again", "FlickPopup"].map(name => [name, $(name)]));
   const session = { active: false, generation: 0, host: false, peer: null, links: new Map(), match: null, room: "", selfId: "",
     mode: "roman", name: "", timer: 0, connectTimer: 0, lastSent: 0, seq: 0, defenseSeq: 0, defensePending: null,
-    localMatch: "", localIndex: -1, localValue: "", kanaValue: "", pending: false, held: new Set(), gesture: null };
+    localMatch: "", localIndex: -1, localValue: "", kanaValue: "", pending: false, held: new Set(), gesture: null,
+    npcMode: false, npcConfig: { weaponId: "swordShield", speed: 3 }, npcBot: null, npcPausedAt: null };
   const cards = new Map(), keys = [], choices = [];
   const cleanName = value => value.replace(/[\u0000-\u001f\u007f<>]/g, "").trim().slice(0, 20) || "プレイヤー";
   const status = value => { ui.Status.textContent = value; };
@@ -32,20 +33,42 @@
     session.match = null; session.room = ""; session.selfId = "";
     session.localMatch = ""; session.localIndex = -1; session.localValue = session.kanaValue = "";
     session.seq = session.defenseSeq = 0; session.defensePending = null; session.pending = false; session.held.clear();
-    cards.clear(); ui.Players.replaceChildren();
+    session.npcBot = null; session.npcPausedAt = null;
+    cards.clear(); ui.Players.replaceChildren(); ui.Actors.replaceChildren();
   }
   function stop(message) { close(false); render(); status(message); }
   function leave() { close(); session.active = false; showStartScreen(); }
-  function open() {
+  function open(mode = "online") {
     if (!assetLoadingState.ready) return;
     const sources = imageSources([coop.stage.image, coop.stage.background,
       ...Object.keys(duel.weapons).map(id => Object.values(getPlayerWeaponAssets(id)))]);
-    if (ensureGameAssets(sources, open)) return;
+    if (ensureGameAssets(sources, () => open(mode))) return;
     close(); session.active = true; session.mode = flickState.enabled ? "kana" : "roman";
+    session.npcMode = mode === "npc";
     ui.Name.value = state.playerName || "プレイヤー"; ui.RoomInput.value = "";
+    if (session.npcMode) createNpcRoom();
     ui.BossImage.src = coop.stage.image;
     ui.Boss.style.backgroundImage = `linear-gradient(#152d4533, #14263255), url("${coop.stage.background}")`;
-    showScreen("coop"); render(); status(""); ui.Create.focus({ preventScroll: true });
+    showScreen("coop"); status(""); render(); (session.npcMode ? ui.Weapon : ui.Create).focus({ preventScroll: true });
+  }
+  function readyNpc() {
+    if (session.npcMode) coop.ready(session.match, 1, true, session.match.settingsRevision);
+  }
+  function createNpcRoom(weaponId = "sword") {
+    session.host = true; session.selfId = transport.randomHex(); session.name = cleanName(ui.Name.value);
+    session.match = coop.create(transport.randomHex(), duel.shuffledOrder(words.length), { id: session.selfId, name: session.name, mode: session.mode });
+    coop.addPlayer(session.match, { id: transport.randomHex(), name: "NPC", mode: session.mode });
+    coop.chooseWeapon(session.match, 0, weaponId, session.match.settingsRevision);
+    coop.chooseWeapon(session.match, 1, session.npcConfig.weaponId, session.match.settingsRevision);
+    readyNpc();
+  }
+  function setNpcConfig(config) {
+    if (!session.active || !session.npcMode || session.match?.phase !== "lobby" || !npc.validConfig(config)) return false;
+    if (session.npcConfig.weaponId === config.weaponId && session.npcConfig.speed === config.speed) return true;
+    coop.chooseWeapon(session.match, 1, config.weaponId, session.match.settingsRevision);
+    coop.ready(session.match, 0, false, session.match.settingsRevision);
+    session.npcConfig = { weaponId: config.weaponId, speed: config.speed };
+    readyNpc(); publish(); return true;
   }
   function publish() {
     if (!session.match) return;
@@ -138,7 +161,7 @@
     for (const event of ["close", "error"]) conn.on(event, () => { if (generation === session.generation) drop(link); });
   }
   function loop(generation) {
-    if (!session.active || generation !== session.generation) return;
+    if (!session.active || generation !== session.generation || session.npcPausedAt !== null) return;
     const now = performance.now();
     for (const link of [...session.links.values()]) {
       if (now - (link.joined ? link.lastSeen : link.openedAt) > (link.joined ? 12000 : 15000)) drop(link);
@@ -146,13 +169,18 @@
     if (generation !== session.generation) return;
     if (session.host && session.match) {
       const revision = session.match.revision;
+      if (session.npcMode && session.npcBot) npc.step(session.npcBot, session.match, words, now);
       coop.tick(session.match, words, now);
       if (session.match.revision !== revision || now - session.lastSent >= 100) { session.lastSent = now; publish(); }
     } else if (now - session.lastSent >= 1000) { session.lastSent = now; toHost({ type: "ping" }); }
-    session.timer = window.setTimeout(() => loop(generation), 50);
+    if (session.npcMode && session.match?.phase === "finished") {
+      session.timer = window.setTimeout(() => {
+        if (generation === session.generation) { render(); session.timer = 0; }
+      }, 750);
+    } else session.timer = window.setTimeout(() => loop(generation), 50);
   }
   async function connect(host) {
-    if (!session.active || session.peer || session.connectTimer) return;
+    if (!session.active || session.npcMode || session.peer || session.connectTimer) return;
     const room = ui.RoomInput.value.normalize("NFKC").replace(/[\s-]/g, "");
     if (!host && !/^\d{8}$/.test(room)) { status("8桁の部屋番号を入力してください。"); return; }
     close(); session.host = host; session.name = cleanName(ui.Name.value); ui.Name.value = session.name;
@@ -195,7 +223,7 @@
   function chooseWeapon(weaponId) {
     if (session.match?.phase !== "lobby" || !duel.isWeapon(weaponId)) return;
     const packet = { type: "weapon", match: session.match.id, weaponId, settingsRevision: session.match.settingsRevision };
-    if (session.host) { coop.chooseWeapon(session.match, 0, weaponId, packet.settingsRevision); publish(); }
+    if (session.host) { coop.chooseWeapon(session.match, 0, weaponId, packet.settingsRevision); readyNpc(); publish(); }
     else toHost(packet);
   }
   function ready() {
@@ -207,11 +235,22 @@
   function start() {
     if (!session.host || !session.match) return false;
     const accepted = coop.start(session.match, 0, coop.stage.id, performance.now(), session.match.settingsRevision);
-    if (accepted) { ui.Input.focus({ preventScroll: true }); publish(); }
+    if (accepted) {
+      publish(); ui.Input.focus({ preventScroll: true }); window.scrollTo?.(0, 0);
+      if (session.npcMode) {
+        session.npcBot = npc.create(session.match, session.npcConfig);
+        if (document.hidden) session.npcPausedAt = performance.now();
+        else loop(session.generation);
+      }
+    }
     return accepted;
   }
   function again() {
     if (!session.host || session.match?.phase !== "finished") return;
+    if (session.npcMode) {
+      const weaponId = self().weaponId;
+      close(); createNpcRoom(weaponId); publish(); return;
+    }
     const old = session.match, connected = new Set([...session.links.values()].filter(l => l.joined).map(l => l.id));
     session.match = coop.create(transport.randomHex(), duel.shuffledOrder(words.length), old.players[0]);
     for (const player of old.players.slice(1)) if (connected.has(player.id)) coop.addPlayer(session.match, player);
@@ -220,7 +259,7 @@
   }
   function canType() {
     const player = self();
-    if (!session.active || session.match?.phase !== "fighting" || !player?.hp) return false;
+    if (!session.active || session.npcPausedAt !== null || session.match?.phase !== "fighting" || !player?.hp) return false;
     const view = session.host ? coop.snapshot(session.match).players[seat()] : player;
     const releasing = session.defensePending?.action === "guard-end";
     if ((view.guarding && !releasing) || view.countering || view.attackWaitMs !== null || (session.defensePending && !releasing)) return false;
@@ -245,7 +284,7 @@
   }
   function defense(action) {
     const player = self();
-    if (!session.active || session.match?.phase !== "fighting" || !player?.hp) return false;
+    if (!session.active || session.npcPausedAt !== null || session.match?.phase !== "fighting" || !player?.hp) return false;
     const partial = session.localValue && session.localValue !== duel.targetFor(duel.wordFor(session.match, words, player.index, seat()), player.mode, session.localValue);
     if (action === "guard-start" && player.weaponId === "greatsword" && (partial || session.pending)) return false;
     const packet = { type: "defense", match: session.match.id, seq: ++session.defenseSeq, action };
@@ -272,15 +311,26 @@
     for (const el of [name, weapon, hp, bar, energy, label]) info.appendChild(el);
     label.className = "coop-player-state"; energy.className = "coop-energy";
     ui.Players.appendChild(card);
-    return { card, image, name, weapon, hp, bar, label, energy, effect, before: null, attackUntil: 0, hurtUntil: 0, effectUntil: 0 };
+    const actor = document.createElement("div"), actorImage = document.createElement("img"), number = document.createElement("span");
+    actor.className = "coop-actor"; actor.setAttribute("role", "group");
+    number.className = "coop-actor-number"; number.setAttribute("aria-hidden", "true");
+    actorImage.className = "coop-actor-image"; actorImage.alt = "";
+    const actorEffect = document.createElement("span"); actorEffect.className = "online-defense-effect"; actorEffect.hidden = true;
+    actorEffect.setAttribute("aria-hidden", "true");
+    actor.appendChild(actorImage); actor.appendChild(number); actor.appendChild(actorEffect); ui.Actors.appendChild(actor);
+    return { card, image, name, weapon, hp, bar, label, energy, effect, actor, actorImage, number, actorEffect,
+      before: null, attackUntil: 0, hurtUntil: 0, effectUntil: 0 };
   }
   function render() {
     const match = session.match && (session.host ? coop.snapshot(session.match) : session.match), player = match?.players[seat()];
     const lobby = match?.phase === "lobby", fighting = match?.phase === "fighting", finished = match?.phase === "finished";
     ui.Screen.dataset.phase = match?.phase || "room";
-    ui.Lobby.hidden = Boolean(session.peer || session.connectTimer); ui.Party.hidden = !player;
+    ui.Title.textContent = session.npcMode ? "NPC協力" : "オンライン協力";
+    ui.NpcSetup.hidden = !session.npcMode || !lobby;
+    ui.NpcWeapon.value = session.npcConfig.weaponId; ui.NpcSpeed.value = String(session.npcConfig.speed);
+    ui.Lobby.hidden = session.npcMode || Boolean(session.peer || session.connectTimer); ui.Party.hidden = !player;
     ui.Create.disabled = ui.Join.disabled = Boolean(session.peer || session.connectTimer);
-    ui.Room.hidden = !match || fighting; ui.Code.textContent = session.room.replace(/(\d{4})(\d{4})/, "$1 $2");
+    ui.Room.hidden = session.npcMode || !match || fighting; ui.Code.textContent = session.room.replace(/(\d{4})(\d{4})/, "$1 $2");
     if (!player) return;
     const newMatch = session.localMatch !== match.id;
     const fresh = newMatch || session.localIndex !== player.index;
@@ -291,7 +341,8 @@
       session.localMatch = match.id; session.localIndex = player.index; session.localValue = session.kanaValue = player.value;
       session.pending = false; session.seq = player.seq; cancelGesture();
     }
-    ui.Count.textContent = `${match.players.length} / ${coop.rules.maxPlayers}`;
+    ui.Count.textContent = session.npcMode ? "あなた ＋ NPC" : `${match.players.length} / ${coop.rules.maxPlayers}`;
+    ui.Players.style.setProperty("--coop-player-count", String(match.players.length));
     ui.Loadout.hidden = !lobby; ui.Weapon.value = player.weaponId;
     ui.Ready.textContent = player.ready ? "準備を解除" : "準備完了にする";
     ui.Stages.hidden = !session.host || !coop.canStart(match);
@@ -302,8 +353,9 @@
     status(lobby ? match.players.length < coop.rules.minPlayers ? "参加待ち（2〜4人）" : coop.canStart(match)
       ? session.host ? "全員準備完了" : "ホストのステージ選択待ち" : `準備完了 ${match.players.filter(p => p.ready).length} / ${match.players.length}`
       : finished && !session.host ? "ホストが武器選択に戻るのを待っています" : "");
-    for (const [id, card] of cards) if (!match.players.some(p => p.id === id)) { card.card.remove(); cards.delete(id); }
+    for (const [id, card] of cards) if (!match.players.some(p => p.id === id)) { card.card.remove(); card.actor.remove(); cards.delete(id); }
     const now = performance.now(), attack = match.boss?.attack;
+    const formation = [player, ...match.players.filter(p => p.id !== player.id)];
     for (const p of match.players) {
       if (!cards.has(p.id)) cards.set(p.id, createCard());
       const card = cards.get(p.id), before = card.before, targeted = Boolean(attack?.targets.includes(p.id));
@@ -318,7 +370,7 @@
       card.name.textContent = `${match.players.indexOf(p) + 1}. ${p.name}${p.id === session.selfId ? "（あなた）" : ""}`;
       card.name.setAttribute("title", card.name.textContent);
       card.weapon.textContent = duel.weapons[p.weaponId].name;
-      card.hp.textContent = `${p.hp} / ${p.maxHp}`; card.hp.hidden = card.bar.hidden = lobby;
+      card.hp.textContent = String(p.hp); card.hp.setAttribute("aria-label", `体力 ${p.hp} / ${p.maxHp}`); card.hp.hidden = card.bar.hidden = lobby;
       card.bar.max = p.maxHp; card.bar.value = p.hp; card.bar.setAttribute("aria-label", p.name + "の体力");
       card.energy.hidden = !fighting || p.weaponId !== "sword"; card.energy.textContent = `気 ${p.counterEnergy}％`;
       card.label.textContent = lobby ? p.ready ? "準備完了" : "武器選択中" : !p.hp ? "戦闘不能" : targeted ? attack.kind === "single" ? "狙われています" : "全体攻撃" : "";
@@ -327,11 +379,21 @@
       card.card.classList.toggle("is-countering", p.countering); card.card.classList.toggle("is-hurt", now < card.hurtUntil);
       card.card.classList.toggle("is-attacking", now < card.attackUntil); card.card.dataset.weapon = p.weaponId;
       card.effect.hidden = now >= card.effectUntil;
+      card.actor.style.setProperty("--coop-rank", String(formation.findIndex(member => member.id === p.id)));
+      card.actor.dataset.playerId = p.id; card.actor.dataset.weapon = p.weaponId;
+      card.actor.classList.toggle("is-self", p.id === session.selfId);
+      for (const name of ["is-targeted", "is-down", "is-guarding", "is-countering", "is-hurt", "is-attacking"]) {
+        card.actor.classList.toggle(name, card.card.classList.contains(name));
+      }
+      card.number.textContent = String(match.players.indexOf(p) + 1);
+      card.actor.setAttribute("aria-label", `${card.name.textContent}${card.label.textContent ? `、${card.label.textContent}` : ""}`);
+      card.actorEffect.hidden = card.effect.hidden; card.actorEffect.dataset.effect = card.effect.dataset.effect || "";
       const assets = getPlayerWeaponAssets(p.weaponId), value = p.id === player.id ? session.localValue : p.value;
       const target = duel.targetFor(duel.wordFor(match, words, p.index, match.players.indexOf(p)), p.mode, value);
       const charge = Math.min(2, Math.floor(value.length / target.length * 2.5));
       const src = now < card.attackUntil ? assets.strike : p.guarding ? assets.guard : p.countering || p.attackWaitMs !== null ? assets.windup : assets.charge?.[charge] || assets.idle;
       if (card.image.getAttribute("src") !== src) card.image.setAttribute("src", src);
+      if (card.actorImage.getAttribute("src") !== src) card.actorImage.setAttribute("src", src);
       card.image.alt = duel.weapons[p.weaponId].name;
       card.before = { ...p, match: match.id };
     }
@@ -413,7 +475,9 @@
   for (const type of ["touchstart", "touchmove", "touchend", "gesturestart", "gesturechange", "gestureend"]) {
     ui.Keyboard.addEventListener(type, event => { if (event.cancelable) event.preventDefault(); }, { passive: false });
   }
-  ui.Button.addEventListener("click", open); ui.Back.addEventListener("click", leave);
+  ui.Button.addEventListener("click", () => open()); ui.Back.addEventListener("click", leave);
+  ui.NpcButton.addEventListener("click", () => open("npc"));
+  for (const field of [ui.NpcWeapon, ui.NpcSpeed]) field.addEventListener("change", () => setNpcConfig({ weaponId: ui.NpcWeapon.value, speed: Number(ui.NpcSpeed.value) }));
   ui.Create.addEventListener("click", () => connect(true)); ui.Join.addEventListener("click", () => connect(false));
   ui.RoomInput.addEventListener("keydown", event => { if (event.key === "Enter" && !event.isComposing) { event.preventDefault(); connect(false); } });
   ui.Weapon.addEventListener("change", () => chooseWeapon(ui.Weapon.value)); ui.Ready.addEventListener("click", ready);
@@ -444,8 +508,18 @@
     const character = getTypingCharacterFromKey(event); if (character) { event.preventDefault(); input(session.localValue + character); }
   });
   document.addEventListener("keyup", event => { if ([" ", "ArrowDown"].includes(event.key)) releaseDefense(event.key); });
-  document.addEventListener("visibilitychange", () => { if (document.hidden) releaseAll(); });
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) releaseAll();
+    if (!session.npcMode || !session.match || !["countdown", "fighting"].includes(session.match.phase)) return;
+    const now = performance.now();
+    if (document.hidden && session.npcPausedAt === null) {
+      session.npcPausedAt = now; window.clearTimeout(session.timer); session.timer = 0;
+    } else if (!document.hidden && session.npcPausedAt !== null) {
+      npc.resume(session.npcBot, session.match, session.npcPausedAt, now);
+      session.npcPausedAt = null; loop(session.generation);
+    }
+  });
   window.addEventListener("blur", releaseAll); window.addEventListener("pagehide", () => { close(); session.active = false; });
   window.COOP_PLAY = { open, leave, close() { close(); session.active = false; }, connect, chooseWeapon, ready, start, again,
-    input, applyKana, defense, get active() { return session.active; }, get session() { return session; } };
+    input, applyKana, defense, setNpcConfig, get active() { return session.active; }, get session() { return session; } };
 })();
