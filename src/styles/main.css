@@ -2280,7 +2280,7 @@ button {
 }
 
 .word-translation {
-  margin-bottom: 7px;
+  margin-top: 7px;
   color: var(--ink);
   font-size: clamp(1.15rem, 3vw, 1.55rem);
   line-height: 1.08;
@@ -2289,7 +2289,7 @@ button {
 
 .word-target {
   font-family: "Segoe UI", Arial, sans-serif;
-  font-size: clamp(1.6rem, 4.6vw, 2.55rem);
+  font-size: clamp(1.45rem, 4.2vw, 2.3rem);
   line-height: 1;
   word-break: break-all;
 }
@@ -2945,7 +2945,7 @@ html[data-compact-battle="true"] .has-treasure .notice-card {
 }
 
 .typing-status[data-weapon="greatsword"] .word-target {
-  font-size: clamp(1.45rem, 4vw, 2.1rem);
+  font-size: clamp(1.3rem, 3.6vw, 1.9rem);
   line-height: 1.08;
 }
 
@@ -4969,7 +4969,7 @@ html[data-flick-input="true"] .typing-word-card {
 }
 
 html[data-flick-input="true"] .word-translation {
-  margin-bottom: 1px;
+  margin-top: 1px;
   font-size: 16px;
   line-height: 1.2;
   overflow-wrap: anywhere;
@@ -5873,7 +5873,7 @@ html[data-flick-input="true"] .battle-screen[data-target-tutorial="select"] .gam
 @media (prefers-reduced-motion: reduce) { .capture-intro img { animation: none; } }
 
 /* Friend rooms: larger health pools and an always-visible opponent typing meter. */
-.online-screen { --current-word-size: clamp(24px, 3.5vw, 36px); --current-input-size: clamp(20px, 2.8vw, 28px); min-height: inherit; padding: clamp(12px, 3vw, 28px); border: 1px solid #a8c9cf; border-radius: 12px; background: linear-gradient(150deg, #f5f9efee, #e5f1f8f5); }
+.online-screen { --current-word-size: clamp(24px, 3.5vw, 36px); --current-input-size: clamp(18px, 2.5vw, 26px); min-height: inherit; padding: clamp(12px, 3vw, 28px); border: 1px solid #a8c9cf; border-radius: 12px; background: linear-gradient(150deg, #f5f9efee, #e5f1f8f5); }
 .online-screen[hidden], .online-screen [hidden] { display: none !important; }
 .online-head, .online-room, .online-progress-head { display: flex; align-items: center; gap: 12px; }
 .online-head { justify-content: space-between; margin-bottom: 16px; }
@@ -5926,8 +5926,8 @@ html[data-flick-input="true"] .battle-screen[data-target-tutorial="select"] .gam
 .online-prompts:has(.online-next:not([hidden])) { grid-template-columns: minmax(0, 1fr) minmax(0, .9fr); gap: 8px; }
 .online-current, .online-next { min-width: 0; }
 .online-next { overflow-wrap: anywhere; color: #246475; }
-.online-next .next-word-translation { margin: 18px 0 12px; font-weight: 800; line-height: inherit; }
-.online-next .next-word-target { font-family: ui-monospace, monospace; line-height: 1.5; }
+.online-next .next-word-translation { margin: 12px 0 0; font-weight: 800; line-height: inherit; }
+.online-next .next-word-target { margin-top: 18px; font-family: ui-monospace, monospace; line-height: 1.5; }
 .online-opponent.is-striking { background: #ffe0b2; border-color: #de6c16; box-shadow: inset 0 0 0 3px #e9943c; }
 .online-fighter.is-winding { border-color: #d45b22; box-shadow: inset 0 0 18px #ed893d66; }
 .online-fighter.is-guarding { border-color: #329dce; box-shadow: inset 0 0 22px #44b4ef66; }
@@ -5943,8 +5943,8 @@ html[data-flick-input="true"] .battle-screen[data-target-tutorial="select"] .gam
 @keyframes onlineFlurry { 25% { translate: 12px -5px; } 50% { translate: -6px 0; } 75% { translate: 12px 5px; } }
 .online-progress-head { flex-wrap: wrap; justify-content: space-between; gap: 8px; }
 .online-progress-head time { font-size: 18px; font-variant-numeric: tabular-nums; color: #52636d; }
-.online-word { font-size: var(--current-word-size); font-weight: 800; margin: 18px 0 12px; overflow-wrap: anywhere; }
-.online-letters { margin: 0; min-height: 1.5em; font-size: var(--current-input-size); font-family: ui-monospace, monospace; line-height: 1.5; overflow-wrap: anywhere; color: #61727b; }
+.online-word { font-size: var(--current-word-size); font-weight: 800; margin: 12px 0 0; overflow-wrap: anywhere; }
+.online-letters { margin: 18px 0 0; min-height: 1.5em; font-size: var(--current-input-size); font-family: ui-monospace, monospace; line-height: 1.5; overflow-wrap: anywhere; color: #61727b; }
 .online-done { color: #0b7888; background: #d8f3f0; font-weight: 800; }
 .online-opponent .online-done { color: #9a4c14; background: #ffe0bb; }
 .online-opponent progress { height: 28px; margin-top: 18px; }
@@ -5964,7 +5964,7 @@ html[data-flick-input="true"] .battle-screen[data-target-tutorial="select"] .gam
 @keyframes onlineHit { 30% { background: #ffb2a3; transform: translateX(4px); } }
 @keyframes onlineStrike { 40% { translate: 12px -5px; } }
 @media (max-width: 650px) {
-  .online-screen { --current-word-size: 24px; --current-input-size: 20px; padding: 10px; }
+  .online-screen { --current-word-size: 24px; --current-input-size: 18px; padding: 10px; }
   .online-head { margin-bottom: 10px; }
   .online-arena { gap: 8px; }
   .online-fighters { gap: 8px; }
@@ -5974,14 +5974,15 @@ html[data-flick-input="true"] .battle-screen[data-target-tutorial="select"] .gam
   .online-fighter strong { font-size: 18px; }
   .online-fighter progress { height: 16px; }
   .online-opponent, .online-input { padding: 10px; }
-  .online-word, .online-next .next-word-translation { margin: 7px 0 4px; }
+  .online-word, .online-next .next-word-translation { margin: 4px 0 0; }
+  .online-letters, .online-next .next-word-target { margin-top: 7px; }
   .online-opponent progress { margin-top: 8px; height: 22px; }
   .online-room { gap: 8px; margin-bottom: 8px; font-size: 16px; }
   .online-room strong { font-size: 22px; }
   .online-lobby { padding: 18px; }
 }
 @media (max-height: 540px) and (min-width: 651px) {
-  .online-screen { --current-word-size: 24px; --current-input-size: 20px; padding: 8px; }
+  .online-screen { --current-word-size: 24px; --current-input-size: 18px; padding: 8px; }
   .online-head { margin-bottom: 5px; }
   .online-room { position: absolute; top: 24px; left: 40%; font-size: 16px; }
   .online-room strong { font-size: 22px; }
@@ -5997,7 +5998,8 @@ html[data-flick-input="true"] .battle-screen[data-target-tutorial="select"] .gam
   .online-input[data-weapon="dualBlades"] .online-input-head { display: none; }
   .online-opponent { padding: 8px; }
   .online-controls { grid-column: 3; grid-row: 1 / 3; padding: 8px; }
-  .online-word, .online-next .next-word-translation { margin: 4px 0; }
+  .online-word, .online-next .next-word-translation { margin: 4px 0 0; }
+  .online-letters, .online-next .next-word-target { margin-top: 4px; }
   .online-keyboard { grid-template-rows: repeat(4, 34px); gap: 4px; margin-top: 4px; }
   .online-entry { margin-top: 4px; min-height: 30px; }
   .online-entry button { min-height: 30px; }
@@ -6014,7 +6016,8 @@ html[data-flick-input="true"] .battle-screen[data-target-tutorial="select"] .gam
   .online-fighters { gap: 6px; }
   .online-opponent, .online-input { padding: 7px; }
   .online-controls { padding: 6px; }
-  .online-word, .online-next .next-word-translation { margin: 4px 0 2px; }
+  .online-word, .online-next .next-word-translation { margin: 2px 0 0; }
+  .online-letters, .online-next .next-word-target { margin-top: 4px; }
   .online-opponent .online-word, .online-input-head h2 { display: none; }
   .online-input-head:has(.online-defense[hidden]) { display: none; }
   .online-opponent progress { height: 18px; margin-top: 4px; }
@@ -6056,7 +6059,7 @@ html[data-flick-input="true"] .battle-screen[data-target-tutorial="select"] .gam
 .capture-hud[data-urgent="true"] .capture-meter i { background: #e55436; }
 .capture-source { position: absolute; right: 8px; bottom: 6px; z-index: 7; padding: 2px 6px; border-radius: 4px; color: #354839; background: #ffffffe8; font-size: 16px; line-height: 1.4; }
 .is-captured .word-translation { line-height: 1.4; overflow-wrap: anywhere; }
-.is-captured .typing-status .word-target { font-size: 24px; line-height: 1.35; }
+.is-captured .typing-status .word-target { font-size: 22px; line-height: 1.35; }
 .is-escaping .capture-carrier { animation: captureEscape .65s ease-in both; }
 .is-escaping .capture-hero { animation: captureHeroEscape .65s ease-in both; }
 @keyframes captureHover { from { transform: translateY(4px) rotate(-2deg); } to { transform: translateY(-8px) rotate(2deg); } }
@@ -6213,11 +6216,11 @@ html[data-flick-input="true"] .is-captured .game-flick-entry { display: none; }
   font-weight: 700;
   overflow-wrap: anywhere;
 }
-.typing-status { --current-word-size: clamp(1.15rem, 3vw, 1.55rem); --current-input-size: clamp(1.6rem, 4.6vw, 2.55rem); }
-.next-word-translation { display: block; margin-bottom: 7px; font-size: calc(var(--current-word-size) * .9); line-height: 1.08; }
+.typing-status { --current-word-size: clamp(1.15rem, 3vw, 1.55rem); --current-input-size: clamp(1.45rem, 4.2vw, 2.3rem); }
+.next-word-translation { display: block; margin-top: 7px; font-size: calc(var(--current-word-size) * .9); line-height: 1.08; }
 .next-word-target { display: block; font-size: calc(var(--current-input-size) * .9); font-family: "Segoe UI", Arial, sans-serif; line-height: 1; }
 html[data-flick-input="true"] .typing-status { --current-word-size: 16px; --current-input-size: 18px; }
-html[data-flick-input="true"] .next-word-preview .next-word-translation { margin-bottom: 1px; line-height: 1.2; }
+html[data-flick-input="true"] .next-word-preview .next-word-translation { margin-top: 1px; line-height: 1.2; }
 html[data-flick-input="true"] .next-word-preview .next-word-target { line-height: 1.25; }
 .next-word-preview[hidden] { display: none; }
 .typing-status.has-next-word {

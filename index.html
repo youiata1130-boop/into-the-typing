@@ -6,7 +6,7 @@
     <title>Into the Typing</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='52'%3E%E2%9A%94%EF%B8%8F%3C/text%3E%3C/svg%3E">
     <link rel="preload" as="image" href="src/assets/images/backgrounds/shared/typing_rpg_background.webp">
-    <link rel="stylesheet" href="src/styles/main.css?v=20261101-plant-regrowth-v1">
+    <link rel="stylesheet" href="src/styles/main.css?v=20261101-input-order-v1">
   </head>
   <body>
     <section class="loading-screen" id="loadingScreen" aria-labelledby="loadingText" aria-busy="true">
@@ -89,19 +89,19 @@
             <div class="online-input-head"><h2>あなたの入力</h2><button class="online-defense" id="onlineDefense" type="button" hidden></button></div>
             <div class="online-prompts">
               <div class="online-current">
-                <p class="online-word" id="onlineTarget"></p>
                 <p class="online-letters"><span id="onlineTyped" class="online-done"></span><span id="onlineRemaining"></span></p>
+                <p class="online-word" id="onlineTarget"></p>
               </div>
               <div class="online-next" id="onlineNext" role="group" aria-label="次の単語" hidden>
-                <span class="next-word-translation" id="onlineNextTranslation"></span>
                 <span class="next-word-target" id="onlineNextTarget"></span>
+                <span class="next-word-translation" id="onlineNextTranslation"></span>
               </div>
             </div>
           </div>
           <div class="online-opponent" id="onlineOpponent">
             <div class="online-progress-head"><h2>相手の入力</h2><strong id="onlineOpponentCount">0文字</strong><time id="onlineClock" aria-label="対戦の残り時間">3:00</time></div>
-            <p class="online-word" id="onlineOpponentTarget"></p>
             <p class="online-letters"><span id="onlineOpponentTyped" class="online-done"></span><span id="onlineOpponentRemaining"></span></p>
+            <p class="online-word" id="onlineOpponentTarget"></p>
             <progress id="onlineOpponentProgress" max="1" value="0" aria-label="相手の入力進捗"></progress>
           </div>
           <div class="online-controls">
@@ -145,8 +145,8 @@
             </div>
             <div class="online-input" id="coopInput" tabindex="-1">
               <div class="online-input-head"><h2 id="coopInputLabel">あなたの入力</h2><button class="online-defense" id="coopDefense" type="button" hidden></button></div>
-              <div class="online-prompts"><div class="online-current"><p class="online-word" id="coopWord"></p><p class="online-letters"><span class="online-done" id="coopTyped"></span><span id="coopRemaining"></span></p></div>
-                <div class="online-next" id="coopNext" aria-label="次の単語" hidden><span class="next-word-translation" id="coopNextWord"></span><span class="next-word-target" id="coopNextTarget"></span></div>
+              <div class="online-prompts"><div class="online-current"><p class="online-letters"><span class="online-done" id="coopTyped"></span><span id="coopRemaining"></span></p><p class="online-word" id="coopWord"></p></div>
+                <div class="online-next" id="coopNext" aria-label="次の単語" hidden><span class="next-word-target" id="coopNextTarget"></span><span class="next-word-translation" id="coopNextWord"></span></div>
               </div>
             </div>
             <div class="coop-controls" id="coopControls" hidden>
@@ -660,12 +660,12 @@
           <div class="typing-status" id="typingStatus" tabindex="-1" data-weapon="sword" aria-live="polite">
             <span class="typing-miss-effect" id="typingMissEffect" aria-hidden="true"></span>
             <span class="word-card typing-word-card">
-              <span class="word-translation" id="wordTranslation">はじめ</span>
               <span class="word-target"><span id="typedWord"></span><span id="remainingWord">hajime</span></span>
+              <span class="word-translation" id="wordTranslation">はじめ</span>
             </span>
             <span class="next-word-preview" id="nextWordPreview" role="group" aria-label="次の単語" hidden>
-              <span class="next-word-translation" id="nextWordTranslation"></span>
               <span class="next-word-target" id="nextWordTarget"></span>
+              <span class="next-word-translation" id="nextWordTranslation"></span>
             </span>
             <div class="attack-cooldown" id="attackCooldown" role="progressbar" aria-label="攻撃後のクールタイム" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" hidden>
               <i id="attackCooldownFill"></i>
