@@ -61,7 +61,7 @@ test('difficulty changes require the host in the lobby and invalidate old readin
 
 test('each difficulty applies its HP, warnings, damage and interval for 2–4 players and validates snapshots', () => {
   for (const [difficulty,hp,interval,warning,single,area] of [
-    ['easy',350,8000,3000,100,50], ['normal',500,6000,2500,160,80], ['hard',750,4500,1800,240,120],
+    ['easy',350,10000,3600,130,65], ['normal',500,7500,3000,200,100], ['hard',750,5500,2200,300,150],
   ]) for (const count of [2,3,4]) {
     const game = battle({ count, start: false });
     game.run(`C.chooseDifficulty(match,0,'${difficulty}',match.settingsRevision);readyAll();C.start(match,0,'giant',0,match.settingsRevision);C.tick(match,W,3000)`);
@@ -103,20 +103,20 @@ test('correct answers damage the one shared giant once, never allies, and honor 
 
 test('single attacks telegraph a specific living target and all attacks damage every living player', () => {
   const game = battle({ count: 4 });
-  game.run('C.tick(match,W,6500,()=>0)');
+  game.run('C.tick(match,W,7500,()=>0)');
   assert.equal(game.run('match.boss.attack.kind'), 'single');
   assert.deepEqual(game.snapshot('match.boss.attack.targets'), ['0'.repeat(24)]);
-  assert.equal(game.run('C.snapshot(match).boss.attack.remainingMs'), 2500);
-  game.run('C.tick(match,W,8999,()=>0)');
+  assert.equal(game.run('C.snapshot(match).boss.attack.remainingMs'), 3000);
+  game.run('C.tick(match,W,10499,()=>0)');
   assert.deepEqual(game.snapshot('match.players.map(p=>p.hp)'), [1000, 1000, 1000, 1000]);
-  game.run('C.tick(match,W,9000,()=>0)');
-  assert.deepEqual(game.snapshot('match.players.map(p=>p.hp)'), [840, 1000, 1000, 1000]);
-  game.run('match.players[0].hp=0; C.tick(match,W,12500,()=>.8)');
+  game.run('C.tick(match,W,10500,()=>0)');
+  assert.deepEqual(game.snapshot('match.players.map(p=>p.hp)'), [800, 1000, 1000, 1000]);
+  game.run('match.players[0].hp=0; C.tick(match,W,15000,()=>.8)');
   assert.equal(game.run('match.boss.attack.kind'), 'all');
   assert.deepEqual(game.snapshot('match.boss.attack.targets'), ['1'.repeat(24), '2'.repeat(24), '3'.repeat(24)]);
-  assert.equal(game.run('answer(0,12500)'), false);
-  game.run('C.tick(match,W,15000,()=>.8); C.tick(match,W,18500,()=>0)');
-  assert.deepEqual(game.snapshot('match.players.map(p=>p.hp)'), [0, 920, 920, 920]);
+  assert.equal(game.run('answer(0,15000)'), false);
+  game.run('C.tick(match,W,18000,()=>.8); C.tick(match,W,22500,()=>0)');
+  assert.deepEqual(game.snapshot('match.players.map(p=>p.hp)'), [0, 900, 900, 900]);
   assert.deepEqual(game.snapshot('match.boss.attack.targets'), ['1'.repeat(24)]);
 });
 
@@ -124,13 +124,13 @@ test('guard, just guard, and energy-based counter protect against the giant', ()
   const game = battle({ count: 4, start: false });
   game.run(`['swordShield','greatsword','sword','dualBlades'].forEach((w,i)=>C.chooseWeapon(match,i,w,match.settingsRevision));
     readyAll();C.start(match,0,'giant',0,match.settingsRevision);C.tick(match,W,3000);
-    C.tick(match,W,6500,()=>.9);
+    C.tick(match,W,7500,()=>.9);
     function defend(i,action,now){return C.defense(match,W,i,{match:match.id,seq:match.players[i].defenseSeq+1,action},now)};
-    defend(0,'guard-start',8000);defend(1,'guard-start',8900);`);
-  assert.equal(game.run('defend(2,"counter",8900)'), false);
-  assert.equal(game.run('defend(3,"guard-start",8900)'), false);
-  game.run('match.players[2].counterEnergy=100;defend(2,"counter",8900);C.tick(match,W,9000)');
-  assert.deepEqual(game.snapshot('match.players.map(p=>p.hp)'), [960, 980, 1000, 920]);
+    defend(0,'guard-start',9500);defend(1,'guard-start',10400);`);
+  assert.equal(game.run('defend(2,"counter",10400)'), false);
+  assert.equal(game.run('defend(3,"guard-start",10400)'), false);
+  game.run('match.players[2].counterEnergy=100;defend(2,"counter",10400);C.tick(match,W,10500)');
+  assert.deepEqual(game.snapshot('match.players.map(p=>p.hp)'), [950, 975, 1000, 900]);
   assert.equal(game.run('match.boss.hp'), 1980);
   assert.equal(game.run('match.players[2].counterEnergy'), 0);
   assert.equal(game.run('match.players.every(p=>!p.guarding && p.defenseCost===0)'), true);
@@ -145,7 +145,7 @@ test('shared victory, defeat, timeout, and disconnect stop further combat', () =
   win.run('C.removePlayer(match,match.players[1].id);C.tick(match,W,999999)');
   assert.equal(win.run('match.outcome'), 'victory');
   const lose = battle();
-  lose.run('match.players.forEach(p=>p.hp=1);C.tick(match,W,6500,()=>.8);C.tick(match,W,9000)');
+  lose.run('match.players.forEach(p=>p.hp=1);C.tick(match,W,7500,()=>.8);C.tick(match,W,10500)');
   assert.equal(lose.run('match.outcome'), 'defeat');
   const timeout = battle();
   timeout.run('answer(0);C.tick(match,W,183000)');
@@ -158,7 +158,7 @@ test('shared victory, defeat, timeout, and disconnect stop further combat', () =
 
 test('co-op snapshots reject invalid players, giant health, targets, phase and host clock data is omitted', () => {
   const game = battle({ count: 4 });
-  game.run('C.tick(match,W,6500,()=>0); const snap=C.snapshot(match)');
+  game.run('C.tick(match,W,7500,()=>0); const snap=C.snapshot(match)');
   assert.equal(game.run('C.validSnapshot(snap,W)'), true);
   assert.equal(game.run('"hitsAt" in snap.boss.attack || "nextAttackAt" in snap.boss'), false);
   for (const edit of [
@@ -198,7 +198,7 @@ test('slow keeps current input stable, uses longer sentences for the next two pr
       C.chooseTarget(match,0,{match:match.id,index:0,seq:1,targetId:'body'});
       const p=match.players[0], initial=C.wordFor(match,W,0), first=D.targetFor(initial,p.mode);
       C.acceptInput(match,W,0,{match:match.id,index:0,seq:1,value:first[0]},3000);
-      C.tick(match,W,6500,()=>.9);C.tick(match,W,9000);match.boss.nextAttackAt=Infinity;
+      C.tick(match,W,7500,()=>.9);C.tick(match,W,10500);match.boss.nextAttackAt=Infinity;
       function complete(){const word=C.wordFor(match,W,p.index),profile=C.attackProfile(word,p.mode);
         const hp=match.boss.hp;answer(0);C.tick(match,W,match.clockNow+profile.inputMs);
         C.tick(match,W,match.clockNow+profile.windupMs);return hp-match.boss.hp;}`);
@@ -249,12 +249,12 @@ test('slow accepts sentence romaji variants and refreshes without changing an ac
     while(C.wordFor(match,W,p.index).inputs.length<2){p.index++;p.slowUntil=p.index+2;}
     const word=C.wordFor(match,W,p.index),variant=word.inputs.at(-1),index=p.index;
     C.acceptInput(match,W,0,{match:match.id,index,seq:1,value:variant.slice(0,-1)},3000);
-    C.tick(match,W,6500,()=>.9);C.tick(match,W,9000);`);
+    C.tick(match,W,7500,()=>.9);C.tick(match,W,10500);`);
   assert.ok(game.run('word.inputs.length') > 1);
   assert.equal(game.run('C.wordFor(match,W,index)===word'), true);
   assert.equal(game.run('p.value'), game.run('variant.slice(0,-1)'));
   assert.equal(game.run('p.slowUntil'), game.run('index+3'));
-  assert.equal(game.run('C.acceptInput(match,W,0,{match:match.id,index,seq:2,value:variant},9000)'), true);
+  assert.equal(game.run('C.acceptInput(match,W,0,{match:match.id,index,seq:2,value:variant},10500)'), true);
   assert.equal(game.run('C.validSnapshot(C.snapshot(match),W)'), true);
   for (const edit of ['copy.stageId="giant"', 'copy.players[0].slowFrom=-1', 'copy.players[0].slowUntil=999',
     'delete copy.players[0].slowFrom', 'copy.players[0].value+="!"']) {
@@ -382,7 +382,7 @@ test('four clients synchronize octopus selection, slow casting and longer prompt
   });
   guests[0].run(`const p=P.session.match.players[1], original=C.wordFor(P.session.match,W,0,1);
     P.applyKana(original.reading[0])`);
-  host.advance(2500); pump(); // Deliver the input after the spell, without replacing its prompt.
+  host.advance(3000); pump(); // Deliver the input after the spell, without replacing its prompt.
   assert.equal(host.run('P.session.match.players[1].value'), guests[0].run('original.reading[0]'));
   all.forEach(g => assert.equal(g.run('document.querySelector("#coopSlow").textContent'), 'スロー（次から2回）'));
   host.run('P.session.match.boss.nextAttackAt=Infinity');
@@ -434,8 +434,8 @@ test('four clients synchronize weapons, readiness, host-only stage, target marke
   targets.forEach(text => assert.match(text, /単体攻撃 → 2\./));
   assert.match(targets[1], /あなた/);
   guests[2].run('const i=P.session.match.players.findIndex(p=>p.id===P.session.selfId);P.input(D.targetFor(D.wordFor(P.session.match,W,0,i),"roman"))'); pump();
-  host.advance(2500); pump();
-  all.forEach(g => assert.equal(g.run('P.session.match.players[1].hp'), 840));
+  host.advance(3000); pump();
+  all.forEach(g => assert.equal(g.run('P.session.match.players[1].hp'), 800));
   assert.ok(host.run('P.session.match.boss.hp') < 2000);
   guests[0].run('P.leave()'); pump();
   [host, ...guests.slice(1)].forEach(g => assert.equal(g.run('P.session.match.outcome'), 'aborted'));
@@ -448,7 +448,7 @@ test('four clients synchronize weapons, readiness, host-only stage, target marke
   all.forEach((g, i) => { g.run('P.leave()'); assert.deepEqual(g.saved(), saved[i]); });
 });
 
-test('host and guest show distinct giant windups, one confirmed impact, and cancel them on victory and rematch', () => {
+test('host and guest start the giant swing before damage, recover on impact, and cancel on victory and rematch', () => {
   const { host, guests: [guest], pump } = room();
   const all = [host, guest];
   all.forEach(g => g.run('P.ready()')); pump(); host.run('P.start()'); host.advance(3000); pump();
@@ -459,10 +459,23 @@ test('host and guest show distinct giant windups, one confirmed impact, and canc
       assert.equal(g.run('document.querySelector("#coopBoss").dataset.attack'), kind);
       assert.equal(g.run('document.querySelector("#coopBossImage").getAttribute("src")'), `src/assets/images/enemies/giant/windup-${kind}.webp`);
       assert.equal(g.run('document.querySelector("#coopBoss").dataset.strike'), '');
+      assert.equal(g.run('document.querySelector("#coopBoss").dataset.swing'), '');
     });
-    host.advance(2500); pump();
+    const hp = host.snapshot('P.session.match.players.map(p=>p.hp)');
+    host.advance(2050); pump(); // 850 ms remain: still holding the windup pose.
+    all.forEach(g => assert.equal(g.run('document.querySelector("#coopBoss").dataset.swing'), ''));
+    host.advance(50); pump(); // The swing begins 800 ms before damage.
+    all.forEach(g => assert.equal(g.run('document.querySelector("#coopBoss").dataset.swing'), kind));
+    host.advance(750); pump();
+    all.forEach(g => {
+      assert.deepEqual(g.snapshot('P.session.match.players.map(p=>p.hp)'), hp);
+      assert.equal(g.run('document.querySelector("#coopBoss").dataset.strike'), '');
+      assert.equal(g.run('document.querySelector("#coopBoss").dataset.swing'), kind);
+    });
+    host.advance(50); pump();
     all.forEach(g => {
       assert.equal(g.run('document.querySelector("#coopBoss").dataset.attack'), '');
+      assert.equal(g.run('document.querySelector("#coopBoss").dataset.swing'), '');
       assert.equal(g.run('document.querySelector("#coopBoss").dataset.strike'), kind);
       assert.equal(g.run('document.querySelector("#coopBossImage").getAttribute("src")'), 'src/assets/images/enemies/giant/idle.webp');
       g.advance(700);
@@ -472,10 +485,13 @@ test('host and guest show distinct giant windups, one confirmed impact, and canc
   }
   host.run('P.session.match.boss.nextAttackAt=performance.now();C.tick(P.session.match,W,performance.now(),()=>.8)');
   host.advance(100); pump();
+  host.advance(2200); pump();
+  all.forEach(g => assert.equal(g.run('document.querySelector("#coopBoss").dataset.swing'), 'all'));
   host.run('P.session.match.boss.hp=0'); host.advance(100); pump();
   all.forEach(g => {
     assert.equal(g.run('document.querySelector("#coopBoss").dataset.attack'), '');
     assert.equal(g.run('document.querySelector("#coopBoss").dataset.strike'), '');
+    assert.equal(g.run('document.querySelector("#coopBoss").dataset.swing'), '');
   });
   host.run('P.again()'); pump(); all.forEach(g => g.run('P.ready()')); pump(); host.run('P.start()'); pump();
   all.forEach(g => {
@@ -499,7 +515,7 @@ test('difficulty is shared with guests, rejects guest changes, controls the warn
     assert.equal(g.run('document.querySelector("#coopBoss").dataset.chargePhase'),'charging');
     assert.equal(g.run('document.querySelector("#coopDifficulty").disabled'),true);
   }
-  host.advance(2400);pump();
+  host.advance(2800);pump();
   for(const g of [host,guest])assert.equal(g.run('document.querySelector("#coopBoss").dataset.chargePhase'),'warning');
   host.run('P.session.match.boss.hp=0');host.advance(100);pump();host.run('P.again()');pump();
   for(const g of [host,guest])assert.equal(g.run('P.session.match.difficulty'),'easy');

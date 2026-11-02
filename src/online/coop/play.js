@@ -1,10 +1,11 @@
 (() => {
   const coop = window.ONLINE_COOP, duel = window.ONLINE_DUEL, transport = window.ONLINE_CONNECTION, npc = window.COOP_NPC;
-  const words = window.ONLINE_PLAY.words, protocol = "coop-5-" + duel.signature([...words, ...coopSlowSentences]);
+  const words = window.ONLINE_PLAY.words, protocol = "coop-6-" + duel.signature([...words, ...coopSlowSentences]);
+  const swingMs = 800;
   const prefix = transport.prefix + "coop-", $ = name => document.querySelector("#coop" + name);
   const playerColors = ["#2563c9", "#bc3d55", "#197c51", "#8050b7"];
   const ui = Object.fromEntries(["Screen", "Title", "Button", "NpcButton", "NpcSetup", "NpcWeapon", "NpcSpeed", "Back", "Lobby", "Name", "Create", "Join", "RoomInput", "Room", "Code", "Copy",
-    "Status", "Party", "PartyHead", "Count", "Clock", "Players", "Actors", "Loadout", "Difficulty", "Weapon", "Ready", "Stages", "Start", "Battle", "Boss",
+    "Status", "Party", "PartyHead", "Count", "Clock", "Players", "Actors", "AttackLinks", "Loadout", "Difficulty", "Weapon", "Ready", "Stages", "Start", "Battle", "Boss",
     "StartOctopus", "TentacleLeft", "TentacleRight", "Enemy", "Octopus", "PartLeft", "PartRight", "PartBody", "LeftBar", "RightBar", "BodyBar", "BodyImage", "Regrowth",
     "Slow", "BossBar", "BossImage", "Target", "Input", "InputLabel", "Word", "Typed", "Remaining", "Next", "NextWord", "NextTarget",
     "Defense", "Energy", "EnergyValue", "EnergyFill", "Controls", "Entry", "Erase", "Keyboard", "Result", "Banner", "Again", "FlickPopup"].map(name => [name, $(name)]));
@@ -14,6 +15,8 @@
     localTarget: "body", targetSeq: 0, targetPending: null, targetLocked: false,
     npcMode: false, npcConfig: { weaponId: "swordShield", speed: 3 }, npcBot: null, npcPausedAt: null };
   const cards = new Map(), keys = [], choices = [];
+  const attackLinks = new Map();
+  let linkFrame = 0;
   const parts = [
     { id: "left", button: ui.PartLeft, bar: ui.LeftBar, image: ui.TentacleLeft },
     { id: "right", button: ui.PartRight, bar: ui.RightBar, image: ui.TentacleRight },
@@ -45,10 +48,12 @@
     session.localTarget = "body"; session.targetSeq = 0; session.targetPending = null; session.targetLocked = false;
     parts.forEach(part => { part.motion = null; });
     session.npcBot = null; session.npcPausedAt = null;
-    bossMotion = null; ui.Boss.dataset.attack = ui.Boss.dataset.strike = ""; ui.Boss.dataset.paused = "false";
+    bossMotion = null; ui.Boss.dataset.attack = ui.Boss.dataset.strike = ui.Boss.dataset.swing = ""; ui.Boss.dataset.paused = "false";
     ui.Boss.dataset.chargePhase = "";
     delete ui.Boss.dataset.stage; ui.TentacleLeft.hidden = ui.TentacleRight.hidden = true;
     ui.Octopus.hidden = true; ui.Enemy.hidden = false;
+    cancelAnimationFrame(linkFrame); linkFrame = 0;
+    attackLinks.clear(); ui.AttackLinks.replaceChildren(); ui.AttackLinks.hidden = true;
     cards.clear(); ui.Players.replaceChildren(); ui.Actors.replaceChildren();
   }
   function stop(message) { close(false); render(); status(message); }
@@ -350,6 +355,14 @@
     if (self() && duel.weapons[self().weaponId].defense === "guard") defense("guard-end");
   }
   function releaseAll() { for (const source of [...session.held]) releaseDefense(source); cancelGesture(); }
+  function renderSwing(element, attack) {
+    const swinging = attack && attack.remainingMs <= swingMs;
+    element.dataset.swing = swinging ? attack.kind : "";
+    // Advance from the authoritative remaining time so late packets, pauses and
+    // cancelled attacks cannot leave an independent animation running toward a hit.
+    const progress = swinging ? Math.max(0, Math.min(1, 1 - attack.remainingMs / swingMs)) : 0;
+    element.style.setProperty("--enemy-swing", (progress * progress).toFixed(3));
+  }
   function renderBossMotion(match, now) {
     const boss = match.boss, attack = boss.attack, active = match.phase === "fighting" && boss.hp > 0;
     if (!bossMotion || bossMotion.match !== match.id) {
@@ -362,6 +375,7 @@
     if (!active || attack || now >= bossMotion.until) bossMotion.strike = "";
     bossMotion.attacks = boss.attacks; bossMotion.windup = active ? attack?.kind || "" : "";
     ui.Boss.dataset.attack = bossMotion.windup; ui.Boss.dataset.strike = bossMotion.strike;
+    renderSwing(ui.Boss, active ? attack : null);
     const charge = !active ? 0 : bossMotion.strike ? 1 : attack
       ? Math.max(0, Math.min(1, 1 - attack.remainingMs / coop.difficultyFor(match).warningMs)) : 0;
     ui.Boss.dataset.chargePhase = !active ? "" : bossMotion.strike ? "attack" : charge >= .75 ? "warning" : "charging";
@@ -395,6 +409,7 @@
       motion.attacks = enemy.attacks; motion.windup = active && alive ? attack?.kind || "" : "";
       const charge = motion.strike ? 1 : attack ? Math.max(0, Math.min(1, 1 - attack.remainingMs / coop.attackTiming(match, part.id).warningMs)) : 0;
       part.button.dataset.attack = motion.windup; part.button.dataset.strike = motion.strike;
+      renderSwing(part.button, active && alive && !(part.id === "body" && regrowth) ? attack : null);
       part.button.dataset.active = String(active && alive);
       part.button.style.setProperty("--enemy-charge", charge.toFixed(3));
       part.button.style.setProperty("--enemy-aura-color", `hsl(${Math.round(100 * (1 - charge))} 90% 64%)`);
@@ -408,6 +423,51 @@
       const src = part.id === "body" ? coop.stages.octopus.image : coop.stages.octopus.tentacle;
       if (part.image.getAttribute("src") !== src) part.image.setAttribute("src", src);
     }
+  }
+  function renderAttackLinks(match, attacks = coop.attacksFor(match)) {
+    const visible = session.active && match.phase === "fighting" && attacks.length > 0;
+    ui.AttackLinks.hidden = !visible;
+    const active = new Set(), bounds = visible && ui.AttackLinks.getBoundingClientRect();
+    for (const attack of visible ? attacks : []) {
+      const source = match.stageId === "octopus" ? parts.find(part => part.id === attack.source).image : ui.BossImage;
+      const sourceName = match.stageId === "octopus" ? coop.partNames[attack.source] : coop.stageFor(match).enemyName;
+      const from = source.getBoundingClientRect();
+      // Anchor on the visible illustration, even when object-fit leaves space above it.
+      const x = from.left + from.width * .5 - bounds.left;
+      const y = from.bottom - Math.min(from.height, from.width * 1.35) * .6 - bounds.top;
+      const targets = match.players.filter(player => player.hp > 0 && attack.targets.includes(player.id));
+      for (const [index, player] of targets.entries()) {
+        const key = attack.source + ":" + player.id, card = cards.get(player.id);
+        if (!card) continue;
+        active.add(key);
+        if (!attackLinks.has(key)) {
+          const line = document.createElement("div"), badge = document.createElement("span");
+          line.className = "coop-attack-link"; line.setAttribute("role", "img");
+          badge.className = "coop-link-badge"; badge.setAttribute("aria-hidden", "true");
+          line.appendChild(badge); ui.AttackLinks.appendChild(line); attackLinks.set(key, { line, badge });
+        }
+        const { line, badge } = attackLinks.get(key), playerIndex = match.players.indexOf(player);
+        const to = card.actor.getBoundingClientRect();
+        const dx = to.right - to.width * .08 - bounds.left - x;
+        const dy = to.bottom - to.height * .65 - bounds.top - y;
+        line.style.left = `${x}px`; line.style.top = `${y}px`; line.style.width = `${Math.hypot(dx, dy)}px`;
+        line.style.setProperty("--link-angle", `${Math.atan2(dy, dx)}rad`);
+        line.style.setProperty("--target-color", playerColors[playerIndex]);
+        line.dataset.source = attack.source; line.dataset.target = player.id; line.dataset.kind = attack.kind;
+        line.setAttribute("aria-label", `${sourceName}の${attack.kind === "slow" ? "スロー" : attack.kind === "all" ? "全体攻撃" : "単体攻撃"} → ${playerIndex + 1}. ${player.name}`);
+        badge.hidden = attack.kind !== "single" && index > 0;
+        badge.textContent = attack.kind === "single" ? String(playerIndex + 1) : "全員";
+        line.style.zIndex = badge.hidden ? "0" : "1";
+      }
+    }
+    for (const [key, { line }] of attackLinks) if (!active.has(key)) { line.remove(); attackLinks.delete(key); }
+  }
+  function scheduleAttackLinks() {
+    if (!session.active || linkFrame) return;
+    linkFrame = requestAnimationFrame(() => {
+      linkFrame = 0;
+      if (session.match) renderAttackLinks(session.host ? coop.snapshot(session.match) : session.match);
+    });
   }
   function createCard() {
     const card = document.createElement("article"); card.className = "online-fighter coop-player";
@@ -568,6 +628,7 @@
     keys.forEach(({ button, definition }) => { button.disabled = !available || Boolean(definition.action && !getGameFlickModified(session.kanaValue.at(-1), definition.action)); });
     ui.Result.hidden = ui.Banner.hidden = !finished && match.phase !== "countdown";
     ui.Banner.textContent = match.phase === "countdown" ? String(match.countdown) : finished ? { victory: coop.stageFor(match).name + " 成功！", defeat: "討伐失敗", aborted: "参加者が退出したため中止しました" }[match.outcome] : "";
+    renderAttackLinks(match, attacks);
   }
   function cancelGesture() {
     const gesture = session.gesture; session.gesture = null; window.clearTimeout(gesture?.timer); ui.FlickPopup.hidden = true;
@@ -671,6 +732,9 @@
     }
   });
   window.addEventListener("blur", releaseAll); window.addEventListener("pagehide", () => { close(); session.active = false; });
+  window.addEventListener("resize", scheduleAttackLinks);
+  window.visualViewport?.addEventListener("resize", scheduleAttackLinks);
+  if (window.ResizeObserver) new window.ResizeObserver(scheduleAttackLinks).observe(ui.Boss);
   window.COOP_PLAY = { open, leave, close() { close(); session.active = false; }, connect, chooseWeapon, ready, start, again,
     input, applyKana, defense, setNpcConfig, chooseDifficulty, chooseTarget, get active() { return session.active; }, get session() { return session; } };
 })();

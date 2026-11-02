@@ -11,6 +11,7 @@
     name: $("onlineName"), roomInput: $("onlineRoomInput"), create: $("onlineCreate"), join: $("onlineJoin"),
     status: $("onlineStatus"), room: $("onlineRoom"), code: $("onlineCode"), copy: $("onlineCopy"),
     ready: $("onlineReady"), arena: $("onlineArena"), stage: $("onlineStage"), banner: $("onlineBanner"), clock: $("onlineClock"),
+    commands: $("onlineCommands"), result: $("onlineResult"),
     target: $("onlineTarget"), typed: $("onlineTyped"), remaining: $("onlineRemaining"),
     opponentTarget: $("onlineOpponentTarget"), opponentTyped: $("onlineOpponentTyped"), opponentRemaining: $("onlineOpponentRemaining"),
     opponentCount: $("onlineOpponentCount"), opponentProgress: $("onlineOpponentProgress"),
@@ -394,11 +395,15 @@
   }
   function render() {
     const match = session.match && (session.host ? duel.snapshot(session.match) : session.match);
+    const inBattle = Boolean(match && match.phase !== "lobby");
     const npcMode = session.opponent === "npc";
     const busy = Boolean(session.peer || session.connectTimer), weaponMode = npcMode || (match?.battleMode || session.battleMode) === "weapons";
     ui.damageRule.textContent = weaponMode ? "文字数に応じて変化" : String(duel.rules.damage);
     ui.hpRule.textContent = (npcMode ? npc.playerHp : duel.rules.hp).toLocaleString("ja-JP");
     ui.title.textContent = npcMode ? "NPC戦" : "オンライン対戦";
+    ui.title.hidden = inBattle; ui.back.textContent = inBattle ? "← 戻る" : "退出";
+    if (inBattle && !ui.screen.classList.contains("is-battle")) window.scrollTo?.(0, 0);
+    ui.screen.classList.toggle("is-battle", inBattle);
     ui.battleMode.hidden = ui.battleModeLabel.hidden = npcMode;
     ui.handicapRatio.hidden = ui.handicapRatioLabel.hidden = npcMode;
     ui.npcFields.forEach(field => { field.hidden = !npcMode; });
@@ -419,10 +424,12 @@
     ui.handicapGuest.textContent = match ? `${session.seat === 1 ? "あなた" : "相手"}：${match.players[1].name}` : "参加する人";
     ui.screen.dataset.phase = match?.phase || "room";
     ui.screen.dataset.battleMode = weaponMode ? "weapons" : "simple";
-    ui.lobby.hidden = npcMode || busy; ui.room.hidden = npcMode || !session.room;
+    ui.lobby.hidden = npcMode || busy; ui.room.hidden = npcMode || !session.room || inBattle;
     ui.code.textContent = session.room.replace(/(\d{4})(\d{4})/, "$1 $2");
     ui.create.disabled = ui.join.disabled = busy;
     ui.arena.hidden = !match;
+    ui.commands.hidden = !inBattle; ui.result.hidden = !match || match.phase === "fighting";
+    ui.clock.hidden = match?.phase !== "fighting";
     ui.ready.hidden = !match || !["lobby", "finished"].includes(match.phase);
     ui.keyboard.hidden = !match || match.phase !== "fighting" || session.mode !== "kana";
     ui.entry.hidden = ui.keyboard.hidden;
@@ -475,8 +482,11 @@
       const card = ui.players[index], before = session.lastRendered?.id === match.id ? session.lastRendered.players[index] : null;
       const weapon = duel.weapons[player.weaponId], visual = session.visual[index], now = performance.now();
       card.name.textContent = `${weaponMode ? weapon.name : index ? "相手" : "あなた"}：${player.name}`;
+      card.name.hidden = inBattle;
       card.name.setAttribute("title", `${index ? "相手" : "あなた"}：${player.name}${weaponMode ? " / " + weapon.name : ""}`);
-      card.energy.hidden = !weaponMode || player.weaponId !== "sword";
+      card.card.setAttribute("aria-label", card.name.getAttribute("title"));
+      card.card.setAttribute("title", card.name.getAttribute("title"));
+      card.energy.hidden = !weaponMode || player.weaponId !== "sword" || match.phase !== "fighting";
       card.energyValue.textContent = `気 ${player.counterEnergy}％`;
       card.energy.setAttribute("aria-valuenow", String(player.counterEnergy));
       card.energyFill.style.width = `${player.counterEnergy}%`;

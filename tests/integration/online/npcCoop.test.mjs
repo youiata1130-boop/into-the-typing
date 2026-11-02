@@ -85,7 +85,7 @@ test("NPC guards only when targeted, for both single and party attacks, and can 
       frame(3500);frame(5650)`);
     assert.equal(game.run("match.players[1].guarding"), true);
     game.run("frame(6000)");
-    assert.deepEqual(game.snapshot("match.players.map(p=>p.hp)"), kind === "all" ? [920, 960] : [1000, 920]);
+    assert.deepEqual(game.snapshot("match.players.map(p=>p.hp)"), kind === "all" ? [900, 950] : [1000, 900]);
     assert.equal(game.run("match.players[1].feedback"), "guard");
     assert.equal(game.run("match.players[1].defenseCost"), 0);
   }
@@ -102,7 +102,7 @@ test("NPC sword needs counter energy, greatsword cannot guard mid-word, and dual
     const game = battle("sword");
     game.run(`frame(3000);bot.random=()=>0;match.players[1].counterEnergy=${energy};
       match.boss.attack={kind:'single',targets:[match.players[1].id],hitsAt:6000};frame(3500);frame(5800);frame(6000)`);
-    assert.equal(game.run("match.players[1].hp"), energy ? 1000 : 840);
+    assert.equal(game.run("match.players[1].hp"), energy ? 1000 : 800);
     assert.equal(game.run("match.players[1].counterHits"), energy ? 1 : 0);
     if (energy) assert.equal(game.run("match.boss.hp"), 980);
   }
@@ -206,7 +206,7 @@ test("human roman and flick input join NPC attacks without changing adventure sa
 
 test("hiding local co-op pauses NPC input, boss warning and deadline without catch-up", () => {
   const game = localGame();
-  game.run("P.ready();P.start()");game.advance(7000);
+  game.run("P.ready();P.start()");game.advance(8000);
   game.run(`const m=P.session.match;const before=C.snapshot(m);const deadline=m.endsAt;const hitAt=m.boss.attack.hitsAt;
     document.hidden=true;document.dispatchEvent({type:'visibilitychange'})`);
   game.advance(60000);
@@ -216,18 +216,29 @@ test("hiding local co-op pauses NPC input, boss warning and deadline without cat
   assert.equal(game.run("m.endsAt-deadline"), 60000);
   assert.equal(game.run("m.boss.attack.hitsAt-hitAt"), 60000);
   assert.equal(game.run("m.players[1].value"), game.run("before.players[1].value"));
-  game.advance(2000);
+  game.advance(2500);
   assert.equal(game.run("m.boss.attacks"), 1);
 });
 
-test("NPC co-op pauses the giant impact motion and resumes its remaining display time", () => {
+test("NPC co-op pauses the pre-hit swing and impact, resuming without early damage", () => {
   const game = localGame();
   game.run("P.ready();P.start()"); game.advance(3000);
   game.run("P.session.match.boss.nextAttackAt=performance.now();C.tick(P.session.match,W,performance.now(),()=>.8)");
   game.advance(100);
   assert.equal(game.run('document.querySelector("#coopBoss").dataset.attack'), "all");
-  game.advance(2500);
+  game.advance(2400);
+  assert.equal(game.run('document.querySelector("#coopBoss").dataset.swing'), "all");
+  const hp = game.snapshot('P.session.match.players.map(p=>p.hp)');
+  game.run("document.hidden=true;document.dispatchEvent({type:'visibilitychange'})"); game.advance(60000);
+  assert.deepEqual(game.snapshot('P.session.match.players.map(p=>p.hp)'), hp);
+  assert.equal(game.run('document.querySelector("#coopBoss").dataset.swing'), "all");
+  game.run("document.hidden=false;document.dispatchEvent({type:'visibilitychange'})");
+  game.advance(400);
+  assert.deepEqual(game.snapshot('P.session.match.players.map(p=>p.hp)'), hp);
+  assert.equal(game.run('document.querySelector("#coopBoss").dataset.strike'), "");
+  game.advance(100);
   assert.equal(game.run('document.querySelector("#coopBoss").dataset.strike'), "all");
+  assert.equal(game.run('document.querySelector("#coopBoss").dataset.swing'), "");
   game.run("document.hidden=true;document.dispatchEvent({type:'visibilitychange'})"); game.advance(60000);
   assert.equal(game.run('document.querySelector("#coopBoss").dataset.paused'), "true");
   game.run("document.hidden=false;document.dispatchEvent({type:'visibilitychange'})");

@@ -76,7 +76,7 @@ test("wilt cancels the tentacle and body attacks; remaining tentacles keep attac
   assert.equal(g.run("left.attack"),null);assert.equal(g.run("boss.attack"),null);
   assert.deepEqual(g.snapshot("boss.wiltedQueue"),["left"]);
   g.run(`right.attack={kind:'single',targets:[victim.id],hitsAt:match.clockNow+100};C.tick(match,W,match.clockNow+100)`);
-  assert.equal(g.run("victim.hp"),944);
+  assert.equal(g.run("victim.hp"),930);
   assert.equal(g.run("victim.slowUntil"),0);
   g.run("hit('right')");
   assert.deepEqual(g.snapshot("boss.wiltedQueue"),["left","right"]);
@@ -91,6 +91,23 @@ test("wilt cancels the tentacle and body attacks; remaining tentacles keep attac
   assert.equal(g.run("right.hp"),g.run("right.maxHp"));assert.equal(g.run("boss.regrowth"),null);
   assert.ok(g.run("boss.nextAttackAt>match.clockNow"));
   assert.equal(g.run("C.validSnapshot(C.snapshot(match),W)"),true);
+});
+
+test("every difficulty gives tentacles longer intervals and warnings with higher physical damage", () => {
+  for (const [difficulty, interval, warning, damage] of [
+    ["easy",3333,1800,46], ["normal",2500,1500,70], ["hard",1833,1100,105],
+  ]) {
+    const g = battle({difficulty});
+    assert.equal(g.run("boss.tentacles[0].nextAttackAt"), 3000+interval-warning);
+    g.run("C.tick(match,W,boss.tentacles[0].nextAttackAt,()=>0)");
+    assert.equal(g.run("C.snapshot(match).boss.tentacles[0].attack.remainingMs"), warning);
+    assert.equal(g.run("C.validSnapshot(C.snapshot(match),W)"), true);
+    g.run(`C.tick(match,W,${3000+interval-1},()=>0)`);
+    assert.equal(g.run("p.hp"), 1000);
+    g.run(`C.tick(match,W,${3000+interval},()=>0)`);
+    assert.equal(g.run("p.hp"), 1000-2*damage);
+    assert.equal(g.run("boss.tentacles[0].nextAttackAt"), 3000+2*interval-warning);
+  }
 });
 
 test("tentacles attack faster than the body, counters damage the attacker, and a body kill ends regeneration", () => {
@@ -133,7 +150,7 @@ test("NPC selects vulnerable tentacles, guards their attacks and pauses all part
   assert.equal(g.run("npc.targetId"),"right");
   g.run(`quiet();boss.tentacles[0].attack={kind:'single',targets:[npc.id],hitsAt:5000};
     N.step(bot,match,W,3500);N.step(bot,match,W,4650);C.tick(match,W,5000)`);
-  assert.equal(g.run("npc.feedback"),"guard");assert.equal(g.run("npc.hp"),972);
+  assert.equal(g.run("npc.feedback"),"guard");assert.equal(g.run("npc.hp"),965);
   g.run("boss.tentacles[1].hp=1;hit('right');const before=C.snapshot(match);const paused=match.clockNow;N.resume(bot,match,paused,paused+60000)");
   assert.deepEqual(g.snapshot("C.snapshot(match).boss"),g.snapshot("before.boss"));
   g.run("C.tick(match,W,boss.regrowth.revivesAt-1)");assert.equal(g.run("boss.tentacles[1].hp"),0);

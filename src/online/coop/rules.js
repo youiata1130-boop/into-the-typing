@@ -2,11 +2,11 @@
 window.ONLINE_COOP = (() => {
   const duel = window.ONLINE_DUEL;
   const rules = Object.freeze({ maxPlayers: 4, minPlayers: 2, hp: 1000, giantHpPerPlayer: 500,
-    attackIntervalMs: 6000, warningMs: 2500, singleDamage: 160, allDamage: 80, slowWords: 2, maxInputLength: 80 });
+    attackIntervalMs: 7500, warningMs: 3000, singleDamage: 200, allDamage: 100, slowWords: 2, maxInputLength: 80 });
   const difficulties = Object.freeze({
-    easy: Object.freeze({ name: "やさしい", giantHpPerPlayer: 350, attackIntervalMs: 8000, warningMs: 3000, singleDamage: 100, allDamage: 50 }),
-    normal: Object.freeze({ name: "普通", giantHpPerPlayer: 500, attackIntervalMs: 6000, warningMs: 2500, singleDamage: 160, allDamage: 80 }),
-    hard: Object.freeze({ name: "難しい", giantHpPerPlayer: 750, attackIntervalMs: 4500, warningMs: 1800, singleDamage: 240, allDamage: 120 }),
+    easy: Object.freeze({ name: "やさしい", giantHpPerPlayer: 350, attackIntervalMs: 10000, warningMs: 3600, singleDamage: 130, allDamage: 65 }),
+    normal: Object.freeze({ name: "普通", giantHpPerPlayer: 500, attackIntervalMs: 7500, warningMs: 3000, singleDamage: 200, allDamage: 100 }),
+    hard: Object.freeze({ name: "難しい", giantHpPerPlayer: 750, attackIntervalMs: 5500, warningMs: 2200, singleDamage: 300, allDamage: 150 }),
   });
   const isDifficulty = id => typeof id === "string" && Object.hasOwn(difficulties, id);
   const difficultyFor = match => difficulties[match.difficulty];

@@ -6364,14 +6364,6 @@ html[data-flick-input="true"][data-compact-battle="true"] .typing-status[data-we
   .duel-stage .online-fighter { bottom: 12px; }
   .duel-stage .online-fighter > div { width: 170px; padding: 4px 6px; }
   .duel-stage .online-fighter h2 { font-size: 16px; }
-  .online-arena:has(.duel-stage) .online-input-head h2 { display: none; }
-  .online-arena:has(.duel-stage) .online-progress-head h2 { display: none; }
-  .online-arena:has(.duel-stage) .online-opponent progress { height: 12px; margin-top: 4px; }
-  .online-arena:has(.duel-stage):has(.online-entry:not([hidden])) { grid-template-columns: minmax(0, 1.2fr) minmax(300px, 1fr); align-items: start; }
-  .online-arena:has(.online-entry:not([hidden])) .duel-stage { grid-column: 1; grid-row: 1 / 3; }
-  .online-arena:has(.duel-stage):has(.online-entry:not([hidden])) .online-input { grid-column: 2; grid-row: 1; }
-  .online-arena:has(.duel-stage):has(.online-entry:not([hidden])) .online-opponent { grid-column: 1; grid-row: 3; }
-  .online-arena:has(.duel-stage):has(.online-entry:not([hidden])) .online-controls { grid-column: 2; grid-row: 2 / 4; }
 }
 @media (max-height: 700px) and (max-width: 650px) {
   .online-screen:has(.duel-stage) { padding: 6px; }
@@ -6380,12 +6372,69 @@ html[data-flick-input="true"][data-compact-battle="true"] .typing-status[data-we
   .duel-stage .online-other { left: auto; right: 14%; }
   .duel-stage .online-fighter > div { width: 124px; padding: 4px 5px; }
   .duel-stage .online-fighter progress { height: 10px; margin-top: 4px; }
-  .online-arena:has(.duel-stage) .online-progress-head h2 { display: none; }
-  .online-arena:has(.duel-stage) .online-keyboard { grid-template-rows: repeat(4, 34px); }
-  .online-arena:has(.duel-stage) .online-controls { padding: 4px; }
-  .online-arena:has(.duel-stage) .online-opponent progress { height: 12px; }
-  .online-arena:has(.duel-stage) .online-entry { min-height: 30px; margin-top: 2px; }
-  .online-arena:has(.duel-stage) .online-entry button { min-height: 30px; padding: 3px 10px; line-height: 1; }
+}
+
+.duel-screen.is-battle { position: relative; height: calc(var(--battle-viewport-height, 100dvh) - 28px); min-height: 0; padding: 0; border: 0; background: none; }
+.duel-screen.is-battle > .online-head { position: absolute; top: 8px; left: 8px; z-index: 30; margin: 0; }
+.duel-screen.is-battle #onlineBack { min-width: 88px; min-height: 48px; padding: 0 14px; background: #fffdfa; border-color: #cbd8e4; }
+.duel-screen.is-battle .online-arena { height: 100%; min-height: 0; grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; align-items: stretch; gap: 12px; }
+.duel-screen.is-battle .online-arena .duel-stage { height: 100%; min-height: 0; grid-area: 1 / 1; border: 1px solid #c7d8dd; border-radius: 8px; }
+.duel-screen.is-battle .online-fighter { bottom: 30px; }
+.duel-screen.is-battle .online-fighter > div { width: clamp(96px, 18vw, 180px); padding: 0; background: none; border: 0; border-radius: 0; box-shadow: none; }
+.duel-screen.is-battle .online-fighter progress { height: 14px; margin: 0; padding: 2px 3px; border: 1px solid #223047cc; border-radius: 6px; background: #fffffff2; }
+.duel-screen.is-battle .online-fighter progress::-webkit-progress-bar { background: #e3e9df; border-radius: 4px; }
+.duel-screen.is-battle .online-fighter progress::-webkit-progress-value { background: #4fa66a; border-radius: 4px; }
+.duel-screen.is-battle .online-fighter progress::-moz-progress-bar { background: #4fa66a; border-radius: 4px; }
+.duel-screen.is-battle .online-other progress::-webkit-progress-value { background: #dc6a60; }
+.duel-screen.is-battle .online-other progress::-moz-progress-bar { background: #dc6a60; }
+.duel-screen.is-battle .online-fighter .counter-energy > span { display: none; }
+.duel-clock { position: absolute; z-index: 6; top: 14px; right: 14px; padding: 4px 8px; border-radius: 6px; background: #ffffffe6; font-size: 18px; font-variant-numeric: tabular-nums; }
+.duel-command-panel { grid-area: 2 / 1; min-width: 0; display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, .8fr); gap: 8px 12px; padding: 10px 12px; border: 1px solid #d9e1e8; border-radius: 8px; background: #ffffffdb; }
+.duel-screen .duel-command-panel .online-input { grid-area: 1 / 1; min-width: 0; padding: 0; border: 0; background: none; outline: none; box-shadow: none; }
+.duel-screen .duel-command-panel .online-opponent { grid-area: 1 / 2; align-self: end; min-width: 0; padding: 8px; border: 1px solid #d5c1a4; border-radius: 8px; background: #fff9f0; }
+.duel-screen .duel-command-panel .online-opponent.is-striking { background: #ffe0b2; border-color: #de6c16; }
+.duel-screen .duel-command-panel .online-input-head { display: flex; justify-content: space-between; gap: 6px; margin: 0 0 6px; }
+.duel-screen .online-input-head:has(#onlineSelfEnergy[hidden]):has(#onlineDefense[hidden]) { display: none; }
+.duel-screen #onlineSelfEnergy { width: 150px; color: #794b17; }
+.duel-screen #onlineDefense { margin-left: auto; }
+.duel-screen .online-prompts { min-height: 78px; padding: 8px; border: 3px solid #223047; border-radius: 8px; text-align: center; background: #fffdfa; }
+.duel-screen .online-input.is-complete .online-prompts { border-color: #2d9b83; }
+.duel-screen .online-letters, .duel-screen .online-next .next-word-target { margin: 0; min-height: 1.25em; line-height: 1.25; font-weight: 800; }
+.duel-screen .online-word, .duel-screen .online-next .next-word-translation { margin: 3px 0 0; font-size: 24px; line-height: 1.25; }
+.duel-screen .online-opponent .online-letters { font-size: 18px; text-align: center; }
+.duel-screen .online-opponent .online-word { font-size: 18px; text-align: center; }
+.duel-screen .online-opponent progress { height: 8px; margin: 6px 0 0; }
+.duel-screen .duel-command-panel .online-controls { grid-area: 2 / 1 / 3 / 3; min-width: 0; padding: 0; border: 0; background: none; }
+.duel-screen .online-controls:has(.online-entry[hidden]) { display: none; }
+.duel-screen .online-entry { margin: 0; }
+.duel-screen .online-keyboard { margin: 6px auto 0; }
+.duel-result { position: absolute; z-index: 20; inset: 0; display: grid; justify-items: center; align-content: center; gap: 16px; padding: 20px; border-radius: 8px; background: #223047d9; }
+.duel-screen .duel-result .online-banner { position: static; display: block; margin: 0; padding: 0; background: none; }
+.duel-screen .duel-result .online-ready { margin: 0; }
+.duel-screen[data-phase="lobby"] .duel-result { background: #223047a6; }
+html[data-flick-input="true"][data-screen="online"]:has(.duel-screen.is-battle) .game-shell { position: fixed; top: var(--battle-viewport-top, 0px); left: var(--battle-viewport-left, 0px); width: var(--battle-viewport-width, 100%); height: var(--battle-viewport-height, 100dvh); min-height: 0; margin: 0; padding: 0 env(safe-area-inset-right, 0px) 0 env(safe-area-inset-left, 0px); }
+html[data-flick-input="true"] .duel-screen.is-battle { height: 100%; max-width: 1100px; margin: 0 auto; }
+html[data-flick-input="true"] .duel-screen .online-arena { gap: 0; }
+html[data-flick-input="true"] .duel-screen.is-battle .duel-stage { border-radius: 0; }
+html[data-flick-input="true"] .duel-command-panel { padding: 6px 8px max(6px, env(safe-area-inset-bottom, 0px)); gap: 6px 8px; border-radius: 0; }
+html[data-flick-input="true"] .duel-screen .online-prompts { min-height: 54px; padding: 4px 6px; }
+html[data-flick-input="true"] .duel-screen .online-word, html[data-flick-input="true"] .duel-screen .online-next .next-word-translation { font-size: 16px; line-height: 1.2; }
+html[data-flick-input="true"] .duel-screen .online-letters, html[data-flick-input="true"] .duel-screen .online-next .next-word-target { font-size: 18px; }
+html[data-flick-input="true"] .duel-screen .online-opponent { padding: 5px; }
+html[data-flick-input="true"] .duel-screen .online-keyboard { grid-template-rows: repeat(4, clamp(40px, calc(var(--battle-viewport-height, 100dvh) / 12), 54px)); gap: 4px; max-width: 420px; }
+html[data-flick-input="true"] .duel-screen .online-entry { min-height: 32px; }
+html[data-flick-input="true"] .duel-screen .online-entry button { min-height: 32px; padding: 3px 10px; line-height: 1; }
+@media (max-height: 700px) and (max-width: 650px) {
+  .duel-screen.is-battle .duel-stage { --duel-hero-width: 64px; }
+  .duel-screen.is-battle #onlineBack { min-height: 36px; }
+  .duel-screen.is-battle .online-fighter { bottom: 20px; }
+  .duel-screen .online-input-head { margin-bottom: 4px; }
+}
+@media (max-height: 500px) and (min-width: 500px) {
+  .duel-screen.is-battle .online-arena { grid-template-columns: minmax(0, 1fr) minmax(280px, 42%); grid-template-rows: minmax(0, 1fr); gap: 0; }
+  .duel-screen.is-battle .duel-stage { --duel-hero-width: 82px; border-radius: 8px 0 0 8px; }
+  .duel-command-panel { grid-area: 1 / 2; align-content: end; border-radius: 0 8px 8px 0; }
+  html[data-flick-input="true"] .duel-screen .online-keyboard { grid-template-rows: repeat(4, 38px); }
 }
 
 /* Co-op uses the adventure layout during battle; room controls stay in the lobby. */
@@ -6416,19 +6465,23 @@ html[data-flick-input="true"][data-compact-battle="true"] .typing-status[data-we
 .coop-boss[data-charge-phase]:not([data-charge-phase=""]) .coop-enemy > img { filter: drop-shadow(0 6px 3px #152b4566) drop-shadow(0 0 calc(3px + var(--enemy-charge, 0) * 13px) var(--enemy-aura-color, #b4f551)); }
 .coop-boss[data-attack="single"] .coop-enemy > img { animation: coopGiantPunchWindup .8s ease-in-out infinite; }
 .coop-boss[data-attack="all"] .coop-enemy > img { animation: coopGiantSlamWindup .6s ease-in-out infinite; }
+.coop-boss[data-swing="single"] .coop-enemy > img { animation: none; transform: translateX(calc(5% - var(--enemy-swing) * 19%)) skewX(calc(var(--enemy-swing) * -5deg)); }
+.coop-boss[data-swing="all"] .coop-enemy > img { animation: none; transform: translateY(calc(-8px + var(--enemy-swing) * 12px)) scaleY(calc(1.04 - var(--enemy-swing) * .22)); }
 .coop-boss[data-strike="single"] .coop-enemy > img { animation: coopGiantPunch .6s ease-out both; }
 .coop-boss[data-strike="all"] .coop-enemy > img { animation: coopGiantSlam .6s ease-out both; }
 .coop-enemy::after { content: ""; position: absolute; z-index: 5; bottom: -6px; left: -100%; width: 260%; height: 22%; border: 5px solid #ffdc8f; border-radius: 50%; box-shadow: 0 0 12px #e5aa51, inset 0 0 12px #e5aa51; opacity: 0; pointer-events: none; }
 .coop-boss[data-strike="all"] .coop-enemy::after { animation: coopGiantShockwave .6s ease-out both; }
 .coop-boss[data-paused="true"] .coop-enemy > img, .coop-boss[data-paused="true"] .coop-enemy::after { animation-play-state: paused; }
 .coop-boss.is-defeated .coop-enemy > img { animation: none; transform: translateY(35px) rotate(-12deg); opacity: .3; }
-@keyframes coopGiantPunchWindup { 50% { transform: translateX(2.5%) rotate(1deg); } }
-@keyframes coopGiantSlamWindup { 50% { transform: translateY(2px) scaleY(.98); } }
-@keyframes coopGiantPunch { 0% { transform: translateX(2.5%); } 25% { transform: translateX(-14%) skewX(-5deg); } 60% { transform: translateX(-7%); } 100% { transform: none; } }
-@keyframes coopGiantSlam { 30% { transform: translateY(4px) scaleY(.82); } 60% { transform: scaleY(.97); } 100% { transform: none; } }
-@keyframes coopGiantShockwave { 0%, 20% { opacity: 0; transform: scale(.15); } 30% { opacity: .9; } 100% { opacity: 0; transform: scale(1); } }
-.coop-octopus { position: absolute; right: 3%; bottom: 44px; width: 50%; height: auto; max-height: 58%; aspect-ratio: 2 / 1.1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+@keyframes coopGiantPunchWindup { 50% { transform: translateX(5%) rotate(2deg); } }
+@keyframes coopGiantSlamWindup { 50% { transform: translateY(-8px) scaleY(1.04); } }
+@keyframes coopGiantPunch { 0% { transform: translateX(-14%) skewX(-5deg); } 60% { transform: translateX(-7%); } 100% { transform: none; } }
+@keyframes coopGiantSlam { 0% { transform: translateY(4px) scaleY(.82); } 60% { transform: scaleY(.97); } 100% { transform: none; } }
+@keyframes coopGiantShockwave { 0% { opacity: .9; transform: scale(.15); } 100% { opacity: 0; transform: scale(1); } }
+.coop-octopus { position: absolute; right: 3%; bottom: 32px; width: 50%; height: auto; max-height: calc((100% - 104px) / 1.4); aspect-ratio: 2 / 1.1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
 .coop-screen .coop-part { position: relative; display: grid; grid-template-rows: 14px minmax(0, 1fr); gap: 6px; align-items: end; min-width: 0; min-height: 0; margin: 0; padding: 0; border: 0; border-radius: 8px; background: transparent; box-shadow: none; touch-action: manipulation; }
+.coop-part:nth-child(2) { translate: 0 -20%; }
+.coop-part:nth-child(3) { translate: 0 -40%; }
 .coop-screen .coop-part:disabled { opacity: 1; cursor: default; }
 .coop-screen .coop-part:hover, .coop-screen .coop-part:active { background: transparent; transform: none; box-shadow: none; }
 .coop-screen .coop-part:focus-visible { outline: 3px solid #ffdf64; outline-offset: 4px; }
@@ -6441,9 +6494,13 @@ html[data-flick-input="true"][data-compact-battle="true"] .typing-status[data-we
 .coop-part[data-attack="single"] > img { animation: coopTentacleWindup .7s ease-in-out infinite; }
 .coop-part[data-attack="all"] > img { animation: coopGiantSlamWindup .5s ease-in-out infinite; }
 .coop-part[data-attack="slow"] > img { animation: coopSlowCast .8s ease-in-out infinite; }
+.coop-part[data-swing]:not([data-swing=""]) > img { animation: none; transition: opacity .35s; }
+.coop-part[data-swing="single"] > img { transform: rotate(calc(12deg - var(--enemy-swing) * 36deg)) translateX(calc(var(--enemy-swing) * -12%)); }
+.coop-part[data-swing="all"] > img { transform: translateY(calc(-8px + var(--enemy-swing) * 12px)) scaleY(calc(1.04 - var(--enemy-swing) * .22)); }
+.coop-part[data-swing="slow"] > img { transform: translateY(calc(var(--enemy-swing) * -6px)) scale(calc(1 + var(--enemy-swing) * .08)); filter: drop-shadow(0 0 16px #ce8cff) brightness(calc(1 + var(--enemy-swing) * .4)); }
 .coop-part[data-strike="single"] > img { animation: coopTentacleStrike .6s ease-out both; }
 .coop-part[data-strike="all"] > img { animation: coopGiantSlam .6s ease-out both; }
-.coop-part[data-strike="slow"] > img { animation: coopSlowCast .6s ease-out both; }
+.coop-part[data-strike="slow"] > img { animation: coopSlowRelease .6s ease-out both; }
 .coop-part.is-regrowing > img { animation: coopRegrow 1s ease-in-out infinite; }
 .coop-part.is-wilted > img { animation: none; transform: translateY(8%) rotate(-28deg) scaleY(.55); opacity: .55; filter: saturate(.3); }
 .coop-part.is-reviving::before { opacity: .5; background: radial-gradient(ellipse at bottom, #bcff82aa, transparent 70%); }
@@ -6454,9 +6511,10 @@ html[data-flick-input="true"][data-compact-battle="true"] .typing-status[data-we
 .coop-slow { margin: 0 0 4px; color: #6a338d; font-size: 16px; font-weight: 800; text-align: center; }
 .coop-screen .online-input.is-slow .online-prompts { border-color: #9260ad; background: #fbf4ff; }
 .coop-actor.is-slow::before { box-shadow: 0 0 0 2px #ffffffaa, 0 0 12px 5px #b67bd9; }
-@keyframes coopTentacleWindup { 50% { transform: rotate(10deg) scaleY(.94); } }
-@keyframes coopTentacleStrike { 25% { transform: rotate(-24deg) translateX(-12%); } 100% { transform: none; } }
+@keyframes coopTentacleWindup { 50% { transform: rotate(12deg) scaleY(.94); } }
+@keyframes coopTentacleStrike { 0% { transform: rotate(-24deg) translateX(-12%); } 100% { transform: none; } }
 @keyframes coopSlowCast { 50% { filter: drop-shadow(0 0 calc(6px + var(--enemy-charge, 0) * 12px) var(--enemy-aura-color, #b4f551)) brightness(1.2); } }
+@keyframes coopSlowRelease { 0% { transform: translateY(-6px) scale(1.08); filter: drop-shadow(0 0 16px #ce8cff) brightness(1.4); } 100% { transform: none; } }
 .coop-screen .coop-character-hp { display: block; width: 100%; min-width: 0; height: 14px; padding: 2px 3px; margin: 0; border: 1px solid #223047cc; border-radius: 6px; background: #fffffff2; accent-color: var(--coop-color, #dc6a60); }
 .coop-screen .coop-character-hp::-webkit-progress-bar { background: #e3e9df; border-radius: 4px; }
 .coop-screen .coop-character-hp::-webkit-progress-value { background: var(--coop-color, #dc6a60); border-radius: 4px; }
@@ -6483,6 +6541,12 @@ html[data-flick-input="true"][data-compact-battle="true"] .typing-status[data-we
 .coop-result .online-ready { margin: 0; }
 .coop-screen[data-phase="countdown"] #coopBanner { position: static; display: block; font-size: 90px; background: none; }
 .coop-actors { position: absolute; inset: 0; pointer-events: none; }
+.coop-attack-links { position: absolute; z-index: 5; inset: 0; pointer-events: none; }
+.coop-attack-link { position: absolute; height: 0; border-top: 2px dashed var(--target-color); transform: rotate(var(--link-angle)); transform-origin: 0 0; filter: drop-shadow(0 1px 1px #fff) drop-shadow(0 -1px 1px #fff); }
+.coop-attack-link::after { content: ""; position: absolute; right: -1px; top: -6px; width: 0; height: 0; border-top: 5px solid transparent; border-bottom: 5px solid transparent; border-left: 10px solid var(--target-color); }
+.coop-link-badge { position: absolute; left: 0; top: -1px; display: grid; place-items: center; width: 24px; height: 24px; border: 2px solid #fff; border-radius: 50%; background: var(--target-color); color: #fff; font-size: 16px; font-weight: 800; line-height: 1; transform: translate(-50%, -50%) rotate(calc(-1 * var(--link-angle))); }
+.coop-attack-link[data-kind="all"] .coop-link-badge, .coop-attack-link[data-kind="slow"] .coop-link-badge { width: 48px; border-radius: 6px; background: #9e3028; }
+.coop-attack-link[data-kind="slow"] .coop-link-badge { background: #66358b; }
 .coop-actor { position: absolute; z-index: calc(4 - var(--coop-rank)); left: calc(max(16px, 4%) + (var(--coop-player-count, 2) - 1 - var(--coop-rank)) * var(--coop-step-x)); bottom: calc(44px + var(--coop-rank) * var(--coop-step-y)); width: var(--coop-hero-width); height: calc(var(--coop-hero-width) * 1.4); }
 .coop-actor::before { content: ""; position: absolute; z-index: -1; left: 12%; right: 12%; bottom: -2px; height: 14%; border: 3px solid var(--coop-color); border-radius: 50%; background: #ffffff66; box-shadow: 0 0 0 2px #ffffffaa; }
 .coop-actor-image { display: block; width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(1px 0 0 var(--coop-color)) drop-shadow(-1px 0 0 var(--coop-color)) drop-shadow(0 3px 2px #152b4555); }
@@ -6543,6 +6607,7 @@ html[data-flick-input="true"] .coop-screen .online-entry button { min-height: 30
   html[data-flick-input="true"] .coop-screen .online-keyboard { grid-template-rows: repeat(4, 38px); }
 }
 @media (prefers-reduced-motion: reduce) { .coop-enemy > img, .coop-part > img { transition: none; } .coop-enemy > img, .coop-enemy::after, .coop-part > img, .coop-actor-image, .coop-target-cursor { animation: none !important; } }
+@media (prefers-reduced-motion: reduce) { .coop-boss[data-swing]:not([data-swing=""]) .coop-enemy > img, .coop-part[data-swing]:not([data-swing=""]) > img { transform: none; } }
 .skill-panel #counterButton[data-ready="true"] { border-color: #f0bd4f; box-shadow: 0 0 0 2px #ffc95055; }
 .skill-panel #counterButton[data-free="true"] { color: #efffff; background: #176c80; border-color: #a9fbff; box-shadow: 0 0 12px #65e6f5; }
 html[data-flick-input="true"] .skill-panel #counterButton { min-width: 80px; padding: 0 8px; }
