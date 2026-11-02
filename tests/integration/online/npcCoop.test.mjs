@@ -33,11 +33,11 @@ test("NPC ally types at the selected speed in both input modes, after countdown 
 test("all four NPC weapons attack the shared giant through normal input and attack timing", () => {
   for (const weapon of ["sword", "greatsword", "dualBlades", "swordShield"]) {
     const game = battle(weapon, 7), saved = game.saved();
-    game.run(`frame(3000);const profile=D.attackProfile(D.wordFor(match,W,0,1),'roman');
+    game.run(`frame(3000);const profile=D.attackProfile(D.wordFor(match,W,0,1),'roman','',match.players[1].weaponId);
       for(let now=3050;match.players[1].attacks===0&&now<9000;now+=50)frame(now)`);
     assert.equal(game.run("match.players[1].attacks"), 1, weapon);
-    assert.ok(game.run("match.clockNow>=3000+profile.damage/4*(1000/7)+profile.windupMs"));
-    assert.ok(game.run("match.clockNow<=3100+profile.damage/4*(1000/7)+profile.windupMs"));
+    assert.ok(game.run("match.clockNow>=3000+profile.inputMs/200*(1000/7)+profile.windupMs"));
+    assert.ok(game.run("match.clockNow<=3100+profile.inputMs/200*(1000/7)+profile.windupMs"));
     assert.equal(game.run("match.boss.hp"), game.run("1000-profile.damage"));
     assert.deepEqual(game.snapshot("match.players.map(p=>p.hp)"), [1000, 1000]);
     assert.equal(game.run("C.validSnapshot(C.snapshot(match),W)"), true);
@@ -97,14 +97,14 @@ test("NPC guards only when targeted, for both single and party attacks, and can 
   }
 });
 
-test("NPC sword needs counter energy, greatsword cannot guard mid-word, and dual blades cannot guard", () => {
+test("NPC sword cannot counter, greatsword cannot guard mid-word, and dual blades cannot guard", () => {
   for (const energy of [0, 100]) {
     const game = battle("sword");
     game.run(`frame(3000);bot.random=()=>0;match.players[1].counterEnergy=${energy};
       match.boss.attack={kind:'single',targets:[match.players[1].id],hitsAt:6000};frame(3500);frame(5800);frame(6000)`);
-    assert.equal(game.run("match.players[1].hp"), energy ? 1000 : 800);
-    assert.equal(game.run("match.players[1].counterHits"), energy ? 1 : 0);
-    if (energy) assert.equal(game.run("match.boss.hp"), 980);
+    assert.equal(game.run("match.players[1].hp"), 800);
+    assert.equal(game.run("match.players[1].counterHits"), 0);
+    assert.equal(game.run("match.players[1].skillsUsed"), 0);
   }
   for (const weapon of ["greatsword", "dualBlades"]) {
     const game = battle(weapon);

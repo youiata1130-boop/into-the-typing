@@ -6,7 +6,7 @@
     <title>Into the Typing</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='52'%3E%E2%9A%94%EF%B8%8F%3C/text%3E%3C/svg%3E">
     <link rel="preload" as="image" href="src/assets/images/backgrounds/shared/typing_rpg_background.webp">
-    <link rel="stylesheet" href="src/styles/main.css?v=20261101-coop-aura-v1">
+    <link rel="stylesheet" href="src/styles/main.css?v=20261102-coop-spacing-v1">
   </head>
   <body>
     <section class="loading-screen" id="loadingScreen" aria-labelledby="loadingText" aria-busy="true">
@@ -157,6 +157,7 @@
           <div class="coop-battle" id="coopBattle" hidden>
             <div class="coop-boss" id="coopBoss">
               <time class="coop-clock" id="coopClock" aria-label="残り時間" hidden></time>
+              <span class="coop-skill-status" id="coopSkillStatus" role="status" hidden></span>
               <div class="coop-enemy" id="coopEnemy">
                 <progress class="coop-character-hp" id="coopBossBar" max="1000" value="1000" aria-label="巨人の体力"></progress>
                 <img id="coopBossImage" alt="岩の巨人">
@@ -183,6 +184,7 @@
             <div class="coop-command-panel">
             <div class="online-input" id="coopInput" tabindex="-1">
               <div class="online-input-head"><h2 id="coopInputLabel" hidden>戦闘不能</h2>
+                <button class="coop-skill" id="coopSkill" type="button" aria-keyshortcuts="Enter" hidden><span id="coopSkillName"></span><span id="coopSkillValue"></span><i aria-hidden="true"><i id="coopSkillFill"></i></i></button>
                 <span class="counter-energy" id="coopEnergy" role="meter" aria-label="あなたの気" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" hidden><span id="coopEnergyValue">気 0％</span><i><i id="coopEnergyFill"></i></i></span>
                 <button class="online-defense" id="coopDefense" type="button" hidden></button>
               </div>
@@ -499,7 +501,6 @@
               <span class="greatsword-charge-spark greatsword-charge-spark-c"></span>
               <span class="greatsword-charge-spark greatsword-charge-spark-d"></span>
             </div>
-            <div class="mind-eye-aura" aria-hidden="true"></div>
             <div class="player-art">
               <img class="player-image player-frame player-frame-idle" id="playerFrameIdle" alt="剣を構えるプレイヤー剣士">
               <img class="player-image player-frame player-frame-charge" id="playerFrameCharge" alt="" aria-hidden="true">
@@ -529,7 +530,6 @@
               <i class="guard-spark guard-spark-perfect" style="--spark-angle:150deg"></i>
               <i class="guard-spark guard-spark-perfect" style="--spark-angle:45deg"></i>
             </span>
-            <span class="counter-impact" aria-hidden="true"><span id="counterDamage"></span></span>
             <span class="attack-boost-aura" aria-hidden="true"></span>
             <span class="healing-effect" aria-hidden="true"><i></i><i></i><i></i><span class="healing-number" id="playerHealText"></span></span>
             <span class="player-damage-text" id="playerDamageText" aria-hidden="true"></span>
@@ -686,9 +686,6 @@
             <div class="skill-gauge" id="skillGauge" role="progressbar" aria-label="スキルゲージ" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="skillGaugeFill"></i></div>
           </div>
           <button id="guardButton" type="button" aria-keyshortcuts="Space" aria-pressed="false" hidden><span id="guardButtonText">ガード</span><kbd>Space</kbd></button>
-          <button id="counterButton" type="button" aria-keyshortcuts="Space" hidden>
-            <span class="counter-button-body"><span>カウンター</span><span class="counter-energy" id="counterEnergy" role="meter" aria-label="カウンターの気" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="counterEnergyValue">気 0％</span><i><i id="counterEnergyFill"></i></i></span></span><kbd>Space</kbd>
-          </button>
           <button id="specialButton" type="button" aria-keyshortcuts="Enter" disabled><span id="skillName">強撃</span><kbd id="specialShortcut">Enter</kbd></button>
         </div>
         <div class="story-dialog" id="storyDialog" role="region" aria-label="会話" hidden>
@@ -753,9 +750,9 @@
     <script src="src/data/coopSentences.js?v=20261101-slow-sentences-v1"></script>
     <script src="src/data/capturePassages.js?v=20261024-passages-v2"></script>
     <script src="src/data/labels.js?v=20261024-enter-skill-v1"></script>
-    <script src="src/config/weapons.js?v=20261031-mind-eye-v1"></script>
+    <script src="src/config/weapons.js?v=20261102-plain-sword-v1"></script>
     <script src="src/config/stages.js?v=20261101-plant-regrowth-v1"></script>
-    <script src="src/config/skills.js?v=20261031-mind-eye-v1"></script>
+    <script src="src/config/skills.js?v=20261102-plain-sword-v1"></script>
     <script src="src/config/enemyAnimations.js?v=20261101-target-lesson-v1"></script>
     <script src="src/config/playerProgression.js?v=20261024-thorn-depths-v1"></script>
     <script src="src/config/saveSlots.js?v=20261024-thorn-depths-v1"></script>
@@ -763,31 +760,28 @@
     <script src="src/input/japanese.js?v=20261024-thorn-depths-v1"></script>
     <script src="src/ui/battleLayout.js?v=20261101-target-lesson-v1"></script>
     <script src="src/input/mobile.js?v=20261101-target-input-lock-v1"></script>
-    <script src="src/input/flickKeyboard.js?v=20261024-sword-counter-v1"></script>
+    <script src="src/input/flickKeyboard.js?v=20261102-plain-sword-v1"></script>
     <script src="src/app/loading.js?v=20261024-capture-intro-v1"></script>
     <script src="src/app/sound.js?v=20261031-mind-eye-v1"></script>
-    <script src="src/app/battle/skills.js?v=20261031-mind-eye-v1"></script>
+    <script src="src/app/battle/skills.js?v=20261102-plain-sword-v1"></script>
     <script src="src/app/stages/targetTutorial.js?v=20261101-target-popup-v1"></script>
     <script src="src/app/stages/plantEnemy.js?v=20261101-plant-regrowth-v1"></script>
     <script src="src/app/battle/enemyCharge.js?v=20261024-dual-time-stop-v1"></script>
-    <script src="src/app/battle/enemyAttackCountdown.js?v=20261101-plant-regrowth-v1"></script>
     <script src="src/app/battle/battleFeedback.js?v=20261024-healing-sword-v1"></script>
-    <script src="src/app/stages/mountainCapture.js?v=20261024-capture-intro-v1"></script>
+    <script src="src/app/stages/mountainCapture.js?v=20261102-plain-sword-v1"></script>
     <script src="src/app/battle/guard.js?v=20261101-target-lesson-v1"></script>
     <script src="src/app/battle/dualBladePreview.js?v=20261101-target-popup-v1"></script>
-    <script src="src/ui/weaponMenu.js?v=20261031-mind-eye-v1"></script>
+    <script src="src/ui/weaponMenu.js?v=20261102-plain-sword-v1"></script>
     <script src="src/app/battle/enemyActionStop.js?v=20261024-dual-time-stop-v1"></script>
     <script src="src/app/battle/attackBoost.js?v=20261024-shield-attack-boost-v1"></script>
-    <script src="src/app/battle/mindEye.js?v=20261031-mind-eye-v1"></script>
     <script src="src/config/counterRules.js?v=20261031-counter-energy-v1"></script>
-    <script src="src/app/battle/counter.js?v=20261101-target-lesson-v1"></script>
-    <script src="src/online/duel/rules.js?v=20261101-coop-octopus-v1"></script>
+    <script src="src/online/duel/rules.js?v=20261102-simple-words-v1"></script>
     <script src="src/online/connection.js?v=20261024-online-v1"></script>
     <script src="src/online/duel/npc.js?v=20261101-npc-levels-v1"></script>
-    <script src="src/app/game.js?v=20261101-target-popup-v1"></script>
-    <script src="src/online/duel/play.js?v=20261101-duel-stage-v1"></script>
-    <script src="src/online/coop/rules.js?v=20261101-slow-sentences-v1"></script>
-    <script src="src/online/coop/npc.js?v=20261101-coop-octopus-v1"></script>
-    <script src="src/online/coop/play.js?v=20261101-slow-sentences-v1"></script>
+    <script src="src/app/game.js?v=20261102-plain-sword-v1"></script>
+    <script src="src/online/duel/play.js?v=20261102-plain-sword-v1"></script>
+    <script src="src/online/coop/rules.js?v=20261102-plain-sword-v1"></script>
+    <script src="src/online/coop/npc.js?v=20261102-plain-sword-v1"></script>
+    <script src="src/online/coop/play.js?v=20261102-plain-sword-v1"></script>
   </body>
 </html>

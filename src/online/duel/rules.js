@@ -1,15 +1,15 @@
 // Shared, deterministic rules. Only the room owner applies damage and decides results.
 window.ONLINE_DUEL = (() => {
   const counter = window.COUNTER_RULES;
-  const rules = Object.freeze({ hp: 800, damage: 40, attackMinMs: 2000, countdownMs: 3000, limitMs: 180000,
+  const rules = Object.freeze({ hp: 800, damage: 60, attackMinMs: 2000, countdownMs: 3000, limitMs: 180000,
     defenseWindowMs: 200, counterWindowMs: counter.windowMs, counterCooldownMs: counter.rearmMs, counterDamage: 20,
     counterMaxEnergy: counter.maxEnergy, counterEnergyPerCharacter: counter.energyPerCharacter,
-    damagePerCharacter: 4, inputMsPerCharacter: 200, windupMsPerCharacter: 40, maxInputLength: 40, version: 6 });
+    damagePerCharacter: 4, inputMsPerCharacter: 200, windupMsPerCharacter: 40, maxInputLength: 40, version: 8 });
   const handicapRatios = Object.freeze([1, 1.1, 1.2, 1.3, 1.4, 1.5, 2, 2.5, 3]);
   function validHandicap(ratio, seat) { return handicapRatios.includes(ratio) && (seat === 0 || seat === 1); }
   function maxHpFor(match, seat, baseHp = rules.hp) { return Math.round(baseHp * (seat === match.handicapSeat ? match.handicapRatio : 1)); }
   const weapons = Object.freeze({
-    sword: Object.freeze({ name: "鉄の剣", defense: "counter", minLength: 2, maxLength: 8 }),
+    sword: Object.freeze({ name: "鉄の剣", defense: "none", damageMultiplier: 1.5, minLength: 2, maxLength: 8 }),
     greatsword: Object.freeze({ name: "大剣", defense: "guard", emptyGuard: true, minLength: 12, maxLength: 20 }),
     dualBlades: Object.freeze({ name: "双剣", defense: "none", minLength: 2, maxLength: 4 }),
     swordShield: Object.freeze({ name: "片手剣", defense: "guard", minLength: 2, maxLength: 8 }),
@@ -83,8 +83,9 @@ window.ONLINE_DUEL = (() => {
       cached.pools.set(key, match.order.filter(index => {
         const word = words[index];
         if (!word) return false;
-        const length = weapon ? Math.min(...word.inputs.map(input => input.length)) : word.roman.length;
-        return length >= (weapon?.minLength ?? 10) && length <= (weapon?.maxLength ?? 16);
+        if (!weapon) return true;
+        const length = Math.min(...word.inputs.map(input => input.length));
+        return length >= weapon.minLength && length <= weapon.maxLength;
       }));
     }
     return cached.pools.get(key);
@@ -96,10 +97,10 @@ window.ONLINE_DUEL = (() => {
   function targetFor(word, mode, value = "") {
     return mode === "kana" ? word.reading : word.inputs.find(input => input.startsWith(value)) || word.inputs[0];
   }
-  function attackProfile(word, mode, value = "") {
+  function attackProfile(word, mode, value = "", weaponId = null) {
     // Scale both power and elapsed time, so short prompts are faster rather than stronger per character.
     const length = targetFor(word, mode, value).length;
-    return { damage: length * rules.damagePerCharacter, inputMs: length * rules.inputMsPerCharacter,
+    return { damage: Math.round(length * rules.damagePerCharacter * (weapons[weaponId]?.damageMultiplier ?? 1)), inputMs: length * rules.inputMsPerCharacter,
       windupMs: length * rules.windupMsPerCharacter };
   }
   function acceptInput(match, words, seat, packet, now = match.clockNow, typing = {}) {
@@ -114,7 +115,7 @@ window.ONLINE_DUEL = (() => {
     if (player.value === targetFor(word, player.mode, player.value)) return false;
     const target = targetFor(word, player.mode, packet.value);
     if (!target.startsWith(packet.value)) return false;
-    if (match.battleMode === "weapons" && player.weaponId === "sword") {
+    if (match.battleMode === "weapons" && weapons[player.weaponId].defense === "counter") {
       const gained = Math.max(0, packet.value.length - player.counterBestLength);
       player.counterBestLength = Math.max(player.counterBestLength, packet.value.length);
       player.counterEnergy = Math.min(rules.counterMaxEnergy, player.counterEnergy + gained * rules.counterEnergyPerCharacter);
@@ -237,7 +238,7 @@ window.ONLINE_DUEL = (() => {
     // Calculate both attacks first. Seat order cannot prevent a simultaneous hit.
     const hits = match.players.map((player, seat) => {
       if (player.attackAt === null || now < player.attackAt) return null;
-      const power = attackProfile(wordFor(match, words, player.index, seat), player.mode, player.value).damage;
+      const power = attackProfile(wordFor(match, words, player.index, seat), player.mode, player.value, player.weaponId).damage;
       const spent = Math.min(power, player.defenseCost);
       player.defenseCost -= spent;
       player.index++; player.attacks++; player.value = ""; player.pendingInput = false;
@@ -316,7 +317,8 @@ window.ONLINE_DUEL = (() => {
       && Number.isInteger(player.counterHits) && player.counterHits >= 0 && player.counterHits <= 1000
       && Number.isInteger(player.counterEnergy) && player.counterEnergy >= 0 && player.counterEnergy <= rules.counterMaxEnergy
       && Number.isInteger(player.counterBestLength) && player.counterBestLength >= 0 && player.counterBestLength <= maxInputLength
-      && ((data.battleMode === "weapons" && player.weaponId === "sword") || (!player.counterEnergy && !player.counterBestLength))
+      && ((data.battleMode === "weapons" && weapons[player.weaponId].defense === "counter")
+        || (!player.counterEnergy && !player.counterBestLength && !player.counterWaitMs && !player.counterHits))
       && (!player.guarding || (data.battleMode === "weapons" && weapons[player.weaponId].defense === "guard"))
       && (!player.countering || (data.battleMode === "weapons" && weapons[player.weaponId].defense === "counter" && player.counterEnergy === rules.counterMaxEnergy))
       && typeof player.value === "string" && player.value.length <= maxInputLength

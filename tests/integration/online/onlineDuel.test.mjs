@@ -19,9 +19,10 @@ function duel({ start = true, modes = ['roman', 'roman'] } = {}) {
 test('online prompts have valid Japanese and roman input, and fixed rules do not use saved growth', () => {
   const game = duel();
   assert.ok(game.run('W.length') >= 30);
-  assert.equal(game.run('D.wordPool(match,W).every(i => W[i].reading && W[i].roman.length >= 10 && W[i].roman.length <= 16)'), true);
+  assert.equal(game.run('D.wordPool(match,W).length'), game.run('W.length'));
+  assert.equal(game.run('D.wordPool(match,W).every(i => W[i].reading && W[i].inputs.every(s=>s.length<=D.rules.maxInputLength))'), true);
   assert.deepEqual(game.snapshot('match.players.map(p => p.hp)'), [800, 800]);
-  assert.equal(game.run('D.rules.damage'), 40);
+  assert.equal(game.run('D.rules.damage'), 60);
   assert.equal(game.run('D.rules.attackMinMs'), 2000);
   assert.equal(game.run('D.signature(W) !== D.signature(W.slice(1))'), true);
   assert.deepEqual(game.snapshot('D.shuffledOrder(W.length).sort((a,b) => a-b)'), game.snapshot('W.map((_,i) => i)'));
@@ -45,15 +46,15 @@ test('both players must ready, countdown blocks input, and the full battle time 
 test('partial typing changes progress without damage; backspace and alternative spellings are accepted', () => {
   const game = duel();
   game.run('const target = D.wordFor(match,W,0).inputs[0]');
-  assert.equal(game.run('typeFor(0, target.slice(0, 4))'), true);
-  assert.equal(game.run('match.players[0].value.length'), 4);
   assert.equal(game.run('typeFor(0, target.slice(0, 2))'), true);
+  assert.equal(game.run('match.players[0].value.length'), 2);
+  assert.equal(game.run('typeFor(0, target.slice(0, 1))'), true);
   assert.equal(game.run('typeFor(0, "!!!!!!!!")'), false);
   game.run('D.tick(match,W,6000)');
   assert.equal(game.run('match.players[1].hp'), 800);
   assert.equal(game.run('typeFor(0, D.wordFor(match,W,0).inputs.at(-1))'), true);
   game.run('D.tick(match,W,6001)');
-  assert.equal(game.run('match.players[1].hp'), 760);
+  assert.equal(game.run('match.players[1].hp'), 740);
 });
 
 test('complete input waits for the minimum attack interval and deals damage only once', () => {
@@ -62,20 +63,20 @@ test('complete input waits for the minimum attack interval and deals damage only
   assert.equal(game.run('match.players[1].hp'), 800);
   assert.equal(game.run('answer(0)'), false);
   game.run('D.tick(match,W,5000); D.tick(match,W,8000)');
-  assert.equal(game.run('match.players[1].hp'), 760);
+  assert.equal(game.run('match.players[1].hp'), 740);
   assert.equal(game.run('match.players[0].index'), 1);
   assert.equal(game.run('match.players[0].value'), '');
 });
 
-test('at least 20 complete attacks and 40 seconds are needed to defeat a full-health opponent', () => {
+test('at least 14 complete attacks and 28 seconds are needed to defeat a full-health opponent', () => {
   const game = duel();
   const saved = game.saved();
-  game.run('for(let i=1;i<=19;i++){answer(0);D.tick(match,W,3000+i*2000)}');
+  game.run('for(let i=1;i<=13;i++){answer(0);D.tick(match,W,3000+i*2000)}');
   assert.equal(game.run('match.phase'), 'fighting');
-  assert.equal(game.run('match.players[1].hp'), 40);
-  game.run('answer(0); D.tick(match,W,42999)');
+  assert.equal(game.run('match.players[1].hp'), 20);
+  game.run('answer(0); D.tick(match,W,30999)');
   assert.equal(game.run('match.phase'), 'fighting');
-  game.run('D.tick(match,W,43000)');
+  game.run('D.tick(match,W,31000)');
   assert.equal(game.run('match.phase'), 'finished');
   assert.equal(game.run('match.winner'), 0);
   assert.equal(game.run('match.players[1].hp'), 0);
@@ -87,7 +88,7 @@ test('at least 20 complete attacks and 40 seconds are needed to defeat a full-he
 
 test('simultaneous finishing attacks produce one shared draw', () => {
   const game = duel();
-  game.run('for(let i=1;i<=20;i++){answer(0);answer(1);D.tick(match,W,3000+i*2000)}');
+  game.run('for(let i=1;i<=14;i++){answer(0);answer(1);D.tick(match,W,3000+i*2000)}');
   assert.equal(game.run('match.phase'), 'finished');
   assert.equal(game.run('match.winner'), -1);
   assert.deepEqual(game.snapshot('match.players.map(p => p.hp)'), [0, 0]);
@@ -104,13 +105,29 @@ test('time limit compares HP and cannot accept an attack after the deadline', ()
   }
 });
 
-test('kana players share the same prompts and damage as roman players', () => {
+test('kana players share short, medium and long prompts and damage with roman players', () => {
   const game = duel({ modes: ['kana', 'roman'] });
-  for (let index = 0; index < game.run('D.wordPool(match,W).length'); index++) {
-    game.run(`answer(0); answer(1); match.players.forEach(p=>p.hp=800); D.tick(match,W,${5000 + index * 2000})`);
-    assert.deepEqual(game.snapshot('match.players.map(p=>p.hp)'), [760, 760]);
+  const indices = game.snapshot('D.wordPool(match,W).map((_,i)=>i).filter((i,_,pool)=>[3,4,8,12,16,19].some(n=>i===pool.find(j=>D.wordFor(match,W,j).roman.length===n)))');
+  assert.equal(indices.length,6);
+  for (const [turn, index] of indices.entries()) {
+    game.run(`match.players.forEach(p=>{p.index=${index};p.hp=800});answer(0);answer(1);D.tick(match,W,${5000 + turn * 2000})`);
+    assert.deepEqual(game.snapshot('match.players.map(p=>p.hp)'), [740, 740]);
     assert.equal(game.run('match.players[0].index === match.players[1].index'), true);
+    assert.equal(game.run('D.validSnapshot(D.snapshot(match),W)'), true);
   }
+});
+
+test('simple mode mixes every prompt length in the same shuffled cycle for both seats and snapshots', () => {
+  const game=duel({start:false});
+  game.run(`let seed=19;match.order=D.shuffledOrder(W.length,()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296});
+    const pool=D.wordPool(match,W),remote=D.snapshot(match);`);
+  assert.deepEqual(game.snapshot('pool'),game.snapshot('match.order'));
+  for(const condition of ['w.roman.length<=4','w.roman.length>=10&&w.roman.length<=16','w.roman.length>16']) {
+    assert.equal(game.run(`pool.some(i=>{const w=W[i];return ${condition}})`),true);
+  }
+  assert.equal(game.run(`pool.every((_,i)=>D.wordFor(match,W,i,0)===D.wordFor(match,W,i,1)
+    && D.wordFor(match,W,i,0)===D.wordFor(remote,W,i,1)
+    && D.wordFor(match,W,i,0)===D.wordFor(match,W,i+pool.length,0))`),true);
 });
 
 test('old indices, repeated sequences, other matches, invalid text and supplied damage are rejected', () => {

@@ -9,14 +9,14 @@ function battle(weapons = ['sword', 'swordShield'], modes = ['roman', 'roman'], 
     const match=D.create('0123456789abcdef01234567',order,['甲','乙'],${JSON.stringify(modes)},
       {battleMode:'weapons',weapons:${JSON.stringify(weapons)}});
     function word(seat){return D.wordFor(match,W,match.players[seat].index,seat)}
-    function profile(seat){const p=match.players[seat];return D.attackProfile(word(seat),p.mode,p.value)}
+    function profile(seat){const p=match.players[seat];return D.attackProfile(word(seat),p.mode,p.value,p.weaponId)}
     function typeFor(seat,value,now=match.clockNow,pending=false){const p=match.players[seat];
       return D.acceptInput(match,W,seat,{match:match.id,index:p.index,seq:p.seq+1,value,pending},now)}
     function answer(seat){const p=match.players[seat];return typeFor(seat,D.targetFor(word(seat),p.mode))}
     function defend(seat,action,now){return D.defense(match,W,seat,{match:match.id,seq:match.players[seat].defenseSeq+1,action},now)}
     function launch(seat){answer(seat);const p=match.players[seat];D.tick(match,W,Math.max(match.clockNow,p.openedAt+profile(seat).inputMs));return p.attackAt}
   `);
-  if(start)game.run('D.ready(match,0,0);D.ready(match,1,0);D.tick(match,W,3000);match.players.filter(p=>p.weaponId==="sword").forEach(p=>p.counterEnergy=100)');
+  if(start)game.run('D.ready(match,0,0);D.ready(match,1,0);D.tick(match,W,3000)');
   return game;
 }
 
@@ -93,32 +93,11 @@ test('greatsword permits guard only before typing or after completion, including
   g.run('typeFor(1,word(1).inputs[0].slice(0,2),3008)');assert.equal(g.run('defend(1,"guard-start",3009)'),true);
 });
 
-test('counter reflects up to 20, repays all prevented/reflected power and cannot be chained',()=>{
-  const g=battle(['dualBlades','sword']);g.run('const power=profile(0).damage;const hitAt=launch(0);defend(1,"counter",hitAt-100)');
-  assert.equal(g.run('answer(1)'),false);
-  g.run('D.tick(match,W,hitAt)');
-  const reflected=Math.min(20,g.run('power')),cost=g.run('power')+reflected;
-  assert.deepEqual(g.snapshot('match.players.map(p=>p.hp)'),[800-reflected,800]);
-  assert.equal(g.run('match.players[1].defenseCost'),cost);
-  assert.equal(g.run('defend(1,"counter",hitAt+1)'),false);
-  g.run('let paid=0;while(match.players[1].defenseCost){const power=profile(1).damage;const at=launch(1);D.tick(match,W,at);paid+=power}');
-  assert.equal(g.run('match.players[0].hp'),800-reflected-(g.run('paid')-cost));
-});
 
-test('expired counter fails, forbidden defenses and skills cannot be invoked',()=>{
-  const g=battle(['swordShield','sword']);g.run('const power=profile(0).damage;const hitAt=launch(0);defend(1,"counter",hitAt-401);D.tick(match,W,hitAt)');
-  assert.deepEqual(g.snapshot('match.players.map(p=>p.hp)'),[800,800-g.run('power')]);
-  assert.equal(g.run('match.players[1].counterEnergy'),50);
-  assert.equal(g.run('defend(1,"counter",hitAt+199)'),false);
-  g.run('match.players[1].counterEnergy=100');
-  assert.equal(g.run('defend(1,"counter",hitAt+199)'),true);
-  const d=battle(['dualBlades','sword']);
-  for(const [seat,action] of [[0,'guard-start'],[0,'counter'],[1,'guard-start'],[1,'skill']])assert.equal(d.run(`defend(${seat},'${action}',3001)`),false);
-});
 
-test('simultaneous counter and just guard preserve both effects, and empty swings release guard',()=>{
+test('simultaneous attack and just guard preserve both effects, and empty swings release guard',()=>{
   const g=battle(['sword','swordShield']);g.run('answer(0);answer(1);D.tick(match,W,3000+profile(0).inputMs);const at=match.players[0].attackAt;defend(0,"counter",at-100);defend(1,"guard-start",at-100);D.tick(match,W,at)');
-  assert.deepEqual(g.snapshot('match.players.map(p=>p.feedback)'),['counter','justGuard']);
+  assert.deepEqual(g.snapshot('match.players.map(p=>p.feedback)'),['hit','justGuard']);
   const e=battle();e.run('match.players[0].defenseCost=profile(0).damage;const at=launch(0);defend(1,"guard-start",at-100);D.tick(match,W,at)');
   assert.equal(e.run('match.players[1].guarding'),false);assert.equal(e.run('match.players[1].hp'),800);
 });
@@ -141,7 +120,7 @@ test('late and replayed defense cannot change state; debt is settled at timeout 
   }
 });
 
-test('equal-speed weapons stay within one heavy hit over complete matches, across orders and input modes',()=>{
+test('equal-speed skill weapons stay close while the plain sword gains damage, across orders and input modes',()=>{
   const g=battle();
   const results=g.snapshot(`(()=>{const out=[];
     for(const a of Object.keys(D.weapons))for(const b of Object.keys(D.weapons))for(const speed of [2,5,10])for(const mode of ['roman','kana'])for(const withDefense of [false,true])for(const seed of [13,89,431]){
@@ -157,7 +136,7 @@ test('equal-speed weapons stay within one heavy hit over complete matches, acros
       out.push({a,b,speed,mode,withDefense,seed,winner:m.winner,gap:Math.abs(m.players[0].hp-m.players[1].hp),valid:D.validSnapshot(D.snapshot(m),W)});
     }return out})()`);
   assert.equal(results.length,576);
-  for(const r of results){assert.ok(r.gap<=80,JSON.stringify(r));assert.equal(r.valid,true,JSON.stringify(r));if(r.a===r.b)assert.equal(r.winner,-1,JSON.stringify(r));}
+  for(const r of results){if(r.a!=="sword"&&r.b!=="sword")assert.ok(r.gap<=80,JSON.stringify(r));assert.equal(r.valid,true,JSON.stringify(r));if(r.a===r.b)assert.equal(r.winner,-1,JSON.stringify(r));}
 });
 
 test('snapshots validate each seat’s prompt, bounded defense fields and relative attack timing',()=>{

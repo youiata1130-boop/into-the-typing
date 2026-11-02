@@ -79,7 +79,7 @@ test("birds approach the player and attack on arrival rather than charging in pl
   assert.ok(game.run('state.hp') < hp);
 });
 
-for (const [method, weaponId] of [['attack', 'swordShield'], ['counter', 'sword'], ['skill', 'greatsword']]) {
+for (const [method, weaponId] of [['attack', 'swordShield'], ['sword attack', 'sword'], ['skill', 'greatsword']]) {
   test(`a final ${method} enters capture instead of prematurely clearing or saving rewards`, () => {
     const game = battle({ weaponId });
     for (let index = 0; index < 4; index++) {
@@ -88,10 +88,7 @@ for (const [method, weaponId] of [['attack', 'swordShield'], ['counter', 'sword'
       assert.equal(game.run('isMountainCaptureActive()'), false);
     }
     game.run('getCurrentEnemy().hp = 1');
-    if (method === 'attack') game.run('applyTypedValue(getInputEnemy(), getInputEnemy().matchedWord)');
-    if (method === 'counter') {
-      game.run('chargePlayerCounter(10); beginPlayerCounter(); setEnemyProgress(getCurrentEnemy(), 1); enemyAttack(getCurrentEnemy())');
-    }
+    if (method !== 'skill') game.run('applyTypedValue(getInputEnemy(), getInputEnemy().matchedWord)');
     if (method === 'skill') {
       game.run('state.specialGauge = 100');
       assert.equal(game.run('useSpecialMove()'), true);
@@ -122,7 +119,6 @@ for (const weaponId of ['sword', 'greatsword', 'dualBlades', 'swordShield']) {
     assert.equal(game.run('getInputEnemy().translation'), 'たちまち足の下で雲雀の声がし出した。');
     assert.equal(game.run('getInputEnemy().translation.length'), 18);
     assert.equal(game.run('beginPlayerGuard("keyboard")'), false);
-    assert.equal(game.run('beginPlayerCounter()'), false);
     assert.equal(game.run('useSpecialMove()'), false);
     assert.equal(game.run('state.specialGauge'), 100);
     assert.equal(game.run('els.weaponCharge.hidden'), true);

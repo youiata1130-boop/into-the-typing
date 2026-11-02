@@ -82,7 +82,7 @@ test("weekdays and ambiguous kana prompts display and accept each correct charac
       }
     }
     assert.equal(game.run("state.combo"), 1, label);
-    assert.equal(game.run("getCurrentEnemy().hp"), 19, label);
+    assert.equal(game.run("getCurrentEnemy().hp"), 18, label);
     assert.equal(game.run("els.flickInput.value"), "", label);
   }
 });
@@ -103,7 +103,7 @@ test("corrected words allow composing dakuten and small kana without accepting t
       game.advance(0);
       assert.equal(game.run("getCurrentEnemy().typingMisses"), 0, label + ": " + value);
     }
-    assert.equal(game.run("getCurrentEnemy().hp"), 19);
+    assert.equal(game.run("getCurrentEnemy().hp"), 18);
     assert.equal(game.run("state.combo"), 1);
     assert.equal(game.run("els.flickInput.value"), "");
   }

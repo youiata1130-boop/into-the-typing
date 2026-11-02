@@ -86,7 +86,7 @@ test('correct answers damage the one shared giant once, never allies, and honor 
   const game = battle({ count: 4, start: false }), saved = game.saved();
   game.run(`['sword','greatsword','dualBlades','swordShield'].forEach((w,i)=>C.chooseWeapon(match,i,w,match.settingsRevision));
     match.players[3].mode='kana';readyAll(); C.start(match,0,'giant',0,match.settingsRevision); C.tick(match,W,3000);
-    const powers=match.players.map((p,i)=>D.attackProfile(D.wordFor(match,W,0,i),p.mode).damage);
+    const powers=match.players.map((p,i)=>D.attackProfile(D.wordFor(match,W,0,i),p.mode,p.value,p.weaponId).damage);
     for(let i=0;i<4;i++) answer(i); C.tick(match,W,6500,()=>0);`);
   assert.equal(game.run('match.boss.hp'), 2000);
   game.run('C.tick(match,W,7500,()=>0)');
@@ -120,7 +120,7 @@ test('single attacks telegraph a specific living target and all attacks damage e
   assert.deepEqual(game.snapshot('match.boss.attack.targets'), ['1'.repeat(24)]);
 });
 
-test('guard, just guard, and energy-based counter protect against the giant', () => {
+test('guards protect against the giant while the plain sword takes full damage', () => {
   const game = battle({ count: 4, start: false });
   game.run(`['swordShield','greatsword','sword','dualBlades'].forEach((w,i)=>C.chooseWeapon(match,i,w,match.settingsRevision));
     readyAll();C.start(match,0,'giant',0,match.settingsRevision);C.tick(match,W,3000);
@@ -129,9 +129,9 @@ test('guard, just guard, and energy-based counter protect against the giant', ()
     defend(0,'guard-start',9500);defend(1,'guard-start',10400);`);
   assert.equal(game.run('defend(2,"counter",10400)'), false);
   assert.equal(game.run('defend(3,"guard-start",10400)'), false);
-  game.run('match.players[2].counterEnergy=100;defend(2,"counter",10400);C.tick(match,W,10500)');
-  assert.deepEqual(game.snapshot('match.players.map(p=>p.hp)'), [950, 975, 1000, 900]);
-  assert.equal(game.run('match.boss.hp'), 1980);
+  game.run('defend(2,"counter",10400);C.tick(match,W,10500)');
+  assert.deepEqual(game.snapshot('match.players.map(p=>p.hp)'), [950, 975, 900, 900]);
+  assert.equal(game.run('match.boss.hp'), 2000);
   assert.equal(game.run('match.players[2].counterEnergy'), 0);
   assert.equal(game.run('match.players.every(p=>!p.guarding && p.defenseCost===0)'), true);
   assert.equal(game.run('C.validSnapshot(C.snapshot(match),W)'), true);
@@ -169,22 +169,23 @@ test('co-op snapshots reject invalid players, giant health, targets, phase and h
   ]) assert.equal(game.run(`(()=>{const copy=JSON.parse(JSON.stringify(snap));${edit};return C.validSnapshot(copy,W)})()`), false, edit);
 });
 
-test('octopus supports every difficulty and randomly warns for single, all, and slow attacks on living players', () => {
-  for (const difficulty of ['easy', 'normal', 'hard']) for (const [roll, kind] of [[0, 'single'], [.5, 'all'], [.9, 'slow']]) {
+test('octopus body casts only slow with a longer interval and warning at every difficulty', () => {
+  for (const [difficulty,interval,warning] of [['easy',16000,5000], ['normal',12000,4000], ['hard',9000,3000]]) for (const roll of [0,.5,.9]) {
     const game = battle({ count: 4, start: false });
     game.run(`C.chooseDifficulty(match,0,'${difficulty}',match.settingsRevision);readyAll();
       C.start(match,0,'octopus',0,match.settingsRevision);C.tick(match,W,3000);match.players[3].hp=0;
-      match.boss.tentacles.forEach(part=>part.nextAttackAt=Infinity);
-      C.tick(match,W,match.boss.nextAttackAt,()=>${roll});`);
-    assert.equal(game.run('match.boss.attack.kind'), kind);
-    assert.equal(game.run('match.boss.attack.targets.length'), kind === 'single' ? 1 : 3);
+      match.boss.tentacles.forEach(part=>part.nextAttackAt=Infinity);`);
+    assert.equal(game.run('match.boss.nextAttackAt'),3000+interval-warning);
+    game.run(`C.tick(match,W,match.boss.nextAttackAt,()=>${roll})`);
+    assert.equal(game.run('match.boss.attack.kind'), 'slow');
+    assert.equal(game.run('match.boss.attack.targets.length'), 3);
+    assert.equal(game.run('C.snapshot(match).boss.attack.remainingMs'),warning);
     assert.equal(game.run('C.validSnapshot(C.snapshot(match),W)'), true);
     game.run('C.tick(match,W,match.boss.attack.hitsAt)');
-    if (kind === 'slow') {
-      assert.deepEqual(game.snapshot('match.players.map(p=>p.hp)'), [1000,1000,1000,0]);
-      assert.deepEqual(game.snapshot('match.players.map(p=>p.slowUntil)'), [3,3,3,0]);
-      assert.equal(game.run('match.boss.hp'), game.run('match.boss.maxHp'));
-    } else assert.ok(game.run('match.players[0].hp') < 1000);
+    assert.deepEqual(game.snapshot('match.players.map(p=>p.hp)'), [1000,1000,1000,0]);
+    assert.deepEqual(game.snapshot('match.players.map(p=>p.slowUntil)'), [3,3,3,0]);
+    assert.equal(game.run('match.boss.hp'), game.run('match.boss.maxHp'));
+    assert.equal(game.run('match.boss.nextAttackAt'),3000+2*interval-warning);
     assert.equal(game.run('C.validSnapshot(C.snapshot(match),W)'), true);
   }
 });
@@ -198,8 +199,8 @@ test('slow keeps current input stable, uses longer sentences for the next two pr
       C.chooseTarget(match,0,{match:match.id,index:0,seq:1,targetId:'body'});
       const p=match.players[0], initial=C.wordFor(match,W,0), first=D.targetFor(initial,p.mode);
       C.acceptInput(match,W,0,{match:match.id,index:0,seq:1,value:first[0]},3000);
-      C.tick(match,W,7500,()=>.9);C.tick(match,W,10500);match.boss.nextAttackAt=Infinity;
-      function complete(){const word=C.wordFor(match,W,p.index),profile=C.attackProfile(word,p.mode);
+      C.tick(match,W,match.boss.nextAttackAt,()=>.9);C.tick(match,W,match.boss.attack.hitsAt);match.boss.nextAttackAt=Infinity;
+      function complete(){const word=C.wordFor(match,W,p.index),profile=C.attackProfile(word,p.mode,p.value,p.weaponId);
         const hp=match.boss.hp;answer(0);C.tick(match,W,match.clockNow+profile.inputMs);
         C.tick(match,W,match.clockNow+profile.windupMs);return hp-match.boss.hp;}`);
     assert.equal(game.run('p.value'), game.run('first[0]'));
@@ -214,7 +215,7 @@ test('slow keeps current input stable, uses longer sentences for the next two pr
         C.tick(match,W,match.clockNow+normal${remaining}.length*400);`);
       assert.equal(game.run('p.attackAt'), null, `${mode}/${weapon}: half the prompt cannot attack`);
       if (weapon === 'greatsword') assert.equal(game.run('C.defense(match,W,0,{match:match.id,seq:p.defenseSeq+1,action:"guard-start"},match.clockNow)'), false);
-      const expected = game.run('D.attackProfile(D.wordFor(match,W,p.index),p.mode).damage');
+      const expected = game.run('D.attackProfile(D.wordFor(match,W,p.index),p.mode,"",p.weaponId).damage');
       assert.equal(game.run('complete()'), expected, `${mode}/${weapon}: no slow damage bonus`);
       assert.equal(game.run('C.validSnapshot(C.snapshot(match),W)'), true);
     }
@@ -249,12 +250,12 @@ test('slow accepts sentence romaji variants and refreshes without changing an ac
     while(C.wordFor(match,W,p.index).inputs.length<2){p.index++;p.slowUntil=p.index+2;}
     const word=C.wordFor(match,W,p.index),variant=word.inputs.at(-1),index=p.index;
     C.acceptInput(match,W,0,{match:match.id,index,seq:1,value:variant.slice(0,-1)},3000);
-    C.tick(match,W,7500,()=>.9);C.tick(match,W,10500);`);
+    C.tick(match,W,match.boss.nextAttackAt,()=>.9);C.tick(match,W,match.boss.attack.hitsAt);`);
   assert.ok(game.run('word.inputs.length') > 1);
   assert.equal(game.run('C.wordFor(match,W,index)===word'), true);
   assert.equal(game.run('p.value'), game.run('variant.slice(0,-1)'));
   assert.equal(game.run('p.slowUntil'), game.run('index+3'));
-  assert.equal(game.run('C.acceptInput(match,W,0,{match:match.id,index,seq:2,value:variant},10500)'), true);
+  assert.equal(game.run('C.acceptInput(match,W,0,{match:match.id,index,seq:2,value:variant},match.clockNow)'), true);
   assert.equal(game.run('C.validSnapshot(C.snapshot(match),W)'), true);
   for (const edit of ['copy.stageId="giant"', 'copy.players[0].slowFrom=-1', 'copy.players[0].slowUntil=999',
     'delete copy.players[0].slowFrom', 'copy.players[0].value+="!"']) {
@@ -314,6 +315,40 @@ function room(count = 2, options = {}) {
   pump(); return { host, guests, pump };
 }
 
+test('four clients synchronize skills, reject party stacking and spoofed actors, and keep the plain sword skill-free', () => {
+  const {host,guests,pump}=room(4),all=[host,...guests];
+  ['swordShield','dualBlades','swordShield','sword'].forEach((w,i)=>{all[i].run(`P.chooseWeapon('${w}')`);pump()});
+  all.forEach(g=>g.run('P.ready()'));pump();host.run('P.start("octopus")');host.advance(3000);pump();
+  host.run(`const m=P.session.match;m.players.forEach(p=>p.skillGauge=C.skills[p.weaponId]?100:0);
+    [m.boss,...m.boss.tentacles].forEach(e=>{e.attack=null;e.nextAttackAt=Infinity});P.defense('guard-end');
+    const prefix=D.targetFor(C.wordFor(m,W,0),m.players[0].mode)[0];P.input(prefix)`);pump();
+  const word=host.run('document.querySelector("#coopWord").textContent');
+  host.run('document.dispatchEvent({type:"keydown",key:"Enter",preventDefault(){}});document.dispatchEvent({type:"keydown",key:"Enter",repeat:true,preventDefault(){}})');
+  guests[0].run('document.querySelector("#coopSkill").dispatchEvent({type:"click"})');
+  guests[1].run('P.useSkill()');pump();
+  for(const g of all) {
+    assert.deepEqual(g.snapshot('P.session.match.players.map(p=>p.skillsUsed)'),[1,1,0,0]);
+    assert.deepEqual(g.snapshot('P.session.match.players.map(p=>p.skillGauge)'),[0,0,100,0]);
+    assert.equal(g.run('P.session.skillPending'),null);
+    assert.equal(g.run('C.validSnapshot(P.session.host?C.snapshot(P.session.match):P.session.match,W)'),true);
+  }
+  assert.equal(host.run('P.session.localValue'),host.run('prefix'));
+  assert.equal(host.run('document.querySelector("#coopWord").textContent'),word);
+  guests[0].run('connections.host.send({type:"skill",match:P.session.match.id,seq:999,seat:3,weaponId:"greatsword",damage:999999})');pump();
+  assert.equal(host.run('m.boss.hp'),2000);
+  assert.equal(host.run('m.players[3].skillsUsed'),0);
+  guests[2].run('P.useSkill()');pump();
+  host.run(`m.boss.attack={kind:'slow',targets:m.players.map(p=>p.id),hitsAt:performance.now()+2000};P.defense('guard-end')`);pump();
+  assert.equal(guests[2].run('document.querySelector("#coopSkill").hidden'),true);
+  assert.equal(guests[2].run('P.useSkill()'),false);
+  for(let i=0;i<4;i++){all.forEach(g=>g.advance(1000));pump()}
+  all.forEach(g=>assert.equal(g.run('P.session.match.players[3].skillsUsed'),0));
+  host.run('m.boss.hp=0');host.advance(50);pump();
+  all.forEach(g=>assert.equal(g.run('P.useSkill()'),false));
+  host.run('P.again()');pump();
+  all.forEach(g=>assert.equal(g.run('P.session.match.players.every(p=>!p.skillGauge&&!p.skillsUsed&&!p.agilityUntil)'),true));
+});
+
 test('four clients choose independent octopus targets, preserve prompts, lock partial input and synchronize wilt and one-by-one revival', () => {
   const {host,guests,pump}=room(4,{touch:true}),all=[host,...guests],guest=guests[0];
   const advance=ms=>{for(let elapsed=0;elapsed<ms;elapsed+=1000){all.forEach(g=>g.advance(Math.min(1000,ms-elapsed)));pump()}};
@@ -361,6 +396,28 @@ test('four clients choose independent octopus targets, preserve prompts, lock pa
   all.forEach(g=>assert.deepEqual(g.snapshot('P.session.match.players.map(p=>[p.targetId,p.targetSeq,p.targetLocked])'),Array.from({length:4},()=>['body',0,false])));
 });
 
+test('four clients see one alternating tentacle warning and the slower body spell on the same timeline', () => {
+  const {host,guests,pump}=room(4),all=[host,...guests];
+  const advance=ms=>{for(let elapsed=0;elapsed<ms;elapsed+=500){all.forEach(g=>g.advance(Math.min(500,ms-elapsed)));pump()}};
+  all.forEach(g=>g.run('P.ready()'));pump();host.run('P.start("octopus")');advance(3000);
+  for(const id of ['left','right','left','right']) {
+    advance(1000);
+    for(const g of all) {
+      assert.deepEqual(g.snapshot('P.session.match.boss.tentacles.filter(t=>t.attack).map(t=>t.id)'),[id]);
+      assert.equal(g.run(`document.querySelector('#coopPart${id==='left'?'Left':'Right'}').dataset.attack`),'single');
+      assert.equal(g.run(`document.querySelector('#coopPart${id==='left'?'Right':'Left'}').dataset.attack`),'');
+    }
+    advance(1500);
+  }
+  all.forEach(g=>assert.equal(g.run('P.session.match.boss.attack.kind'),'slow'));
+  advance(2000);
+  for(const g of all) {
+    assert.equal(g.run('P.session.match.boss.attacks'),1);
+    assert.equal(g.run('P.session.match.players.every(p=>p.slowUntil===3)'),true);
+    assert.equal(g.run('C.validSnapshot(P.session.host?C.snapshot(P.session.match):P.session.match,W)'),true);
+  }
+});
+
 test('four clients synchronize octopus selection, slow casting and longer prompts with in-flight roman/kana input and clean rematches', () => {
   const { host, guests, pump } = room(4, { touch: true }), all = [host, ...guests];
   function advance(ms) { for (let elapsed = 0; elapsed < ms; elapsed += 1000) { all.forEach(g => g.advance(Math.min(1000, ms - elapsed))); pump(); } }
@@ -382,7 +439,7 @@ test('four clients synchronize octopus selection, slow casting and longer prompt
   });
   guests[0].run(`const p=P.session.match.players[1], original=C.wordFor(P.session.match,W,0,1);
     P.applyKana(original.reading[0])`);
-  host.advance(3000); pump(); // Deliver the input after the spell, without replacing its prompt.
+  host.advance(4000); pump(); // Deliver the input after the spell, without replacing its prompt.
   assert.equal(host.run('P.session.match.players[1].value'), guests[0].run('original.reading[0]'));
   all.forEach(g => assert.equal(g.run('document.querySelector("#coopSlow").textContent'), 'スロー（次から2回）'));
   host.run('P.session.match.boss.nextAttackAt=Infinity');

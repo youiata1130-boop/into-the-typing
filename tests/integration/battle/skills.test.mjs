@@ -162,7 +162,7 @@ for (const touch of [false, true]) test('branch cannot charge or use a skill thr
 });
 
 test("all skill weapons use Enter or NumpadEnter, never Space or Shift+Space", () => {
-  for (const weapon of ["sword", "greatsword", "dualBlades", "swordShield"]) {
+  for (const weapon of ["greatsword", "dualBlades", "swordShield"]) {
     const game = battle();
     game.run(`state.weaponId="${weapon}";target.weaponId="${weapon}";state.dualBladesObtained=true;state.swordShieldObtained=true;state.hp=getMaxHp()-10;state.specialGauge=100;updateHud();
       handleTypingKeydown({key:" ",code:"Space",shiftKey:true,preventDefault(){}});

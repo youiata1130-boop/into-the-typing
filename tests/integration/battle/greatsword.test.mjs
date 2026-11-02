@@ -140,7 +140,7 @@ test("many mistakes have a damage floor, and restart or a different weapon clear
   assert.equal(game.run("els.weaponCharge.dataset.penalized"), "false");
   game.run('getCurrentEnemy().weaponId = "sword"; updateHud()');
   assert.equal(game.run("els.weaponCharge.hidden"), true);
-  assert.equal(game.run("getPlayerAttackDamage(getCurrentEnemy())"), 1);
+  assert.equal(game.run("getPlayerAttackDamage(getCurrentEnemy())"), 2);
   game.run('finishGame(false)');
   assert.equal(game.run("els.weaponCharge.hidden"), true);
 });

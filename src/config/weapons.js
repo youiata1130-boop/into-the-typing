@@ -11,8 +11,7 @@ const weaponDefinitions = {
   sword: {
     id: "sword",
     name: "鉄の剣",
-    skillId: "mind_eye",
-    damageMultiplier: 1,
+    damageMultiplier: 1.5,
     attackCooldownMs: 700,
   },
   swordShield: {

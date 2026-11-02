@@ -73,7 +73,7 @@ test('handicap increases HP without scaling attack damage, and zero HP still end
   for (const mode of ['simple', 'weapons']) {
     game.run(`const m_${mode}=make({battleMode:'${mode}',handicapRatio:3,handicapSeat:1});
       D.ready(m_${mode},0,0);D.ready(m_${mode},1,0);D.tick(m_${mode},W,3000);
-      const damage_${mode}=${mode === 'simple' ? '40' : 'D.wordFor(m_'+mode+',W,0).inputs[0].length*4'};
+      const damage_${mode}=${mode === 'simple' ? '60' : 'D.wordFor(m_'+mode+',W,0).inputs[0].length*6'};
       for(let seat=0;seat<2;seat++)D.acceptInput(m_${mode},W,seat,{match:m_${mode}.id,index:0,seq:1,value:D.wordFor(m_${mode},W,0,seat).inputs[0]});
       D.tick(m_${mode},W,5000);D.tick(m_${mode},W,5400);`);
     const damage = game.run(`damage_${mode}`);

@@ -13,6 +13,10 @@ window.COOP_NPC = (() => {
     bot.lastAt = now;
     const player = match.players[1];
     if (match.phase !== "fighting" || now >= match.endsAt || !player.hp) { bot.credit = 0; return; }
+    if (coop.canUseSkill(match, 1, now)) {
+      coop.useSkill(match, words, 1, { match: match.id, seq: player.skillSeq + 1 }, now);
+      if (match.phase !== "fighting") return;
+    }
     const attack = coop.attacksFor(match).filter(attack => attack.kind !== "slow" && attack.targets.includes(player.id))
       .sort((a, b) => a.hitsAt - b.hitsAt)[0], targeted = Boolean(attack);
     const defend = action => coop.defense(match, words, 1,
@@ -25,6 +29,9 @@ window.COOP_NPC = (() => {
       bot.defendAt = targeted && bot.random() < .65 && kind !== "none"
         ? attack.hitsAt - (kind === "counter" ? 200 : 350) : null;
     }
+    // A slowing skill can move the same enemy's hit time after the cue was seen.
+    if (bot.defendAt !== null && targeted) bot.defendAt = attack.hitsAt - (kind === "counter" ? 200 : 350);
+    if (player.guarding && targeted && bot.releaseAt !== null) bot.releaseAt = attack.hitsAt + 100;
     if (bot.defendAt !== null && now >= bot.defendAt) {
       bot.defendAt = null;
       if (targeted && now < attack.hitsAt && defend(kind === "guard" ? "guard-start" : "counter") && kind === "guard") {
@@ -45,10 +52,13 @@ window.COOP_NPC = (() => {
     const target = duel.targetFor(coop.wordFor(match, words, player.index, 1), player.mode, player.value);
     if (player.guarding || countering || player.attackAt !== null || player.value === target) { bot.credit = 0; return; }
     npc.typeNext(bot, match, words, target, elapsed, now, coop.acceptInput);
+    if (player.attackAt !== null) player.attackAt = now + coop.attackProfile(coop.wordFor(match, words, player.index, 1), player.mode, player.value).windupMs;
   }
   function resume(bot, match, pausedAt, now) {
     npc.resume(bot, match, pausedAt, now);
     const elapsed = Math.max(0, now - pausedAt);
+    for (const player of match.players) for (const key of ["skillReadyAt"]) if (player[key]) player[key] += elapsed;
+    for (const key of ["hasteReadyAt", "slowReadyAt", "slowFrom", "slowUntil", "updatedAt"]) if (match.skills[key]) match.skills[key] += elapsed;
     if (Number.isFinite(match.boss?.nextAttackAt)) match.boss.nextAttackAt += elapsed;
     if (match.boss?.attack) match.boss.attack.hitsAt += elapsed;
     for (const part of match.boss?.tentacles || []) {

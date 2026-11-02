@@ -99,7 +99,6 @@ function tryStartMountainCapture() {
   const { id: passageId, passage } = selection;
   clearInputBuffer();
   clearPlayerGuard();
-  clearPlayerCounter();
   clearPlayerAttackAnimation();
   clearPlayerAttackCooldown();
   clearEnemyActionStop();

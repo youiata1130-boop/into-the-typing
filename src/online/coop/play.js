@@ -1,6 +1,6 @@
 (() => {
   const coop = window.ONLINE_COOP, duel = window.ONLINE_DUEL, transport = window.ONLINE_CONNECTION, npc = window.COOP_NPC;
-  const words = window.ONLINE_PLAY.words, protocol = "coop-6-" + duel.signature([...words, ...coopSlowSentences]);
+  const words = window.ONLINE_PLAY.words, protocol = "coop-9-" + duel.signature([...words, ...coopSlowSentences]);
   const swingMs = 800;
   const prefix = transport.prefix + "coop-", $ = name => document.querySelector("#coop" + name);
   const playerColors = ["#2563c9", "#bc3d55", "#197c51", "#8050b7"];
@@ -8,11 +8,13 @@
     "Status", "Party", "PartyHead", "Count", "Clock", "Players", "Actors", "AttackLinks", "Loadout", "Difficulty", "Weapon", "Ready", "Stages", "Start", "Battle", "Boss",
     "StartOctopus", "TentacleLeft", "TentacleRight", "Enemy", "Octopus", "PartLeft", "PartRight", "PartBody", "LeftBar", "RightBar", "BodyBar", "BodyImage", "Regrowth",
     "Slow", "BossBar", "BossImage", "Target", "Input", "InputLabel", "Word", "Typed", "Remaining", "Next", "NextWord", "NextTarget",
-    "Defense", "Energy", "EnergyValue", "EnergyFill", "Controls", "Entry", "Erase", "Keyboard", "Result", "Banner", "Again", "FlickPopup"].map(name => [name, $(name)]));
+    "Defense", "Energy", "EnergyValue", "EnergyFill", "Skill", "SkillName", "SkillValue", "SkillFill", "SkillStatus",
+    "Controls", "Entry", "Erase", "Keyboard", "Result", "Banner", "Again", "FlickPopup"].map(name => [name, $(name)]));
   const session = { active: false, generation: 0, host: false, peer: null, links: new Map(), match: null, room: "", selfId: "",
     mode: "roman", name: "", timer: 0, connectTimer: 0, lastSent: 0, seq: 0, defenseSeq: 0, defensePending: null,
     localMatch: "", localIndex: -1, localValue: "", kanaValue: "", pending: false, held: new Set(), gesture: null,
     localTarget: "body", targetSeq: 0, targetPending: null, targetLocked: false,
+    skillSeq: 0, skillPending: null,
     npcMode: false, npcConfig: { weaponId: "swordShield", speed: 3 }, npcBot: null, npcPausedAt: null };
   const cards = new Map(), keys = [], choices = [];
   const attackLinks = new Map();
@@ -46,6 +48,7 @@
     session.localMatch = ""; session.localIndex = -1; session.localValue = session.kanaValue = "";
     session.seq = session.defenseSeq = 0; session.defensePending = null; session.pending = false; session.held.clear();
     session.localTarget = "body"; session.targetSeq = 0; session.targetPending = null; session.targetLocked = false;
+    session.skillSeq = 0; session.skillPending = null;
     parts.forEach(part => { part.motion = null; });
     session.npcBot = null; session.npcPausedAt = null;
     bossMotion = null; ui.Boss.dataset.attack = ui.Boss.dataset.strike = ui.Boss.dataset.swing = ""; ui.Boss.dataset.paused = "false";
@@ -148,6 +151,7 @@
         session.localValue = session.kanaValue = packet.value; session.pending = false; render();
       }
       if (packet.type === "defense-ack" && packet.seq === session.defensePending?.seq) { session.defensePending = null; render(); }
+      if (packet.type === "skill-ack" && packet.seq === session.skillPending?.seq) { session.skillPending = null; render(); }
       if (packet.type === "target-ack" && packet.index === session.localIndex && packet.seq === session.targetPending?.seq) {
         session.targetPending = null; render();
       }
@@ -161,6 +165,10 @@
     else if (packet.type === "target") {
       coop.chooseTarget(match, index, packet); publish();
       send(link, { type: "target-ack", match: match.id, index: packet.index, seq: packet.seq }); return;
+    }
+    else if (packet.type === "skill") {
+      coop.useSkill(match, words, index, packet, now); publish();
+      send(link, { type: "skill-ack", match: match.id, seq: packet.seq }); return;
     }
     else if (packet.type === "ready") coop.ready(match, index, packet.value, packet.settingsRevision);
     else if (packet.type === "defense") {
@@ -350,6 +358,13 @@
     const kind = duel.weapons[self().weaponId].defense;
     if (first && kind !== "none") defense(kind === "guard" ? "guard-start" : "counter");
   }
+  function useSkill() {
+    if (!session.active || session.npcPausedAt !== null || !session.match || session.skillPending
+        || !coop.canUseSkill(session.match, seat(), performance.now())) return false;
+    const packet = { type: "skill", match: session.match.id, seq: ++session.skillSeq };
+    if (session.host) { const accepted = coop.useSkill(session.match, words, seat(), packet, performance.now()); publish(); return accepted; }
+    session.skillPending = packet; toHost(packet); render(); return true;
+  }
   function releaseDefense(source) {
     if (!session.held.delete(source) || session.held.size) return;
     if (self() && duel.weapons[self().weaponId].defense === "guard") defense("guard-end");
@@ -377,7 +392,7 @@
     ui.Boss.dataset.attack = bossMotion.windup; ui.Boss.dataset.strike = bossMotion.strike;
     renderSwing(ui.Boss, active ? attack : null);
     const charge = !active ? 0 : bossMotion.strike ? 1 : attack
-      ? Math.max(0, Math.min(1, 1 - attack.remainingMs / coop.difficultyFor(match).warningMs)) : 0;
+      ? Math.max(0, Math.min(1, 1 - attack.remainingMs / coop.attackTiming(match).warningMs)) : 0;
     ui.Boss.dataset.chargePhase = !active ? "" : bossMotion.strike ? "attack" : charge >= .75 ? "warning" : "charging";
     ui.Boss.style.setProperty("--enemy-charge", charge.toFixed(3));
     ui.Boss.style.setProperty("--enemy-aura-color", `hsl(${Math.round(100 * (1 - charge))} 90% 64%)`);
@@ -514,7 +529,9 @@
     const fresh = newMatch || session.localIndex !== player.index;
     if (newMatch) {
       session.defenseSeq = player.defenseSeq; session.defensePending = null; session.held.clear();
+      session.skillSeq = player.skillSeq; session.skillPending = null;
     }
+    if (session.skillPending && player.skillSeq >= session.skillPending.seq) session.skillPending = null;
     if (fresh) {
       session.localMatch = match.id; session.localIndex = player.index; session.localValue = session.kanaValue = player.value;
       session.pending = false; session.seq = player.seq; cancelGesture();
@@ -544,6 +561,10 @@
       if (!cards.has(p.id)) cards.set(p.id, createCard());
       const card = cards.get(p.id), before = card.before, incoming = attacks.find(a => a.targets.includes(p.id)), targeted = Boolean(incoming);
       if (before?.match === match.id) {
+        if (before.skillsUsed < p.skillsUsed) {
+          card.skillUntil = now + 650;
+          window.GAME_SOUND.play({ sword: "mind_eye", greatsword: "impact", swordShield: "attack_boost", dualBlades: "time_stop" }[p.weaponId]);
+        }
         if (before.hp > p.hp) card.hurtUntil = now + 350;
         if (before.attacks < p.attacks || before.counterHits < p.counterHits) { card.attackUntil = now + 350; window.GAME_SOUND.play("impact"); }
         if (before.feedbackId < p.feedbackId && ["guard", "justGuard", "counter"].includes(p.feedback)) {
@@ -568,6 +589,8 @@
       card.actor.dataset.playerId = p.id; card.actor.dataset.weapon = p.weaponId;
       card.actor.classList.toggle("is-self", p.id === session.selfId);
       card.actor.classList.toggle("is-slow", fighting && p.hp > 0 && p.slowUntil > p.index);
+      card.actor.classList.toggle("is-agile", fighting && p.hp > 0 && p.agilityUntil > p.index);
+      card.actor.classList.toggle("is-skill-casting", fighting && p.hp > 0 && now < card.skillUntil);
       for (const name of ["is-targeted", "is-down", "is-guarding", "is-countering", "is-hurt", "is-attacking"]) {
         card.actor.classList.toggle(name, card.card.classList.contains(name));
       }
@@ -603,11 +626,24 @@
     ui.Input.dataset.weapon = player.weaponId;
     const word = coop.wordFor(match, words, player.index, seat()), target = duel.targetFor(word, player.mode, session.localValue);
     const showWord = fighting && player.hp > 0;
+    const skill = coop.skills[player.weaponId], skillWait = Math.max(player.skillWaitMs,
+      player.weaponId === "swordShield" ? match.skills.hasteWaitMs : player.weaponId === "dualBlades" ? match.skills.slowWaitMs : 0);
+    ui.Skill.hidden = !showWord || !skill; ui.SkillName.textContent = skill?.name || "";
+    ui.SkillValue.textContent = skillWait > 0 ? `${Math.ceil(skillWait / 1000)}秒` : `${player.skillGauge}％`;
+    ui.SkillFill.style.width = `${player.skillGauge}%`;
+    ui.Skill.title = skill?.description || "";
+    ui.Skill.setAttribute("aria-label", `${skill?.name || ""}、ゲージ${player.skillGauge}％${skillWait > 0 ? `、再使用まで${Math.ceil(skillWait / 1000)}秒` : ""}`);
+    ui.Skill.disabled = !showWord || session.npcPausedAt !== null || Boolean(session.skillPending) || !coop.canUseSkill(match, seat(), now);
+    ui.Skill.dataset.ready = String(!ui.Skill.disabled);
+    ui.SkillStatus.textContent = fighting ? [player.agilityUntil > player.index ? "俊敏↑" : "",
+      coop.enemySlowRemaining(match) > 0 ? "鈍化" : ""].filter(Boolean).join("・") : "";
+    ui.SkillStatus.hidden = !ui.SkillStatus.textContent;
+    ui.Boss.classList.toggle("is-slowed", fighting && coop.enemySlowRemaining(match) > 0);
     const slow = showWord && player.slowUntil > player.index;
     ui.Slow.hidden = !slow;
     ui.Slow.textContent = slow ? coop.isSlowed(player) ? `スロー（あと${player.slowUntil - player.index}回）` : `スロー（次から${player.slowUntil - player.slowFrom}回）` : "";
     ui.Input.classList.toggle("is-slow", slow && coop.isSlowed(player));
-    ui.Energy.hidden = !showWord || player.weaponId !== "sword";
+    ui.Energy.hidden = true;
     ui.EnergyValue.textContent = `気 ${player.counterEnergy}％`;
     ui.Energy.setAttribute("aria-valuenow", String(player.counterEnergy)); ui.EnergyFill.style.width = `${player.counterEnergy}%`;
     ui.Word.textContent = showWord ? word.text : ""; ui.Typed.textContent = showWord ? session.localValue : "";
@@ -619,7 +655,7 @@
     const kind = duel.weapons[player.weaponId].defense;
     ui.Defense.hidden = !showWord || kind === "none";
     ui.Defense.textContent = (kind === "counter" ? "カウンター" : "ガード") + (player.mode === "roman" ? " ［Space］" : "");
-    ui.Defense.disabled = Boolean(session.defensePending || (kind === "counter" && (player.counterEnergy < duel.rules.counterMaxEnergy || player.counterWaitMs))
+    ui.Defense.disabled = Boolean(session.defensePending || (kind === "counter" && ((player.counterEnergy < duel.rules.counterMaxEnergy) || player.counterWaitMs))
       || (player.weaponId === "greatsword" && ((session.localValue && session.localValue !== target) || session.pending)));
     ui.Defense.setAttribute("aria-pressed", String(player.guarding || player.countering));
     ui.Controls.hidden = lobby || player.mode !== "kana";
@@ -688,6 +724,7 @@
   ui.Difficulty.addEventListener("change", () => chooseDifficulty(ui.Difficulty.value));
   ui.Start.addEventListener("click", () => start("giant")); ui.StartOctopus.addEventListener("click", () => start("octopus"));
   ui.Again.addEventListener("click", again);
+  ui.Skill.addEventListener("click", () => { useSkill(); ui.Input.focus({ preventScroll: true }); });
   for (const part of parts) part.button.addEventListener("click", () => { chooseTarget(part.id); ui.Input.focus({ preventScroll: true }); });
   ui.Copy.addEventListener("click", async () => {
     try { await navigator.clipboard.writeText(session.room); status("部屋番号をコピーしました"); }
@@ -711,7 +748,7 @@
     if (event.key === "Shift" && session.match?.phase === "fighting") { event.preventDefault(); if (!event.repeat) chooseTarget(); return; }
     if ([" ", "Enter"].includes(event.key) && event.target?.closest?.(".coop-part")) return;
     if ([" ", "ArrowDown"].includes(event.key) && session.match?.phase === "fighting") { event.preventDefault(); if (!event.repeat) pressDefense(event.key); return; }
-    if (event.key === "Enter" && session.match?.phase === "fighting") { event.preventDefault(); return; }
+    if (event.key === "Enter" && session.match?.phase === "fighting") { event.preventDefault(); if (!event.repeat) useSkill(); return; }
     if (session.mode !== "roman" || !canType()) return;
     if (event.key === "Backspace") { event.preventDefault(); input(session.localValue.slice(0, -1)); return; }
     const character = getTypingCharacterFromKey(event); if (character) { event.preventDefault(); input(session.localValue + character); }
@@ -736,5 +773,5 @@
   window.visualViewport?.addEventListener("resize", scheduleAttackLinks);
   if (window.ResizeObserver) new window.ResizeObserver(scheduleAttackLinks).observe(ui.Boss);
   window.COOP_PLAY = { open, leave, close() { close(); session.active = false; }, connect, chooseWeapon, ready, start, again,
-    input, applyKana, defense, setNpcConfig, chooseDifficulty, chooseTarget, get active() { return session.active; }, get session() { return session; } };
+    input, applyKana, defense, useSkill, setNpcConfig, chooseDifficulty, chooseTarget, get active() { return session.active; }, get session() { return session; } };
 })();

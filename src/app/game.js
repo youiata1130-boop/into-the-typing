@@ -341,7 +341,6 @@ function invalidateBattleGeneration() {
   state.activeEnemies.forEach(stopPlantRegrowth);
   clearTargetTutorial();
   clearMountainCapture();
-  clearPlayerCounter();
   clearPlayerAttackBoost();
   clearEnemyActionStop();
   clearPlayerDamageEffect();
@@ -383,11 +382,6 @@ const els = {
   specialShortcut: document.querySelector("#specialShortcut"),
   guardButton: document.querySelector("#guardButton"),
   guardButtonText: document.querySelector("#guardButtonText"),
-  counterButton: document.querySelector("#counterButton"),
-  counterEnergy: document.querySelector("#counterEnergy"),
-  counterEnergyValue: document.querySelector("#counterEnergyValue"),
-  counterEnergyFill: document.querySelector("#counterEnergyFill"),
-  counterDamage: document.querySelector("#counterDamage"),
   skillPanel: document.querySelector("#skillPanel"),
   skillName: document.querySelector("#skillName"),
   skillGauge: document.querySelector("#skillGauge"),
@@ -623,7 +617,6 @@ function isSpecialReady() {
     && (getActiveSkill().target !== "self" || state.hp < getMaxHp())
     && (getActiveSkill().target !== "battle" || !isEnemyActionStopped())
     && (getActiveSkill().target !== "playerBuff" || !isPlayerAttackBoosted())
-    && (getActiveSkill().target !== "counterBuff" || (!isMindEyeActive() && !isBattleStartPending()))
     && state.specialGauge >= specialGaugeMax;
 }
 
@@ -812,9 +805,7 @@ function startPlayerAttackCooldown(weaponId) {
 
 function updateHud() {
   updateTargetTutorial();
-  state.activeEnemies.forEach(enemy => updateEnemyAttackCountdown(enemy));
   updateEnemySelection();
-  updatePlayerCounterHud();
   updateDualBladePreview();
   updateGuardHud();
   syncGameFlickKeyboard();
@@ -1870,7 +1861,6 @@ function createEnemyElement(enemy) {
       <span class="enemy-time-stop-mark" aria-hidden="true">Ⅱ</span>
     </div>
     <span class="enemy-target-cursor" aria-hidden="true"></span>
-    <span class="enemy-attack-countdown" hidden></span>
     <div class="plant-regrowth" hidden>
       <span>再生中</span>
       <div class="plant-regrowth-track" role="progressbar" aria-label="触手の再生" aria-valuemin="0" aria-valuemax="100"><i></i></div>
@@ -1884,8 +1874,6 @@ function createEnemyElement(enemy) {
   enemy.hpFill = element.querySelector(".character-hp-track i");
   enemy.hpTrack = element.querySelector(".character-hp-track");
   enemy.selectButton = element.querySelector(".enemy-select");
-  enemy.attackCountdownEl = element.querySelector(".enemy-attack-countdown");
-  enemy.attackCountdownEl.hidden = true;
   enemy.regrowthEl = element.querySelector(".plant-regrowth");
   enemy.regrowthEl.hidden = true;
   enemy.regrowthTrack = element.querySelector(".plant-regrowth-track");
@@ -1949,7 +1937,6 @@ function updateEnemyHud(enemy) {
   enemy.hpTrack.setAttribute("aria-valuemax", String(maximum));
   enemy.hpTrack.setAttribute("aria-valuenow", String(value));
   enemy.selectButton.disabled = !canSelectBattleEnemy() || !canSelectTutorialEnemy(enemy) || enemy.resolving || !isEnemyAlive(enemy);
-  updateEnemyAttackCountdown(enemy);
 }
 
 function updateEnemyWordLabel(enemy) {
@@ -2064,7 +2051,6 @@ function setNextWord(enemy) {
   enemy.matchedWord = enemy.inputs[0] || next.text;
   enemy.translation = next.translation;
   enemy.bestLength = 0;
-  enemy.counterBestLength = 0;
   enemy.typingMisses = 0;
   enemy.chargeInputProgress = 0;
   enemy.typed = "";
@@ -2278,7 +2264,6 @@ function enemyLoop(now) {
     }
   });
 
-  state.activeEnemies.forEach(enemy => updateEnemyAttackCountdown(enemy, now));
   state.rafId = requestAnimationFrame(enemyLoop);
 }
 
@@ -2298,12 +2283,10 @@ function enemyAttack(enemy) {
   if (enemy.attackStyle === "charge") {
     if (performance.now() < state.battleStartsAt || enemy.chargeElapsedMs < enemy.chargeDurationMs) return;
   } else if (enemy.progress < 1) return;
-  showEnemyAttackCountdownImpact(enemy);
   if (enemy.attackStyle === "charge") {
     resetEnemyCharge(enemy);
     aimEnemySpores(enemy);
   }
-  if (tryPlayerCounter(enemy)) return;
   enemy.atBase = enemy.attackStyle !== "charge";
   enemy.nextAttackAt = performance.now() + enemyAttackRecoveryMs + randomizeEnemyAttackMs(enemy.repeatAttackMs);
   const damage = rollAttackDamage(enemy.attackPower);
@@ -2331,7 +2314,6 @@ function enemyAttack(enemy) {
     return;
   }
 
-  // A counterattack replaces this animation and cancels its recovery callback.
   enemy.returnTimerId = scheduleBattleTimeout(() => {
     if (state.running) {
       stopEnemyWalkingAnimation(enemy);
@@ -2428,7 +2410,6 @@ function useSpecialMove() {
   if (skill.target === "self") return useHealingSkill(skill);
   if (skill.target === "battle") return useEnemyStopSkill(skill);
   if (skill.target === "playerBuff") return useAttackBoostSkill(skill);
-  if (skill.target === "counterBuff") return useMindEyeSkill(skill);
   const targets = getSkillTargets(skill);
   if (!targets.length || targets.some((enemy) => enemy.resolving)) {
     updateHud();
@@ -2805,11 +2786,6 @@ function applyTypedValue(enemy, value, { readingProgress } = {}) {
   enemy.chargeInputProgress = readingProgress ?? nextValue.length / Math.max(1, matchedWord.length);
   enemy.typed = nextValue;
   enemy.matchedWord = matchedWord;
-  const counterLength = readingProgress === undefined ? nextValue.length
-    : Math.round(readingProgress * (getFlickReading(enemy)?.reading.length || 0));
-  const counterGain = Math.max(0, counterLength - (enemy.counterBestLength || 0));
-  enemy.counterBestLength = Math.max(enemy.counterBestLength || 0, counterLength);
-  chargePlayerCounter(counterGain);
   updateEnemyWordLabel(enemy);
   renderWord();
 
@@ -2893,8 +2869,7 @@ function handleTypingKeydown(event) {
     if (state.running) {
       event.preventDefault();
       if (!event.repeat) {
-        if (getBattleWeaponId() === "sword") beginPlayerCounter();
-        else if (hasGuardWeapon()) beginPlayerGuard("keyboard");
+        if (hasGuardWeapon()) beginPlayerGuard("keyboard");
       }
       return;
     }
@@ -3037,7 +3012,6 @@ els.stageChoices.addEventListener("click", (event) => {
 });
 document.addEventListener("keydown", handleTypingKeydown);
 initializePlayerGuard();
-initializePlayerCounter();
 
 initializeFlickInput();
 initializeSaveMenu();

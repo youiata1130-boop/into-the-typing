@@ -366,7 +366,7 @@ test('lethal typing wilts a tentacle in place without rewards, attacks or select
   assert.equal(game.run('state.hp'), hp);
   assert.equal(game.run('body.wiltedTentacles.length'), 1);
   assert.equal(game.run('body.regrowthEl.hidden'), false);
-  assert.equal(game.run('left.attackCountdownEl.hidden'), true);
+  assert.equal(game.run('left.attackCountdownEl'), undefined);
 });
 
 test('regrowth follows knockdown order and needs a separate full charge for each tentacle', () => {
@@ -462,14 +462,12 @@ test('damaging the body pauses its charge during recovery and then resumes witho
   assert.equal(game.run('left.wilted'), false);
 });
 
-test('counterattacks wilt tentacles and charging never shows an attack countdown even with Mind Eye', () => {
+test('plain sword attacks wilt tentacles without displaying numeric attack cues', () => {
   const game = battle({ weaponId: 'sword' });
-  game.run(`const [left,middle,body]=state.activeEnemies;state.specialGauge=100;useSpecialMove();
-    beginPlayerCounter();setEnemyProgress(left,1);enemyAttack(left);`);
-  game.advance(420);
+  game.run(`const [left,middle,body]=state.activeEnemies;left.hp=1;selectBattleEnemy(left);applyTypedValue(left,left.matchedWord)`);
+  game.advance(900);
   assert.equal(game.run('left.wilted'), true);
-  game.run('setEnemyProgress(body,1);body.atBase=true;body.nextAttackAt=performance.now()+1000;updateEnemyAttackCountdown(body)');
-  assert.equal(game.run('body.attackCountdownEl.hidden'), true);
+  assert.equal(game.run('body.attackCountdownEl'), undefined);
   assert.equal(game.run('body.regrowthEl.hidden'), false);
 });
 

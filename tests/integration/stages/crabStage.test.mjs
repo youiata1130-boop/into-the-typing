@@ -86,7 +86,7 @@ test("stage 1-3 spawns two crabs then their king and saves 75 EXP only after the
       { type: "crab_level_1", hp: 5, boss: false },
       { type: "crab_boss", hp: 8, boss: true },
     ]);
-    assert.equal(attacks, 10);
+    assert.equal(attacks, 7);
     assert.deepEqual(game.snapshot("({ xp: state.totalExperience, level: state.level, sp: state.skillPoints, clears: state.clearedStages })"),
       { xp: 115, level: 3, sp: 1, clears: ["forest_path", "mist_road", "sky_castle"] });
     assert.equal(game.run("els.noticeButton.textContent"), "装備画面へ");

@@ -486,7 +486,7 @@
       card.name.setAttribute("title", `${index ? "相手" : "あなた"}：${player.name}${weaponMode ? " / " + weapon.name : ""}`);
       card.card.setAttribute("aria-label", card.name.getAttribute("title"));
       card.card.setAttribute("title", card.name.getAttribute("title"));
-      card.energy.hidden = !weaponMode || player.weaponId !== "sword" || match.phase !== "fighting";
+      card.energy.hidden = true;
       card.energyValue.textContent = `気 ${player.counterEnergy}％`;
       card.energy.setAttribute("aria-valuenow", String(player.counterEnergy));
       card.energyFill.style.width = `${player.counterEnergy}%`;

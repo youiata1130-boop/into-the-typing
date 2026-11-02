@@ -1,4 +1,5 @@
 function getActiveSkill() {
+  if (["branch", "unarmed", "sword"].includes(getBattleWeaponId())) return null;
   return skillDefinitions[getActiveWeapon().skillId || state.skillId] || skillDefinitions[defaultSkillId];
 }
 
@@ -20,7 +21,7 @@ function useHealingSkill(skill) {
 
 function canChargeSkill() {
   return state.running && state.hp > 0 && !state.specialInProgress
-    && !["branch", "unarmed"].includes(getBattleWeaponId())
+    && Boolean(getActiveSkill())
     && !getStageDefinition(state.stageId).tutorial && !isStoryDialogueOpen();
 }
 
@@ -40,7 +41,6 @@ function getSkillDamage(effect) {
 
 // New effect types belong here; gauge consumption and battle timing stay shared.
 const skillEffectHandlers = {
-  freeCounter(effect) { startMindEye(effect.durationMs); },
   attackBoost(effect) { startPlayerAttackBoost(effect); },
   stopActions(effect) { startEnemyActionStop(effect.durationMs); },
   heal(effect) {
@@ -61,18 +61,21 @@ function updateSkillHud() {
   els.specialButton.disabled = !state.running || state.guarding || state.specialInProgress || hasResolvingEnemy
     || !isSpecialReady() || !state.activeEnemies.some(enemy => isEnemyAlive(enemy));
   const skill = getActiveSkill();
+  els.skillPanel.hidden = !skill || !state.running || getStageDefinition(state.stageId).tutorial || isStoryDialogueOpen();
+  if (!skill) {
+    els.skillName.textContent = "";
+    els.specialButton.disabled = true;
+    return;
+  }
   const value = Math.max(0, Math.min(specialGaugeMax, state.specialGauge));
   const percent = Math.floor(value / specialGaugeMax * 100);
-  els.skillPanel.hidden = ["branch", "unarmed"].includes(getBattleWeaponId()) || !state.running || getStageDefinition(state.stageId).tutorial || isStoryDialogueOpen();
   els.skillPanel.dataset.ready = String(!els.specialButton.disabled);
   els.skillGauge.setAttribute("aria-valuemax", String(specialGaugeMax));
   els.skillGauge.setAttribute("aria-valuenow", String(value));
   els.skillGauge.setAttribute("aria-valuetext", `${percent}％${els.specialButton.disabled ? "" : "、発動可能"}`);
   els.skillGaugeFill.style.width = `${percent}%`;
   els.skillGaugeValue.textContent = `${percent}％`;
-  const mindEyeActive = skill.id === "mind_eye" && isMindEyeActive();
-  els.skillName.textContent = mindEyeActive ? "心眼中" : skill.name;
-  els.specialButton.dataset.active = String(mindEyeActive);
+  els.skillName.textContent = skill.name;
   els.specialButton.setAttribute("aria-label", `${skill.name}を発動`);
   const shortcut = "Enter";
   els.specialShortcut.textContent = shortcut;

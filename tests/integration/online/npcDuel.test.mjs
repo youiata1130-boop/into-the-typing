@@ -78,22 +78,22 @@ test('a stalled frame cannot burst-type a whole prompt or advance a finished bat
   assert.equal(game.run('match.phase'), 'finished');
 });
 
-for (const weapon of ['sword','greatsword','swordShield']) {
+for (const weapon of ['greatsword','swordShield']) {
   test(`NPC ${weapon} reacts to the visible windup using legal defense and its usual cost`, () => {
     const game = fixture({weaponId:weapon,hp:1000,speed:1});
     if (weapon === 'sword') game.run('match.players[1].counterEnergy=100');
-    game.run('frame(3000);const damage=D.targetFor(D.wordFor(match,W,0,0),"roman").length*4;answer();D.tick(match,W,5000);bot.random=()=>0;N.step(bot,match,W,5000);N.step(bot,match,W,5250)');
+    game.run('frame(3000);const damage=D.attackProfile(D.wordFor(match,W,0,0),"roman","",match.players[0].weaponId).damage;answer();D.tick(match,W,5000);bot.random=()=>0;N.step(bot,match,W,5000);N.step(bot,match,W,5250)');
     assert.equal(game.run(weapon === 'sword' ? 'match.players[1].counterStartedAt!==null' : 'match.players[1].guarding'), true);
     game.run('D.tick(match,W,5400)');
     assert.equal(game.run('match.players[1].feedback'), weapon === 'sword' ? 'counter' : 'justGuard');
-    assert.equal(game.run('match.players[1].defenseCost'), weapon === 'sword' ? game.run('damage+Math.min(20,damage)') : game.run('damage*3/4'));
-    assert.equal(game.run('match.players[1].hp'), weapon === 'sword' ? 1000 : game.run('1000-damage/4'));
+    assert.equal(game.run('match.players[1].defenseCost'), weapon === 'sword' ? game.run('damage+Math.min(20,damage)') : game.run('damage-Math.ceil(damage/4)'));
+    assert.equal(game.run('match.players[1].hp'), weapon === 'sword' ? 1000 : game.run('1000-Math.ceil(damage/4)'));
   });
 }
 
 test('NPC greatsword cannot guard midway through a word and defense is not guaranteed', () => {
   const game = fixture({weaponId:'greatsword',hp:1000,speed:3});
-  game.run('frame(3000);for(let now=3050;now<5000;now+=50)frame(now);const damage=D.targetFor(D.wordFor(match,W,0,0),"roman").length*4;answer();D.tick(match,W,5000);bot.random=()=>0;N.step(bot,match,W,5000);N.step(bot,match,W,5200);N.step(bot,match,W,5250)');
+  game.run('frame(3000);for(let now=3050;now<5000;now+=50)frame(now);const damage=D.attackProfile(D.wordFor(match,W,0,0),"roman","",match.players[0].weaponId).damage;answer();D.tick(match,W,5000);bot.random=()=>0;N.step(bot,match,W,5000);N.step(bot,match,W,5200);N.step(bot,match,W,5250)');
   assert.ok(game.run('match.players[1].value.length') > 0);
   assert.equal(game.run('match.players[1].guarding'), false);
   game.run('D.tick(match,W,5400)');
@@ -129,7 +129,7 @@ test('NPC starts without a connection and keeps online handicaps out of local NP
   assert.equal(game.run('document.querySelector("#onlineOtherBar").max'), 500);
 });
 
-test('local roman and flick input, guarding and counter work without a fake connection', () => {
+test('local roman and flick input, guarding work and sword counters are rejected without a fake connection', () => {
   for (const touch of [false, true]) {
     const game = localGame(touch);
     game.run('O.chooseWeapon("swordShield");O.startNpc()'); game.advance(3000);
@@ -144,8 +144,8 @@ test('local roman and flick input, guarding and counter work without a fake conn
   const game = localGame();game.run('O.startNpc()');game.advance(3000);
   assert.equal(game.run('O.defense("counter")'), false);
   game.run('O.session.match.players[0].counterEnergy=100');
-  assert.equal(game.run('O.defense("counter")'), true);
-  assert.equal(game.run('O.session.match.players[0].counterStartedAt!==null'), true);
+  assert.equal(game.run('O.defense("counter")'), false);
+  assert.equal(game.run('O.session.match.players[0].counterStartedAt!==null'), false);
 });
 
 test('hidden NPC battle pauses typing, attacks and time, then resumes without catch-up', () => {
